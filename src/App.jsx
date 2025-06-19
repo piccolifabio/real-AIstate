@@ -7,8 +7,8 @@ export default function LandingPage() {
   const [sent, setSent] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white to-gray-100 flex flex-col items-center justify-center px-6 py-12">
-      <div className="max-w-xl mx-auto text-center space-y-6">
+    <div className="min-h-screen w-full bg-gradient-to-br from-white to-gray-100 flex items-center justify-center px-6 py-12">
+      <div className="max-w-xl w-full text-center space-y-6">
         <h1 className="text-4xl font-bold text-gray-800">
           Vendi e compra casa senza agenzia.
         </h1>
