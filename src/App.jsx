@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { Routes, Route } from "react-router-dom";
+import Privacy from "./Privacy.jsx";
 
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Serif+Display:ital@0;1&display=swap');
@@ -219,7 +221,7 @@ const cards = [
 
 function CTA() {
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState("idle"); // idle | loading | success | error
+  const [status, setStatus] = useState("idle");
 
   const handleSubmit = async () => {
     if (!email || !email.includes("@")) return;
@@ -230,15 +232,9 @@ function CTA() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
-      if (res.ok) {
-        setStatus("success");
-        setEmail("");
-      } else {
-        setStatus("error");
-      }
-    } catch {
-      setStatus("error");
-    }
+      if (res.ok) { setStatus("success"); setEmail(""); }
+      else setStatus("error");
+    } catch { setStatus("error"); }
   };
 
   return (
@@ -254,15 +250,8 @@ function CTA() {
       ) : (
         <>
           <div className="cta-form">
-            <input
-              className="cta-input" type="email" placeholder="la-tua@email.it"
-              value={email} onChange={(e) => setEmail(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-              disabled={status === "loading"}
-            />
-            <button className="btn-cta-submit" onClick={handleSubmit} disabled={status === "loading"}>
-              {status === "loading" ? "..." : "Voglio l'accesso →"}
-            </button>
+            <input className="cta-input" type="email" placeholder="la-tua@email.it" value={email} onChange={(e) => setEmail(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSubmit()} disabled={status === "loading"} />
+            <button className="btn-cta-submit" onClick={handleSubmit} disabled={status === "loading"}>{status === "loading" ? "..." : "Voglio l'accesso →"}</button>
           </div>
           {status === "error" && <div className="cta-error">Qualcosa è andato storto. Riprova.</div>}
           <div className="cta-note">Nessuno spam. Solo aggiornamenti rilevanti.</div>
@@ -272,17 +261,15 @@ function CTA() {
   );
 }
 
-export default function App() {
+function Home() {
   useScrollReveal();
   const [tab, setTab] = useState("venditore");
   const steps = tab === "venditore" ? sellerSteps : buyerSteps;
 
   return (
     <>
-      <style>{styles}</style>
-
       <nav className="nav">
-        <a href="#" className="nav-logo">Real<span>AI</span>state</a>
+        <a href="/" className="nav-logo">Real<span>AI</span>state</a>
         <ul className="nav-links">
           <li><a href="#perche">Perché</a></li>
           <li><a href="#come-funziona">Come funziona</a></li>
@@ -316,14 +303,8 @@ export default function App() {
         <div>
           {excuses.map((e, i) => (
             <div className="excuse-row reveal" key={i}>
-              <div className="excuse-left">
-                <div className="excuse-num">0{i + 1}</div>
-                <div className="excuse-text">{e.text}</div>
-              </div>
-              <div className="excuse-right">
-                <div className="excuse-arrow">→</div>
-                <div className="excuse-answer">{e.answer}</div>
-              </div>
+              <div className="excuse-left"><div className="excuse-num">0{i + 1}</div><div className="excuse-text">{e.text}</div></div>
+              <div className="excuse-right"><div className="excuse-arrow">→</div><div className="excuse-answer">{e.answer}</div></div>
             </div>
           ))}
         </div>
@@ -371,9 +352,25 @@ export default function App() {
 
       <footer className="footer">
         <div className="footer-logo">Real<span>AI</span>state</div>
-        <div className="footer-links"><a href="#">Privacy</a><a href="#">Termini</a><a href="#">Contatti</a></div>
+        <div className="footer-links">
+          <a href="/privacy">Privacy</a>
+          <a href="#">Termini</a>
+          <a href="mailto:info@realaistate.ai">Contatti</a>
+        </div>
         <div>© 2025 RealAIstate</div>
       </footer>
+    </>
+  );
+}
+
+export default function App() {
+  return (
+    <>
+      <style>{styles}</style>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/privacy" element={<Privacy />} />
+      </Routes>
     </>
   );
 }
