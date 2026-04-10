@@ -1,691 +1,377 @@
-import { useEffect, useRef, useState } from "react";
-
+import { useEffect, useState } from "react";
+ 
 const styles = `
-  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
-
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Serif+Display:ital@0;1&display=swap');
+ 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
+ 
   :root {
-    --ink: #0f0f0e;
-    --paper: #f5f2ec;
-    --warm: #e8e2d6;
-    --gold: #b89a5a;
-    --gold-light: #d4b87a;
-    --muted: #7a7368;
-    --surface: #ffffff;
-    --accent: #1a3a2a;
-    --accent-light: #2d5c42;
-    --red: #c0392b;
+    --black: #0a0a0a;
+    --white: #f7f5f0;
+    --red: #d93025;
+    --red-dark: #b02020;
+    --gold: #c9a84c;
+    --muted: #6b6b6b;
+    --surface: #141414;
+    --border: rgba(247,245,240,0.08);
+    --green: #2d6a4f;
   }
-
+ 
   html { scroll-behavior: smooth; }
-
+ 
   body {
     font-family: 'DM Sans', sans-serif;
-    background: var(--paper);
-    color: var(--ink);
+    background: var(--black);
+    color: var(--white);
     overflow-x: hidden;
   }
-
-  /* NAV */
+ 
+  body::after {
+    content: '';
+    position: fixed; inset: 0; z-index: 9999; pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    opacity: 0.025;
+  }
+ 
   .nav {
-    position: fixed; top: 0; left: 0; right: 0;
-    z-index: 100;
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
     display: flex; align-items: center; justify-content: space-between;
-    padding: 1.25rem 3rem;
-    background: rgba(245,242,236,0.88);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid rgba(184,154,90,0.15);
+    padding: 1.2rem 3rem;
+    border-bottom: 1px solid var(--border);
+    background: rgba(10,10,10,0.9);
+    backdrop-filter: blur(16px);
   }
-  .nav-logo {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 1.5rem; font-weight: 600;
-    letter-spacing: -0.01em; color: var(--ink); text-decoration: none;
-  }
-  .nav-logo span { color: var(--gold); }
+  .nav-logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; letter-spacing: 0.05em; color: var(--white); text-decoration: none; }
+  .nav-logo span { color: var(--red); }
   .nav-links { display: flex; gap: 2.5rem; list-style: none; }
-  .nav-links a {
-    font-size: 0.82rem; font-weight: 500;
-    letter-spacing: 0.08em; text-transform: uppercase;
-    color: var(--muted); text-decoration: none; transition: color 0.2s;
-  }
-  .nav-links a:hover { color: var(--ink); }
-  .nav-cta {
-    background: var(--accent) !important; color: white !important;
-    padding: 0.55rem 1.4rem; border-radius: 2px;
-    font-size: 0.78rem !important; letter-spacing: 0.1em !important;
-    transition: background 0.2s !important;
-  }
-  .nav-cta:hover { background: var(--accent-light) !important; }
-
-  /* HERO */
+  .nav-links a { font-size: 0.78rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(247,245,240,0.4); text-decoration: none; transition: color 0.2s; }
+  .nav-links a:hover { color: var(--white); }
+  .nav-cta { background: var(--red) !important; color: var(--white) !important; padding: 0.55rem 1.4rem; border-radius: 2px; font-size: 0.75rem !important; letter-spacing: 0.12em !important; transition: background 0.2s !important; }
+  .nav-cta:hover { background: var(--red-dark) !important; }
+ 
   .hero {
-    min-height: 100vh;
-    display: grid; grid-template-columns: 1fr 1fr;
-    align-items: center; padding: 0 3rem; padding-top: 5rem; gap: 4rem;
-    position: relative; overflow: hidden;
+    min-height: 100vh; display: flex; flex-direction: column; justify-content: center;
+    padding: 8rem 3rem 5rem; position: relative; overflow: hidden;
   }
-  .hero::before {
-    content: ''; position: absolute; top: -20%; right: -10%;
-    width: 60vw; height: 120%;
-    background: radial-gradient(ellipse at 70% 40%, rgba(184,154,90,0.07) 0%, transparent 65%),
-                radial-gradient(ellipse at 30% 80%, rgba(26,58,42,0.05) 0%, transparent 60%);
-    pointer-events: none;
+  .hero-bg-number {
+    position: absolute; right: -2rem; top: 50%; transform: translateY(-50%);
+    font-family: 'Bebas Neue', sans-serif; font-size: clamp(200px, 30vw, 420px);
+    color: rgba(247,245,240,0.025); line-height: 1; user-select: none; pointer-events: none;
   }
-  .hero-text { max-width: 560px; }
-  .hero-eyebrow {
-    display: inline-flex; align-items: center; gap: 0.6rem;
-    font-size: 0.72rem; font-weight: 500; letter-spacing: 0.16em;
-    text-transform: uppercase; color: var(--gold); margin-bottom: 1.8rem;
-  }
-  .hero-eyebrow::before { content: ''; width: 28px; height: 1px; background: var(--gold); }
-  .hero h1 {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: clamp(3rem, 5vw, 4.8rem); font-weight: 300;
-    line-height: 1.08; letter-spacing: -0.02em; color: var(--ink); margin-bottom: 1.8rem;
-  }
-  .hero h1 em { font-style: italic; color: var(--gold); }
-  .hero-sub {
-    font-size: 1.05rem; font-weight: 300; line-height: 1.7;
-    color: var(--muted); max-width: 440px; margin-bottom: 2.8rem;
-  }
-  .hero-actions { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
-  .btn-primary {
-    background: var(--accent); color: white; border: none;
-    padding: 0.9rem 2rem; font-family: 'DM Sans', sans-serif;
-    font-size: 0.85rem; font-weight: 500; letter-spacing: 0.06em;
-    cursor: pointer; border-radius: 2px;
-    transition: background 0.2s, transform 0.15s; text-decoration: none; display: inline-block;
-  }
-  .btn-primary:hover { background: var(--accent-light); transform: translateY(-1px); }
-  .btn-ghost {
-    background: transparent; color: var(--ink);
-    border: 1px solid rgba(15,15,14,0.2); padding: 0.9rem 2rem;
-    font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 400;
-    cursor: pointer; border-radius: 2px;
-    transition: border-color 0.2s, background 0.2s; text-decoration: none;
-    display: inline-flex; align-items: center; gap: 0.5rem;
-  }
-  .btn-ghost:hover { border-color: var(--ink); background: rgba(15,15,14,0.03); }
-  .hero-stats {
-    display: flex; gap: 2.5rem; margin-top: 3.5rem;
-    padding-top: 2rem; border-top: 1px solid rgba(15,15,14,0.08);
-  }
-  .stat-num {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 2rem; font-weight: 600; color: var(--ink); line-height: 1;
-  }
-  .stat-label {
-    font-size: 0.72rem; letter-spacing: 0.08em;
-    text-transform: uppercase; color: var(--muted); margin-top: 0.3rem;
-  }
-
-  /* HERO CARD */
-  .hero-visual {
-    display: flex; justify-content: center; align-items: center; position: relative;
-  }
-  .property-card-demo {
-    background: var(--surface); border-radius: 4px;
-    box-shadow: 0 24px 80px rgba(15,15,14,0.12), 0 4px 16px rgba(15,15,14,0.06);
-    width: 100%; max-width: 420px; overflow: hidden;
-    animation: floatCard 6s ease-in-out infinite;
-  }
-  @keyframes floatCard {
-    0%, 100% { transform: translateY(0px) rotate(-0.5deg); }
-    50% { transform: translateY(-10px) rotate(0.5deg); }
-  }
-  .card-img {
-    height: 220px;
-    background: linear-gradient(135deg, #c9bfa8 0%, #a8987e 50%, #8a7a62 100%);
-    position: relative; overflow: hidden;
-  }
-  .card-img::after {
-    content: ''; position: absolute; inset: 0;
-    background: linear-gradient(to bottom, transparent 40%, rgba(15,15,14,0.4) 100%);
-  }
-  .card-img-text {
-    position: absolute; bottom: 1rem; left: 1.2rem; z-index: 1;
-    color: white; font-size: 0.72rem; letter-spacing: 0.1em;
-    text-transform: uppercase; opacity: 0.9;
-  }
-  .card-badge {
-    position: absolute; top: 1rem; right: 1rem; z-index: 1;
-    background: var(--accent); color: white; font-size: 0.68rem;
-    font-weight: 500; letter-spacing: 0.08em;
-    padding: 0.3rem 0.7rem; border-radius: 2px; text-transform: uppercase;
-  }
-  .map-bg {
-    position: absolute; inset: 0;
-    display: grid; grid-template-columns: repeat(8,1fr); grid-template-rows: repeat(5,1fr);
-    opacity: 0.18;
-  }
-  .map-bg span { border: 1px solid rgba(255,255,255,0.5); }
-  .card-body { padding: 1.2rem; }
-  .card-price {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 1.6rem; font-weight: 600; color: var(--ink); line-height: 1; margin-bottom: 0.3rem;
-  }
-  .card-address { font-size: 0.78rem; color: var(--muted); margin-bottom: 1rem; }
-  .card-specs {
-    display: flex; gap: 1rem; margin-bottom: 1rem;
-    padding-bottom: 1rem; border-bottom: 1px solid var(--warm);
-  }
-  .spec-item { font-size: 0.75rem; color: var(--muted); display: flex; align-items: center; gap: 0.3rem; }
-  .ai-panel { background: var(--paper); border-radius: 3px; padding: 0.8rem; margin-bottom: 0.8rem; }
-  .ai-panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.6rem; }
-  .ai-label {
-    font-size: 0.65rem; font-weight: 500; letter-spacing: 0.12em;
-    text-transform: uppercase; color: var(--gold);
-    display: flex; align-items: center; gap: 0.35rem;
-  }
-  .ai-label::before {
-    content: ''; width: 6px; height: 6px; border-radius: 50%;
-    background: var(--gold); animation: pulse 2s infinite;
-  }
-  @keyframes pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.5; transform: scale(1.3); }
-  }
-  .score-chips { display: flex; gap: 0.4rem; }
-  .score-chip { font-size: 0.68rem; font-weight: 500; padding: 0.2rem 0.5rem; border-radius: 2px; }
-  .chip-green { background: rgba(26,58,42,0.1); color: var(--accent); }
-  .chip-gold { background: rgba(184,154,90,0.12); color: #8a6a20; }
-  .ai-insight { font-size: 0.75rem; line-height: 1.5; color: var(--muted); }
-  .ai-insight strong { color: var(--ink); font-weight: 500; }
-  .card-footer { display: flex; align-items: center; justify-content: space-between; }
-  .score-bar-label { font-size: 0.65rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.3rem; }
-  .score-bar { height: 4px; background: var(--warm); border-radius: 2px; overflow: hidden; width: 120px; }
-  .score-fill { height: 100%; width: 78%; background: linear-gradient(90deg, var(--accent), var(--gold)); border-radius: 2px; }
-  .card-actions { display: flex; gap: 0.5rem; }
-  .card-btn {
-    width: 32px; height: 32px; border: 1px solid var(--warm);
-    background: transparent; border-radius: 2px; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 0.85rem; transition: background 0.15s;
-  }
-  .card-btn:hover { background: var(--warm); }
-  .float-badge {
-    position: absolute; top: -1.5rem; right: -1.5rem;
-    background: var(--surface); border-radius: 4px; padding: 0.7rem 1rem;
-    box-shadow: 0 8px 32px rgba(15,15,14,0.1);
-    display: flex; align-items: center; gap: 0.6rem;
-    animation: floatBadge 5s ease-in-out 1s infinite;
-  }
-  @keyframes floatBadge {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-6px); }
-  }
-  .badge-icon { font-size: 1.1rem; }
-  .badge-text { font-size: 0.72rem; line-height: 1.3; }
-  .badge-text strong { display: block; font-weight: 500; color: var(--ink); }
-  .badge-text span { color: var(--muted); }
-  .float-badge-2 {
-    position: absolute; bottom: 1rem; left: -2rem;
-    background: var(--accent); color: white; border-radius: 4px;
-    padding: 0.6rem 1rem; box-shadow: 0 8px 24px rgba(26,58,42,0.3);
-    font-size: 0.72rem; line-height: 1.4;
-    animation: floatBadge 5s ease-in-out 2.5s infinite;
-  }
-  .float-badge-2 strong { display: block; font-size: 1.1rem; font-weight: 600; font-family: 'Cormorant Garamond', serif; }
-
-  /* SECTIONS */
-  .section { padding: 6rem 3rem; }
-  .section-label {
-    font-size: 0.7rem; font-weight: 500; letter-spacing: 0.18em;
-    text-transform: uppercase; color: var(--gold); margin-bottom: 1rem;
-    display: flex; align-items: center; gap: 0.6rem;
-  }
-  .section-label::before { content: ''; width: 24px; height: 1px; background: var(--gold); }
-  .section-title {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: clamp(2rem, 3.5vw, 3rem); font-weight: 300;
-    line-height: 1.12; letter-spacing: -0.02em; color: var(--ink);
-  }
-  .section-title em { font-style: italic; color: var(--gold); }
-
-  /* HOW IT WORKS */
-  .how-works { background: var(--ink); color: white; }
-  .how-works .section-label { color: var(--gold-light); }
-  .how-works .section-label::before { background: var(--gold-light); }
-  .how-works .section-title { color: white; }
-  .how-works .section-title em { color: var(--gold-light); }
-  .how-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; margin-top: 4rem; }
-  .how-step {
-    background: rgba(255,255,255,0.03); padding: 2.5rem 2rem;
-    border: 1px solid rgba(255,255,255,0.06); position: relative;
-    transition: background 0.3s;
-  }
-  .how-step:hover { background: rgba(255,255,255,0.06); }
-  .step-num {
-    font-family: 'Cormorant Garamond', serif; font-size: 4rem;
-    font-weight: 300; color: rgba(184,154,90,0.2); line-height: 1;
-    margin-bottom: 1.5rem; display: block;
-  }
-  .step-title { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 400; color: white; margin-bottom: 0.8rem; }
-  .step-desc { font-size: 0.85rem; line-height: 1.7; color: rgba(255,255,255,0.45); }
-
-  /* FEATURES */
-  .features-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2rem; margin-top: 4rem; }
-  .feature-card {
-    background: var(--surface); border-radius: 3px; padding: 2rem;
-    border: 1px solid rgba(15,15,14,0.06); transition: box-shadow 0.3s, transform 0.3s;
-  }
-  .feature-card:hover { box-shadow: 0 12px 40px rgba(15,15,14,0.08); transform: translateY(-3px); }
-  .feature-card-wide { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center; }
-  .feature-icon {
-    width: 44px; height: 44px; background: var(--paper); border-radius: 3px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.2rem; margin-bottom: 1.2rem;
-  }
-  .feature-title { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; font-weight: 400; margin-bottom: 0.6rem; color: var(--ink); }
-  .feature-desc { font-size: 0.83rem; line-height: 1.7; color: var(--muted); }
-  .feature-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 1rem; }
-  .ftag {
-    font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase;
-    padding: 0.25rem 0.6rem; border-radius: 2px;
-    background: var(--paper); color: var(--muted); font-weight: 500;
-  }
-  .score-preview { background: var(--paper); border-radius: 3px; padding: 1.5rem; }
-  .score-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.8rem; }
-  .score-row:last-child { margin-bottom: 0; }
-  .score-name { font-size: 0.78rem; color: var(--muted); font-weight: 400; }
-  .score-val { font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; font-weight: 600; }
-  .sv-green { color: var(--accent); }
-  .sv-gold { color: #8a6a20; }
-  .sv-muted { color: var(--muted); }
-  .mini-bar { height: 3px; background: var(--warm); border-radius: 2px; margin-top: 0.25rem; overflow: hidden; }
-  .mini-fill { height: 100%; border-radius: 2px; }
-  .score-insight { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--warm); font-size: 0.72rem; color: var(--muted); line-height: 1.6; }
-
-  /* TARGET */
-  .target-section { background: var(--warm); }
-  .target-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-top: 3rem; }
-  .target-card {
-    background: var(--surface); border-radius: 3px; padding: 2rem 1.8rem;
-    border-top: 3px solid transparent; transition: border-color 0.3s, box-shadow 0.3s;
-  }
-  .target-card:hover { border-color: var(--gold); box-shadow: 0 8px 32px rgba(15,15,14,0.08); }
-  .target-card-active { border-color: var(--accent); }
-  .target-role { font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold); font-weight: 500; margin-bottom: 0.6rem; }
-  .target-name { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 400; color: var(--ink); margin-bottom: 0.8rem; }
-  .target-need { font-size: 0.82rem; line-height: 1.6; color: var(--muted); margin-bottom: 1.2rem; }
-  .target-features { list-style: none; display: flex; flex-direction: column; gap: 0.4rem; }
-  .target-features li { font-size: 0.78rem; color: var(--muted); display: flex; align-items: flex-start; gap: 0.5rem; }
-  .target-features li::before { content: '→'; color: var(--gold); flex-shrink: 0; }
-
-  /* CTA */
-  .cta-section {
-    background: var(--accent); text-align: center; padding: 7rem 3rem;
-    position: relative; overflow: hidden;
-  }
-  .cta-section::before {
-    content: ''; position: absolute; inset: 0;
-    background: radial-gradient(ellipse at 50% 0%, rgba(184,154,90,0.15) 0%, transparent 65%);
-  }
-  .cta-eyebrow { font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(184,154,90,0.8); margin-bottom: 1.5rem; }
-  .cta-title { font-family: 'Cormorant Garamond', serif; font-size: clamp(2.5rem, 5vw, 4rem); font-weight: 300; color: white; line-height: 1.1; margin-bottom: 1.5rem; }
-  .cta-title em { font-style: italic; color: var(--gold-light); }
-  .cta-sub { font-size: 0.95rem; color: rgba(255,255,255,0.5); max-width: 420px; margin: 0 auto 2.5rem; line-height: 1.7; }
-  .cta-form { display: flex; gap: 0.75rem; justify-content: center; align-items: center; flex-wrap: wrap; }
-  .cta-input {
-    padding: 0.9rem 1.4rem; border: 1px solid rgba(255,255,255,0.15);
-    background: rgba(255,255,255,0.07); color: white;
-    font-family: 'DM Sans', sans-serif; font-size: 0.88rem;
-    border-radius: 2px; width: 280px; outline: none; transition: border-color 0.2s;
-  }
-  .cta-input::placeholder { color: rgba(255,255,255,0.3); }
-  .cta-input:focus { border-color: var(--gold); }
-  .btn-gold {
-    background: var(--gold); color: var(--ink); border: none;
-    padding: 0.9rem 2rem; font-family: 'DM Sans', sans-serif;
-    font-size: 0.85rem; font-weight: 500; letter-spacing: 0.05em;
-    cursor: pointer; border-radius: 2px; transition: background 0.2s, transform 0.15s;
-  }
-  .btn-gold:hover { background: var(--gold-light); transform: translateY(-1px); }
-  .cta-note { font-size: 0.72rem; color: rgba(255,255,255,0.3); margin-top: 1rem; letter-spacing: 0.05em; }
-  .cta-success { font-size: 0.9rem; color: var(--gold-light); margin-top: 1rem; }
-
-  /* FOOTER */
-  .footer {
-    background: var(--ink); color: rgba(255,255,255,0.4);
-    padding: 2.5rem 3rem; display: flex; align-items: center;
-    justify-content: space-between; font-size: 0.78rem; letter-spacing: 0.04em;
-  }
-  .footer-logo { font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; font-weight: 600; color: rgba(255,255,255,0.6); }
-  .footer-logo span { color: var(--gold); }
+  .hero-eyebrow { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--red); margin-bottom: 2rem; display: flex; align-items: center; gap: 0.8rem; }
+  .hero-eyebrow::before { content: ''; width: 32px; height: 1px; background: var(--red); }
+  .hero-h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(4rem, 10vw, 10rem); line-height: 0.92; letter-spacing: 0.01em; color: var(--white); max-width: 900px; margin-bottom: 0.5rem; }
+  .hero-h1 .strike { position: relative; display: inline-block; color: rgba(247,245,240,0.2); }
+  .hero-h1 .strike::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 4px; background: var(--red); transform: rotate(-2deg); }
+  .hero-answer { font-family: 'Bebas Neue', sans-serif; font-size: clamp(3.5rem, 7vw, 7rem); color: var(--red); line-height: 1; letter-spacing: 0.02em; margin-bottom: 3rem; }
+  .hero-sub { font-size: 1.1rem; font-weight: 300; line-height: 1.7; color: rgba(247,245,240,0.5); max-width: 500px; margin-bottom: 3rem; }
+  .hero-sub strong { color: var(--white); font-weight: 500; }
+  .hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; }
+ 
+  .btn-red { background: var(--red); color: var(--white); border: none; padding: 1rem 2.2rem; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; border-radius: 2px; transition: background 0.2s, transform 0.15s; text-decoration: none; display: inline-block; }
+  .btn-red:hover { background: var(--red-dark); transform: translateY(-2px); }
+  .btn-outline { background: transparent; color: rgba(247,245,240,0.6); border: 1px solid rgba(247,245,240,0.15); padding: 1rem 2.2rem; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 400; cursor: pointer; border-radius: 2px; transition: all 0.2s; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; }
+  .btn-outline:hover { border-color: rgba(247,245,240,0.4); color: var(--white); }
+ 
+  .hero-cost { margin-top: 4rem; padding-top: 2.5rem; border-top: 1px solid var(--border); display: flex; gap: 3rem; align-items: center; }
+  .cost-num { font-family: 'Bebas Neue', sans-serif; font-size: 3rem; line-height: 1; color: var(--white); }
+  .cost-num.red { color: var(--red); }
+  .cost-label { font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(247,245,240,0.35); margin-top: 0.25rem; }
+  .cost-divider { width: 1px; height: 48px; background: var(--border); }
+ 
+  .excuses { background: var(--white); color: var(--black); padding: 7rem 3rem; }
+  .excuses-label { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--red); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.8rem; }
+  .excuses-label::before { content: ''; width: 24px; height: 1px; background: var(--red); }
+  .excuses-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2.5rem, 5vw, 5rem); line-height: 1; color: var(--black); margin-bottom: 4rem; max-width: 700px; }
+  .excuse-row { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid rgba(10,10,10,0.1); padding: 2rem 0; transition: background 0.2s; }
+  .excuse-row:last-child { border-bottom: 1px solid rgba(10,10,10,0.1); }
+  .excuse-row:hover { background: rgba(10,10,10,0.02); }
+  .excuse-left { display: flex; align-items: flex-start; gap: 1.5rem; padding-right: 3rem; }
+  .excuse-num { font-family: 'Bebas Neue', sans-serif; font-size: 1rem; color: rgba(10,10,10,0.2); flex-shrink: 0; padding-top: 0.2rem; }
+  .excuse-text { font-family: 'DM Serif Display', serif; font-size: 1.3rem; line-height: 1.3; color: rgba(10,10,10,0.4); font-style: italic; }
+  .excuse-right { display: flex; align-items: flex-start; gap: 1rem; padding-left: 3rem; border-left: 1px solid rgba(10,10,10,0.08); }
+  .excuse-arrow { font-size: 1.2rem; color: var(--red); flex-shrink: 0; padding-top: 0.1rem; }
+  .excuse-answer { font-size: 0.95rem; line-height: 1.6; color: var(--black); }
+  .excuse-answer strong { font-weight: 600; }
+ 
+  .sentence-section { background: var(--red); padding: 6rem 3rem; text-align: center; position: relative; overflow: hidden; }
+  .sentence-section::before { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(-45deg, transparent, transparent 40px, rgba(0,0,0,0.03) 40px, rgba(0,0,0,0.03) 41px); }
+  .sentence-text { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2rem, 5vw, 4.5rem); line-height: 1.05; color: var(--white); max-width: 900px; margin: 0 auto; position: relative; z-index: 1; letter-spacing: 0.02em; }
+  .sentence-sub { font-size: 1rem; color: rgba(247,245,240,0.65); margin-top: 1.5rem; position: relative; z-index: 1; font-weight: 300; }
+ 
+  .how-section { padding: 7rem 3rem; background: var(--black); }
+  .how-label { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--red); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.8rem; }
+  .how-label::before { content: ''; width: 24px; height: 1px; background: var(--red); }
+  .how-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2.5rem, 5vw, 5rem); line-height: 1; color: var(--white); margin-bottom: 3rem; max-width: 600px; }
+  .how-tabs { display: flex; gap: 0; margin-bottom: 3rem; border-bottom: 1px solid var(--border); }
+  .how-tab { padding: 0.8rem 1.8rem; font-size: 0.78rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(247,245,240,0.35); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.2s; background: none; border-top: none; border-left: none; border-right: none; font-family: 'DM Sans', sans-serif; }
+  .how-tab.active { color: var(--white); border-bottom-color: var(--red); }
+  .how-tab:hover { color: rgba(247,245,240,0.7); }
+  .how-step { display: grid; grid-template-columns: 80px 1fr auto; align-items: center; gap: 2rem; padding: 2rem 0; border-bottom: 1px solid var(--border); transition: background 0.2s; }
+  .how-step:hover { background: rgba(247,245,240,0.02); }
+  .how-step-num { font-family: 'Bebas Neue', sans-serif; font-size: 3rem; color: rgba(247,245,240,0.08); line-height: 1; }
+  .how-step-title { font-size: 1.05rem; font-weight: 600; color: var(--white); margin-bottom: 0.4rem; }
+  .how-step-desc { font-size: 0.85rem; line-height: 1.6; color: rgba(247,245,240,0.4); }
+  .how-step-tag { font-size: 0.65rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; padding: 0.3rem 0.8rem; border-radius: 2px; white-space: nowrap; }
+  .tag-ai { background: rgba(201,168,76,0.12); color: var(--gold); }
+  .tag-auto { background: rgba(217,48,37,0.1); color: var(--red); }
+  .tag-pro { background: rgba(247,245,240,0.06); color: rgba(247,245,240,0.5); }
+ 
+  .forwho-section { padding: 7rem 3rem; background: var(--surface); }
+  .forwho-label { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--red); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.8rem; }
+  .forwho-label::before { content: ''; width: 24px; height: 1px; background: var(--red); }
+  .forwho-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2.5rem, 5vw, 5rem); line-height: 1; color: var(--white); margin-bottom: 3rem; }
+  .forwho-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; }
+  .forwho-card { background: rgba(247,245,240,0.03); padding: 2.5rem; border: 1px solid var(--border); transition: background 0.3s; position: relative; overflow: hidden; }
+  .forwho-card:hover { background: rgba(247,245,240,0.06); }
+  .forwho-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--red); transform: scaleX(0); transform-origin: left; transition: transform 0.3s; }
+  .forwho-card:hover::before { transform: scaleX(1); }
+  .forwho-role { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--red); margin-bottom: 0.8rem; }
+  .forwho-name { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; color: var(--white); margin-bottom: 0.8rem; line-height: 1; }
+  .forwho-desc { font-size: 0.85rem; line-height: 1.7; color: rgba(247,245,240,0.4); margin-bottom: 1.5rem; }
+  .forwho-list { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; }
+  .forwho-list li { font-size: 0.8rem; color: rgba(247,245,240,0.5); display: flex; align-items: flex-start; gap: 0.6rem; }
+  .forwho-list li::before { content: '→'; color: var(--red); flex-shrink: 0; }
+ 
+  .cta-section { background: var(--white); color: var(--black); padding: 8rem 3rem; text-align: center; }
+  .cta-pre { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--red); margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: center; gap: 0.8rem; }
+  .cta-pre::before, .cta-pre::after { content: ''; width: 24px; height: 1px; background: var(--red); }
+  .cta-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(3rem, 7vw, 7rem); line-height: 0.95; color: var(--black); margin-bottom: 1.5rem; }
+  .cta-title span { color: var(--red); }
+  .cta-sub { font-size: 1rem; color: rgba(10,10,10,0.5); max-width: 420px; margin: 0 auto 3rem; line-height: 1.7; font-weight: 300; }
+  .cta-form { display: flex; gap: 0; justify-content: center; max-width: 480px; margin: 0 auto; }
+  .cta-input { flex: 1; padding: 1rem 1.5rem; border: 2px solid rgba(10,10,10,0.15); border-right: none; background: transparent; color: var(--black); font-family: 'DM Sans', sans-serif; font-size: 0.9rem; border-radius: 2px 0 0 2px; outline: none; transition: border-color 0.2s; }
+  .cta-input::placeholder { color: rgba(10,10,10,0.3); }
+  .cta-input:focus { border-color: var(--red); }
+  .btn-cta-submit { background: var(--red); color: white; border: 2px solid var(--red); padding: 1rem 1.8rem; font-family: 'DM Sans', sans-serif; font-size: 0.8rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; border-radius: 0 2px 2px 0; transition: background 0.2s; white-space: nowrap; }
+  .btn-cta-submit:hover { background: var(--red-dark); border-color: var(--red-dark); }
+  .cta-note { font-size: 0.72rem; color: rgba(10,10,10,0.3); margin-top: 1rem; }
+  .cta-success { font-size: 1rem; color: var(--green); font-weight: 500; margin-top: 1rem; }
+ 
+  .footer { background: var(--black); padding: 2rem 3rem; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--border); font-size: 0.75rem; color: rgba(247,245,240,0.2); }
+  .footer-logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; color: rgba(247,245,240,0.4); letter-spacing: 0.05em; }
+  .footer-logo span { color: var(--red); }
   .footer-links { display: flex; gap: 2rem; }
-  .footer-links a { color: rgba(255,255,255,0.3); text-decoration: none; transition: color 0.2s; }
-  .footer-links a:hover { color: rgba(255,255,255,0.7); }
-
-  /* SCROLL REVEAL */
-  .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.7s ease, transform 0.7s ease; }
+  .footer-links a { color: rgba(247,245,240,0.2); text-decoration: none; transition: color 0.2s; }
+  .footer-links a:hover { color: rgba(247,245,240,0.6); }
+ 
+  .reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.6s ease, transform 0.6s ease; }
   .reveal.visible { opacity: 1; transform: translateY(0); }
-
-  /* RESPONSIVE */
+ 
   @media (max-width: 900px) {
     .nav { padding: 1rem 1.5rem; }
     .nav-links { display: none; }
-    .hero { grid-template-columns: 1fr; padding: 7rem 1.5rem 3rem; min-height: auto; gap: 3rem; }
-    .hero-visual { display: none; }
-    .section { padding: 4rem 1.5rem; }
-    .how-grid { grid-template-columns: 1fr; gap: 1px; }
-    .features-grid { grid-template-columns: 1fr; }
-    .feature-card-wide { grid-column: 1; display: block; }
-    .target-grid { grid-template-columns: 1fr; }
-    .cta-section { padding: 5rem 1.5rem; }
+    .hero { padding: 7rem 1.5rem 4rem; }
+    .hero-bg-number { display: none; }
+    .hero-cost { gap: 1.5rem; flex-wrap: wrap; }
+    .excuse-row { grid-template-columns: 1fr; gap: 1rem; }
+    .excuse-right { border-left: none; border-top: 1px solid rgba(10,10,10,0.08); padding-left: 0; padding-top: 1rem; }
+    .how-step { grid-template-columns: 50px 1fr; }
+    .how-step-tag { display: none; }
+    .forwho-grid { grid-template-columns: 1fr; }
+    .excuses, .sentence-section, .how-section, .forwho-section, .cta-section { padding: 5rem 1.5rem; }
+    .cta-form { flex-direction: column; }
+    .cta-input { border-right: 2px solid rgba(10,10,10,0.15); border-bottom: none; border-radius: 2px 2px 0 0; }
+    .btn-cta-submit { border-radius: 0 0 2px 2px; }
     .footer { flex-direction: column; gap: 1.5rem; text-align: center; padding: 2rem 1.5rem; }
     .footer-links { flex-wrap: wrap; justify-content: center; }
   }
 `;
-
+ 
 function useScrollReveal() {
   useEffect(() => {
-    const reveals = document.querySelectorAll(".reveal");
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((e, i) => {
-          if (e.isIntersecting) {
-            setTimeout(() => e.target.classList.add("visible"), i * 120);
-          }
-        });
-      },
-      { threshold: 0.1 }
+    const els = document.querySelectorAll(".reveal");
+    const obs = new IntersectionObserver(
+      (entries) => entries.forEach((e, i) => {
+        if (e.isIntersecting) setTimeout(() => e.target.classList.add("visible"), i * 100);
+      }),
+      { threshold: 0.08 }
     );
-    reveals.forEach((r) => observer.observe(r));
-    return () => observer.disconnect();
+    els.forEach((el) => obs.observe(el));
+    return () => obs.disconnect();
   }, []);
 }
-
-function Nav() {
-  return (
-    <nav className="nav">
-      <a href="#" className="nav-logo">Real<span>AI</span>state</a>
-      <ul className="nav-links">
-        <li><a href="#come-funziona">Come funziona</a></li>
-        <li><a href="#funzionalita">Funzionalità</a></li>
-        <li><a href="#per-chi">Per chi</a></li>
-        <li><a href="#early" className="nav-cta">Accesso anticipato</a></li>
-      </ul>
-    </nav>
-  );
-}
-
-function PropertyCard() {
-  return (
-    <div className="hero-visual">
-      <div className="float-badge">
-        <div className="badge-icon">📈</div>
-        <div className="badge-text">
-          <strong>Sotto mercato del 8%</strong>
-          <span>Fair Price Score</span>
-        </div>
-      </div>
-      <div className="property-card-demo">
-        <div className="card-img">
-          <div className="map-bg">
-            {Array(40).fill(null).map((_, i) => <span key={i} />)}
-          </div>
-          <div className="card-img-text">Milano · Porta Romana</div>
-          <div className="card-badge">Analisi AI ✦</div>
-        </div>
-        <div className="card-body">
-          <div className="card-price">€ 485.000</div>
-          <div className="card-address">Via Lamarmora, 18 · 3 locali · 92 m²</div>
-          <div className="card-specs">
-            <div className="spec-item">🛏 2 camere</div>
-            <div className="spec-item">🛁 2 bagni</div>
-            <div className="spec-item">⚡ Cl. B</div>
-            <div className="spec-item">🅿 Box</div>
-          </div>
-          <div className="ai-panel">
-            <div className="ai-panel-header">
-              <span className="ai-label">Analisi AI</span>
-              <div className="score-chips">
-                <span className="score-chip chip-green">✓ Prezzo ok</span>
-                <span className="score-chip chip-gold">★ Buon rendimento</span>
-              </div>
-            </div>
-            <div className="ai-insight">
-              <strong>Punti di forza:</strong> ottima classe energetica, zona in rivalutazione, box incluso.<br />
-              <strong>Attenzione:</strong> spese condominiali non indicate nell'annuncio.
-            </div>
-          </div>
-          <div className="card-footer">
-            <div>
-              <div className="score-bar-label">Investment Score</div>
-              <div className="score-bar"><div className="score-fill" /></div>
-            </div>
-            <div className="card-actions">
-              <button className="card-btn">♡</button>
-              <button className="card-btn">⤢</button>
-              <button className="card-btn">✎</button>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className="float-badge-2">
-        <strong>7.8/10</strong>
-        Investment Score
-      </div>
-    </div>
-  );
-}
-
-function Hero() {
-  return (
-    <section className="hero">
-      <div className="hero-text">
-        <div className="hero-eyebrow">Piattaforma AI per il Real Estate</div>
-        <h1>Ogni immobile<br />è una <em>decisione</em></h1>
-        <p className="hero-sub">RealAIstate trasforma gli annunci in centri decisionali. Analisi del prezzo, scoring qualitativo, comparabili automatici e sintesi AI — in un'unica scheda.</p>
-        <div className="hero-actions">
-          <a href="#early" className="btn-primary">Richiedi accesso anticipato</a>
-          <a href="#come-funziona" className="btn-ghost"><span>↓</span> Come funziona</a>
-        </div>
-        <div className="hero-stats">
-          <div><div className="stat-num">3s</div><div className="stat-label">per un'analisi completa</div></div>
-          <div><div className="stat-num">AI</div><div className="stat-label">Scoring spiegabile</div></div>
-          <div><div className="stat-num">∞</div><div className="stat-label">Comparabili automatici</div></div>
-        </div>
-      </div>
-      <PropertyCard />
-    </section>
-  );
-}
-
-function HowItWorks() {
-  const steps = [
-    { num: "01", title: "Cerca e filtra", desc: "Inserisci zona, budget e criteri. La mappa interattiva e i filtri intelligenti portano in superficie solo ciò che è rilevante per il tuo obiettivo." },
-    { num: "02", title: "Analizza in profondità", desc: "Ogni scheda include valutazione AI del prezzo, comparabili automatici, punti di forza e criticità, domande consigliate da fare prima della visita." },
-    { num: "03", title: "Decidi con sicurezza", desc: "Organizza la tua shortlist, confronta più immobili affiancati, aggiungi note private ed esporta un report decisionale condivisibile." },
-  ];
-  return (
-    <section className="section how-works" id="come-funziona">
-      <div className="section-label">Come funziona</div>
-      <h2 className="section-title">Dal dato grezzo<br />alla <em>decisione giusta</em></h2>
-      <div className="how-grid">
-        {steps.map((s) => (
-          <div className="how-step reveal" key={s.num}>
-            <span className="step-num">{s.num}</span>
-            <div className="step-title">{s.title}</div>
-            <p className="step-desc">{s.desc}</p>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function Features() {
-  return (
-    <section className="section" id="funzionalita" style={{ background: "var(--paper)" }}>
-      <div className="section-label">Funzionalità</div>
-      <h2 className="section-title">Strumenti pensati<br />per <em>chi decide</em></h2>
-      <div className="features-grid">
-        <div className="feature-card feature-card-wide reveal">
-          <div>
-            <div className="feature-icon">🎯</div>
-            <h3 className="feature-title">Fair Price Score</h3>
-            <p className="feature-desc">Il motore AI valuta ogni immobile rispetto al mercato locale, tenendo conto di zona, metratura, stato, classe energetica e caratteristiche. Il punteggio è sempre spiegato — nessuna black box.</p>
-            <div className="feature-tags">
-              <span className="ftag">Prezzo sotto/sopra mercato</span>
-              <span className="ftag">Comparabili automatici</span>
-              <span className="ftag">Trend zona</span>
-              <span className="ftag">Spiegazione testuale</span>
-            </div>
-          </div>
-          <div className="score-preview">
-            <div className="score-row">
-              <div><div className="score-name">Fair Price Score</div><div className="mini-bar"><div className="mini-fill" style={{ width: "82%", background: "var(--accent)" }} /></div></div>
-              <div className="score-val sv-green">82/100</div>
-            </div>
-            <div className="score-row">
-              <div><div className="score-name">Investment Score</div><div className="mini-bar"><div className="mini-fill" style={{ width: "78%", background: "var(--gold)" }} /></div></div>
-              <div className="score-val sv-gold">78/100</div>
-            </div>
-            <div className="score-row">
-              <div><div className="score-name">Qualità annuncio</div><div className="mini-bar"><div className="mini-fill" style={{ width: "55%", background: "var(--muted)" }} /></div></div>
-              <div className="score-val sv-muted">55/100</div>
-            </div>
-            <div className="score-insight">
-              💡 <em>Il prezzo è allineato al mercato di zona. L'annuncio manca di informazioni su spese condominiali e piano — chiedi prima della visita.</em>
-            </div>
-          </div>
-        </div>
-        <div className="feature-card reveal">
-          <div className="feature-icon">🔎</div>
-          <h3 className="feature-title">Question Generator</h3>
-          <p className="feature-desc">L'AI analizza l'annuncio e produce automaticamente le domande che dovresti fare all'agente o al proprietario — colmando le lacune informative prima della visita.</p>
-          <div className="feature-tags">
-            <span className="ftag">Domande pre-visita</span>
-            <span className="ftag">Red flags</span>
-            <span className="ftag">Checklist visita</span>
-          </div>
-        </div>
-        <div className="feature-card reveal">
-          <div className="feature-icon">📋</div>
-          <h3 className="feature-title">Workspace personale</h3>
-          <p className="feature-desc">Preferiti, shortlist, confronti multi-immobile, note private e stato del processo: da valutare, da visitare, offerta inviata, scartato.</p>
-          <div className="feature-tags">
-            <span className="ftag">Shortlist</span>
-            <span className="ftag">Confronto affiancato</span>
-            <span className="ftag">Note private</span>
-            <span className="ftag">Export PDF</span>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function TargetSection() {
-  const targets = [
-    {
-      role: "Acquirente privato", name: "Capire prima di decidere",
-      need: "Non sei un esperto del mercato. RealAIstate ti dice in 3 secondi se l'immobile vale davvero quello che chiedono — e perché.",
-      features: ["Valutazione del prezzo in linguaggio semplice", "Domande consigliate da fare all'agente", "Confronto tra più opzioni in shortlist", "Alert su nuovi immobili compatibili"],
-      active: false
-    },
-    {
-      role: "Investitore", name: "Massimizzare il rendimento",
-      need: "Ogni ora persa a confrontare dati è denaro. Il workspace investitore centralizza analisi, scoring e pipeline opportunità in un unico flusso.",
-      features: ["Investment Score con spiegazione", "Classificazione: rendita, flip, affitto breve", "Pipeline opportunità con stato", "Report decisionale esportabile"],
-      active: true
-    },
-    {
-      role: "Agente immobiliare", name: "Lavorare meglio sugli annunci",
-      need: "Genera descrizioni ottimizzate con AI, analizza il posizionamento di ogni annuncio e gestisci i lead con un CRM leggero integrato.",
-      features: ["Riscrittura annunci con AI", "Report di posizionamento condivisibile", "Mini CRM lead e trattative", "Analisi performance annunci"],
-      active: false
-    },
-  ];
-  return (
-    <section className="section target-section" id="per-chi">
-      <div className="section-label">Per chi è pensato</div>
-      <h2 className="section-title">Ogni utente ha<br />il suo <em>valore chiave</em></h2>
-      <div className="target-grid reveal">
-        {targets.map((t) => (
-          <div className={`target-card ${t.active ? "target-card-active" : ""}`} key={t.role}>
-            <div className="target-role">{t.role}</div>
-            <div className="target-name">{t.name}</div>
-            <p className="target-need">{t.need}</p>
-            <ul className="target-features">
-              {t.features.map((f) => <li key={f}>{f}</li>)}
-            </ul>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function CTASection() {
+ 
+const excuses = [
+  { text: '"Ho bisogno di qualcuno che conosca il mercato."', answer: <><strong>L'AI analizza migliaia di transazioni nella tua zona.</strong> In tempo reale. Senza commissioni.</> },
+  { text: '"Non saprei come fare le foto giuste."', answer: <><strong>RealAIstate valuta ogni foto che carichi</strong> e ti dice esattamente cosa migliorare, stanza per stanza.</> },
+  { text: '"Per il notaio e i documenti ho bisogno di aiuto."', answer: <><strong>La piattaforma ti connette direttamente</strong> con notai, periti e professionisti certificati. Senza intermediari.</> },
+  { text: '"Non riesco a capire se il prezzo è giusto."', answer: <><strong>Il Fair Price Score ti dice in 3 secondi</strong> se stai pagando troppo — e perché. Con dati, non opinioni.</> },
+  { text: '"Ho paura di sbagliare senza qualcuno che mi segue."', answer: <><strong>L'AI è con te in ogni passaggio</strong> — dalla valutazione alla trattativa, fino al rogito. Sempre disponibile, mai di parte.</> },
+];
+ 
+const sellerSteps = [
+  { title: "Pubblica il tuo immobile", desc: "Inserisci i dati base. L'AI genera titolo, descrizione ottimizzata e ti dice il prezzo di mercato corretto.", tag: "AI", tagClass: "tag-ai" },
+  { title: "Valuta le tue foto", desc: "Carica le immagini. RealAIstate analizza luminosità, angolazione e composizione. Ti dice cosa rifare.", tag: "AI", tagClass: "tag-ai" },
+  { title: "Ricevi le proposte", desc: "Gli acquirenti ti contattano direttamente. Nessun intermediario. Nessuna percentuale da pagare.", tag: "Automatico", tagClass: "tag-auto" },
+  { title: "Chiudi con i professionisti", desc: "Notaio, perito energetico, geometra. Li trovi tutti sulla piattaforma, certificati e a prezzo trasparente.", tag: "Rete Pro", tagClass: "tag-pro" },
+];
+ 
+const buyerSteps = [
+  { title: "Cerca senza filtri inutili", desc: "Zona, budget, obiettivo. La mappa mostra gli immobili ordinati per Fair Price Score, non per chi paga di più.", tag: "AI", tagClass: "tag-ai" },
+  { title: "Analizza ogni scheda", desc: "Valutazione del prezzo, punti di forza, criticità, domande da fare. Tutto generato dall'AI in automatico.", tag: "AI", tagClass: "tag-ai" },
+  { title: "Fai un'offerta diretta", desc: "Contatta il venditore. RealAIstate ti supporta nella trattativa con dati di mercato reali.", tag: "Automatico", tagClass: "tag-auto" },
+  { title: "Chiudi in sicurezza", desc: "Perizia, APE, atti notarili. La piattaforma coordina tutto. Tu arrivi al rogito preparato.", tag: "Rete Pro", tagClass: "tag-pro" },
+];
+ 
+const cards = [
+  { role: "Stai vendendo", name: "Pubblica. Incassa. Tutto.", desc: "Smetti di cedere migliaia di euro a chi mette il tuo annuncio su un portale e risponde al telefono al posto tuo.", items: ["Valutazione AI del prezzo di mercato", "Analisi e miglioramento delle foto", "Annuncio generato e ottimizzato dall'AI", "Rete di professionisti certificati", "Gestione trattativa diretta col compratore"] },
+  { role: "Stai comprando", name: "Cerca. Analizza. Decidi.", desc: "Finisci di dipendere da qualcuno che rappresenta il venditore e si fa pagare anche da te.", items: ["Fair Price Score su ogni immobile", "Analisi AI di punti di forza e criticità", "Domande consigliate prima della visita", "Connessione diretta col venditore", "Supporto AI dalla proposta al rogito"] },
+  { role: "Sei un investitore", name: "Dati. Score. Pipeline.", desc: "Ogni ora persa a confrontare annunci è denaro. Il workspace investitore centralizza tutto in un flusso unico.", items: ["Investment Score con spiegazione", "Classificazione: rendita, flip, affitto breve", "Pipeline opportunità con stato avanzamento", "Report decisionale esportabile", "Alert automatici su nuovi immobili"] },
+  { role: "Sei un professionista", name: "Entra nella rete.", desc: "Notai, periti, geometri, ingegneri: RealAIstate ti porta clienti qualificati, già informati, pronti a procedere.", items: ["Profilo verificato sulla piattaforma", "Richieste da utenti già qualificati dall'AI", "Nessuna agenzia nel mezzo", "Pagamenti trasparenti e tracciati", "Visibilità su tutto il territorio"] },
+];
+ 
+export default function App() {
+  useScrollReveal();
+  const [tab, setTab] = useState("venditore");
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
-
+  const steps = tab === "venditore" ? sellerSteps : buyerSteps;
+ 
   const handleSubmit = () => {
-    if (email && email.includes("@")) {
-      setSubmitted(true);
-      setEmail("");
-    }
+    if (email && email.includes("@")) { setSubmitted(true); setEmail(""); }
   };
-
+ 
   return (
-    <section className="cta-section" id="early">
-      <div style={{ position: "relative", zIndex: 1 }}>
-        <div className="cta-eyebrow">Early Access</div>
-        <h2 className="cta-title">Sii tra i primi a<br /><em>usarlo davvero</em></h2>
-        <p className="cta-sub">Stiamo costruendo RealAIstate. Lascia la tua email per entrare nella lista d'attesa e ricevere accesso anticipato.</p>
+    <>
+      <style>{styles}</style>
+ 
+      {/* NAV */}
+      <nav className="nav">
+        <a href="#" className="nav-logo">Real<span>AI</span>state</a>
+        <ul className="nav-links">
+          <li><a href="#perche">Perché</a></li>
+          <li><a href="#come-funziona">Come funziona</a></li>
+          <li><a href="#per-chi">Per chi</a></li>
+          <li><a href="#early" className="nav-cta">Accesso anticipato</a></li>
+        </ul>
+      </nav>
+ 
+      {/* HERO */}
+      <section className="hero">
+        <div className="hero-bg-number">€15K</div>
+        <div className="hero-eyebrow">Piattaforma AI · Compra e vendi casa</div>
+        <h1 className="hero-h1">
+          Hai davvero bisogno<br />
+          di un&apos;<span className="strike">agenzia</span>?
+        </h1>
+        <div className="hero-answer">No.</div>
+        <p className="hero-sub">
+          <strong>RealAIstate</strong> mette venditore e compratore direttamente in contatto.
+          L&apos;AI fa la valutazione, analizza le foto, trova i professionisti.
+          Tu tieni i soldi.
+        </p>
+        <div className="hero-actions">
+          <a href="#early" className="btn-red">Entra in lista d&apos;attesa</a>
+          <a href="#perche" className="btn-outline"><span>↓</span> Scopri perché</a>
+        </div>
+        <div className="hero-cost">
+          <div><div className="cost-num red">3–6%</div><div className="cost-label">Commissione media agenzia</div></div>
+          <div className="cost-divider" />
+          <div><div className="cost-num red">€9.000–18.000</div><div className="cost-label">Su una casa da €300k</div></div>
+          <div className="cost-divider" />
+          <div><div className="cost-num">€0</div><div className="cost-label">Con RealAIstate</div></div>
+        </div>
+      </section>
+ 
+      {/* EXCUSES */}
+      <section className="excuses" id="perche">
+        <div className="excuses-label">Le scuse finiscono qui</div>
+        <h2 className="excuses-title">Perché continui<br />a pagare l&apos;agenzia?</h2>
+        <div>
+          {excuses.map((e, i) => (
+            <div className="excuse-row reveal" key={i}>
+              <div className="excuse-left">
+                <div className="excuse-num">0{i + 1}</div>
+                <div className="excuse-text">{e.text}</div>
+              </div>
+              <div className="excuse-right">
+                <div className="excuse-arrow">→</div>
+                <div className="excuse-answer">{e.answer}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+ 
+      {/* SENTENCE */}
+      <section className="sentence-section">
+        <div className="sentence-text">
+          L&apos;agenzia immobiliare sarà<br />
+          l&apos;ultima cosa che paghi<br />
+          senza capire perché.
+        </div>
+        <div className="sentence-sub">Il cambiamento è già iniziato.</div>
+      </section>
+ 
+      {/* HOW IT WORKS */}
+      <section className="how-section" id="come-funziona">
+        <div className="how-label">Come funziona</div>
+        <h2 className="how-title">Zero agenzie.<br />Zero commissioni.</h2>
+        <div className="how-tabs">
+          <button className={`how-tab ${tab === "venditore" ? "active" : ""}`} onClick={() => setTab("venditore")}>Sei un venditore</button>
+          <button className={`how-tab ${tab === "compratore" ? "active" : ""}`} onClick={() => setTab("compratore")}>Sei un compratore</button>
+        </div>
+        <div>
+          {steps.map((s, i) => (
+            <div className="how-step reveal" key={i + tab}>
+              <div className="how-step-num">0{i + 1}</div>
+              <div>
+                <div className="how-step-title">{s.title}</div>
+                <div className="how-step-desc">{s.desc}</div>
+              </div>
+              <span className={`how-step-tag ${s.tagClass}`}>{s.tag}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+ 
+      {/* FOR WHO */}
+      <section className="forwho-section" id="per-chi">
+        <div className="forwho-label">Per chi è</div>
+        <h2 className="forwho-title">Chiunque compra<br />o vende casa.</h2>
+        <div className="forwho-grid">
+          {cards.map((c) => (
+            <div className="forwho-card reveal" key={c.role}>
+              <div className="forwho-role">{c.role}</div>
+              <div className="forwho-name">{c.name}</div>
+              <p className="forwho-desc">{c.desc}</p>
+              <ul className="forwho-list">
+                {c.items.map((item) => <li key={item}>{item}</li>)}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </section>
+ 
+      {/* CTA */}
+      <section className="cta-section" id="early">
+        <div className="cta-pre">Early Access</div>
+        <h2 className="cta-title">Basta<br /><span>scuse.</span></h2>
+        <p className="cta-sub">Stiamo costruendo RealAIstate. Entra in lista d&apos;attesa e ricevi l&apos;accesso anticipato quando apriamo.</p>
         {!submitted ? (
           <>
             <div className="cta-form">
-              <input
-                className="cta-input"
-                type="email"
-                placeholder="la-tua@email.it"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-              />
-              <button className="btn-gold" onClick={handleSubmit}>Voglio l'accesso anticipato →</button>
+              <input className="cta-input" type="email" placeholder="la-tua@email.it" value={email} onChange={(e) => setEmail(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSubmit()} />
+              <button className="btn-cta-submit" onClick={handleSubmit}>Voglio l&apos;accesso →</button>
             </div>
             <div className="cta-note">Nessuno spam. Solo aggiornamenti rilevanti.</div>
           </>
         ) : (
-          <div className="cta-success">✓ Ottimo! Sei nella lista. Ti contatteremo presto.</div>
+          <div className="cta-success">✓ Sei dentro. Ti contatteremo presto.</div>
         )}
-      </div>
-    </section>
-  );
-}
-
-function Footer() {
-  return (
-    <footer className="footer">
-      <div className="footer-logo">Real<span>AI</span>state</div>
-      <div className="footer-links">
-        <a href="#">Privacy</a>
-        <a href="#">Termini</a>
-        <a href="#">Contatti</a>
-      </div>
-      <div>© 2025 RealAIstate</div>
-    </footer>
-  );
-}
-
-export default function App() {
-  useScrollReveal();
-
-  return (
-    <>
-      <style>{styles}</style>
-      <Nav />
-      <Hero />
-      <HowItWorks />
-      <Features />
-      <TargetSection />
-      <CTASection />
-      <Footer />
+      </section>
+ 
+      {/* FOOTER */}
+      <footer className="footer">
+        <div className="footer-logo">Real<span>AI</span>state</div>
+        <div className="footer-links">
+          <a href="#">Privacy</a>
+          <a href="#">Termini</a>
+          <a href="#">Contatti</a>
+        </div>
+        <div>© 2025 RealAIstate</div>
+      </footer>
     </>
   );
 }
