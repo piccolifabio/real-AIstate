@@ -1,37 +1,29 @@
 import { useEffect, useState } from "react";
-import { Routes, Route } from "react-router-dom";
-import Privacy from "./Privacy.jsx";
+import { Routes, Route, useNavigate } from "react-router-dom";
 
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Serif+Display:ital@0;1&display=swap');
-
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
   :root {
-    --black: #0a0a0a;
-    --white: #f7f5f0;
-    --red: #d93025;
-    --red-dark: #b02020;
-    --gold: #c9a84c;
-    --muted: #6b6b6b;
-    --surface: #141414;
-    --border: rgba(247,245,240,0.08);
-    --green: #2d6a4f;
+    --black: #0a0a0a; --white: #f7f5f0; --red: #d93025; --red-dark: #b02020;
+    --gold: #c9a84c; --muted: #6b6b6b; --surface: #141414;
+    --border: rgba(247,245,240,0.08); --green: #2d6a4f;
   }
-
   html { scroll-behavior: smooth; }
   body { font-family: 'DM Sans', sans-serif; background: var(--black); color: var(--white); overflow-x: hidden; }
   body::after { content: ''; position: fixed; inset: 0; z-index: 9999; pointer-events: none; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); opacity: 0.025; }
 
+  /* NAV */
   .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 1.2rem 3rem; border-bottom: 1px solid var(--border); background: rgba(10,10,10,0.9); backdrop-filter: blur(16px); }
   .nav-logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; letter-spacing: 0.05em; color: var(--white); text-decoration: none; }
   .nav-logo span { color: var(--red); }
   .nav-links { display: flex; gap: 2.5rem; list-style: none; }
   .nav-links a { font-size: 0.78rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(247,245,240,0.4); text-decoration: none; transition: color 0.2s; }
   .nav-links a:hover { color: var(--white); }
-  .nav-cta { background: var(--red) !important; color: var(--white) !important; padding: 0.55rem 1.4rem; border-radius: 2px; font-size: 0.75rem !important; letter-spacing: 0.12em !important; transition: background 0.2s !important; }
+  .nav-cta { background: var(--red) !important; color: var(--white) !important; padding: 0.55rem 1.4rem; border-radius: 2px; font-size: 0.75rem !important; letter-spacing: 0.12em !important; }
   .nav-cta:hover { background: var(--red-dark) !important; }
 
+  /* HERO */
   .hero { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; padding: 8rem 3rem 5rem; position: relative; overflow: hidden; }
   .hero-bg-number { position: absolute; right: -2rem; top: 50%; transform: translateY(-50%); font-family: 'Bebas Neue', sans-serif; font-size: clamp(200px, 30vw, 420px); color: rgba(247,245,240,0.025); line-height: 1; user-select: none; pointer-events: none; }
   .hero-eyebrow { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--red); margin-bottom: 2rem; display: flex; align-items: center; gap: 0.8rem; }
@@ -40,16 +32,14 @@ const styles = `
   .hero-h1 .strike { position: relative; display: inline-block; color: rgba(247,245,240,0.2); }
   .hero-h1 .strike::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 4px; background: var(--red); transform: rotate(-2deg); }
   .hero-h1 .highlight { color: var(--red); }
-  .hero-challenge { font-family: 'DM Serif Display', serif; font-size: clamp(1.1rem, 2vw, 1.4rem); font-style: italic; color: rgba(247,245,240,0.5); margin-bottom: 3rem; max-width: 600px; line-height: 1.5; }
+  .hero-challenge { font-family: 'DM Serif Display', serif; font-size: clamp(1.1rem, 2vw, 1.4rem); font-style: italic; color: rgba(247,245,240,0.5); margin-bottom: 2.5rem; max-width: 600px; line-height: 1.5; }
   .hero-challenge strong { color: var(--white); font-style: normal; font-family: 'DM Sans', sans-serif; font-weight: 500; }
   .hero-sub { font-size: 1rem; font-weight: 300; line-height: 1.7; color: rgba(247,245,240,0.45); max-width: 480px; margin-bottom: 2.8rem; }
   .hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; }
-
   .btn-red { background: var(--red); color: var(--white); border: none; padding: 1rem 2.2rem; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; border-radius: 2px; transition: background 0.2s, transform 0.15s; text-decoration: none; display: inline-block; }
   .btn-red:hover { background: var(--red-dark); transform: translateY(-2px); }
   .btn-outline { background: transparent; color: rgba(247,245,240,0.6); border: 1px solid rgba(247,245,240,0.15); padding: 1rem 2.2rem; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 400; cursor: pointer; border-radius: 2px; transition: all 0.2s; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; }
   .btn-outline:hover { border-color: rgba(247,245,240,0.4); color: var(--white); }
-
   .hero-cost { margin-top: 4rem; padding-top: 2.5rem; border-top: 1px solid var(--border); display: flex; gap: 3rem; align-items: center; flex-wrap: wrap; }
   .cost-num { font-family: 'Bebas Neue', sans-serif; font-size: 3rem; line-height: 1; color: var(--white); }
   .cost-num.red { color: var(--red); }
@@ -57,6 +47,7 @@ const styles = `
   .cost-label { font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(247,245,240,0.35); margin-top: 0.25rem; }
   .cost-divider { width: 1px; height: 48px; background: var(--border); }
 
+  /* EXCUSES */
   .excuses { background: var(--white); color: var(--black); padding: 7rem 3rem; }
   .excuses-label { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--red); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.8rem; }
   .excuses-label::before { content: ''; width: 24px; height: 1px; background: var(--red); }
@@ -75,11 +66,13 @@ const styles = `
   .excuse-answer { font-size: 0.95rem; line-height: 1.6; color: var(--black); }
   .excuse-answer strong { font-weight: 600; }
 
+  /* SENTENCE */
   .sentence-section { background: var(--red); padding: 6rem 3rem; text-align: center; position: relative; overflow: hidden; }
   .sentence-section::before { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(-45deg, transparent, transparent 40px, rgba(0,0,0,0.03) 40px, rgba(0,0,0,0.03) 41px); }
-  .sentence-text { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2rem, 5vw, 4.5rem); line-height: 1.05; color: var(--white); max-width: 900px; margin: 0 auto; position: relative; z-index: 1; letter-spacing: 0.02em; }
+  .sentence-text { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2rem, 5vw, 4.5rem); line-height: 1.05; color: var(--white); max-width: 900px; margin: 0 auto; position: relative; z-index: 1; }
   .sentence-sub { font-size: 1rem; color: rgba(247,245,240,0.65); margin-top: 1.5rem; position: relative; z-index: 1; font-weight: 300; }
 
+  /* HOW */
   .how-section { padding: 7rem 3rem; background: var(--black); }
   .how-label { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--red); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.8rem; }
   .how-label::before { content: ''; width: 24px; height: 1px; background: var(--red); }
@@ -98,6 +91,7 @@ const styles = `
   .tag-auto { background: rgba(217,48,37,0.1); color: var(--red); }
   .tag-pro { background: rgba(247,245,240,0.06); color: rgba(247,245,240,0.5); }
 
+  /* FOR WHO */
   .forwho-section { padding: 7rem 3rem; background: var(--surface); }
   .forwho-label { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--red); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.8rem; }
   .forwho-label::before { content: ''; width: 24px; height: 1px; background: var(--red); }
@@ -114,6 +108,7 @@ const styles = `
   .forwho-list li { font-size: 0.8rem; color: rgba(247,245,240,0.5); display: flex; align-items: flex-start; gap: 0.6rem; }
   .forwho-list li::before { content: '→'; color: var(--red); flex-shrink: 0; }
 
+  /* CTA */
   .cta-section { background: var(--white); color: var(--black); padding: 8rem 3rem; text-align: center; }
   .cta-pre { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--red); margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: center; gap: 0.8rem; }
   .cta-pre::before, .cta-pre::after { content: ''; width: 24px; height: 1px; background: var(--red); }
@@ -125,15 +120,75 @@ const styles = `
   .cta-input::placeholder { color: rgba(10,10,10,0.3); }
   .cta-input:focus { border-color: var(--red); }
   .btn-cta-submit { background: var(--red); color: white; border: 2px solid var(--red); padding: 1rem 1.8rem; font-family: 'DM Sans', sans-serif; font-size: 0.8rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; border-radius: 0 2px 2px 0; transition: background 0.2s; white-space: nowrap; }
-  .btn-cta-submit:hover:not(:disabled) { background: var(--red-dark); border-color: var(--red-dark); }
+  .btn-cta-submit:hover:not(:disabled) { background: var(--red-dark); }
   .btn-cta-submit:disabled { opacity: 0.6; cursor: not-allowed; }
   .cta-note { font-size: 0.72rem; color: rgba(10,10,10,0.3); margin-top: 1rem; }
   .cta-success { font-size: 1.1rem; color: var(--green); font-weight: 600; }
   .cta-success-sub { font-size: 0.85rem; color: rgba(10,10,10,0.4); margin-top: 0.5rem; }
   .cta-error { font-size: 0.85rem; color: var(--red); margin-top: 0.5rem; }
 
+  /* SCUSE PAGE */
+  .scuse-hero { min-height: 55vh; display: flex; flex-direction: column; justify-content: center; padding: 9rem 3rem 4rem; position: relative; overflow: hidden; }
+  .scuse-hero-bg { position: absolute; right: -2rem; top: 50%; transform: translateY(-50%); font-family: 'Bebas Neue', sans-serif; font-size: clamp(180px, 28vw, 380px); color: rgba(247,245,240,0.025); line-height: 1; user-select: none; pointer-events: none; }
+  .scuse-form-section { background: var(--white); padding: 5rem 3rem; }
+  .scuse-section-label { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--red); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.8rem; }
+  .scuse-section-label::before { content: ''; width: 24px; height: 1px; background: var(--red); }
+  .scuse-form-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2rem, 4vw, 3.5rem); line-height: 1; color: var(--black); margin-bottom: 0.8rem; }
+  .scuse-form-sub { font-size: 0.95rem; color: var(--muted); margin-bottom: 2.5rem; max-width: 560px; line-height: 1.6; }
+  .scuse-input-wrap { display: flex; gap: 0; max-width: 640px; }
+  .scuse-textarea { flex: 1; padding: 1rem 1.5rem; border: 2px solid rgba(10,10,10,0.15); border-right: none; background: transparent; color: var(--black); font-family: 'DM Serif Display', serif; font-size: 1.1rem; font-style: italic; border-radius: 2px 0 0 2px; outline: none; transition: border-color 0.2s; resize: none; height: 64px; }
+  .scuse-textarea::placeholder { color: rgba(10,10,10,0.25); font-style: italic; }
+  .scuse-textarea:focus { border-color: var(--red); }
+  .scuse-submit { background: var(--red); color: white; border: 2px solid var(--red); padding: 0 2rem; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; border-radius: 0 2px 2px 0; transition: background 0.2s; white-space: nowrap; }
+  .scuse-submit:hover:not(:disabled) { background: var(--red-dark); }
+  .scuse-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+  .scuse-response { margin-top: 2rem; max-width: 640px; background: var(--black); border-radius: 3px; padding: 2rem; border-left: 3px solid var(--red); animation: fadeIn 0.5s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  .scuse-response-label { font-size: 0.65rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--red); margin-bottom: 0.8rem; }
+  .scuse-response-text { font-size: 1rem; line-height: 1.7; color: var(--white); }
+  .scuse-response-text strong { color: var(--gold); }
+  .scuse-loading { display: flex; align-items: center; gap: 0.6rem; color: var(--muted); font-size: 0.9rem; margin-top: 2rem; }
+  .scuse-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--red); animation: bounce 1.2s infinite; }
+  .scuse-dot:nth-child(2) { animation-delay: 0.2s; }
+  .scuse-dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce { 0%,80%,100% { transform: scale(0.6); opacity: 0.3; } 40% { transform: scale(1); opacity: 1; } }
+  .hall-section { background: var(--surface); padding: 5rem 3rem; }
+  .hall-label { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.8rem; }
+  .hall-label::before { content: ''; width: 24px; height: 1px; background: var(--gold); }
+  .hall-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2rem, 4vw, 3.5rem); line-height: 1; color: var(--white); margin-bottom: 3rem; }
+  .hall-item { border-top: 1px solid var(--border); padding: 1.8rem 0; display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; transition: background 0.2s; }
+  .hall-item:last-child { border-bottom: 1px solid var(--border); }
+  .hall-item:hover { background: rgba(247,245,240,0.02); }
+  .hall-scusa { font-family: 'DM Serif Display', serif; font-size: 1.1rem; font-style: italic; color: rgba(247,245,240,0.35); line-height: 1.4; }
+  .hall-risposta { font-size: 0.9rem; line-height: 1.6; color: rgba(247,245,240,0.7); padding-left: 2rem; border-left: 1px solid var(--border); }
+  .hall-risposta strong { color: var(--white); }
+
+  /* PRIVACY */
+  .legal-nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 1.2rem 3rem; border-bottom: 1px solid var(--border); background: rgba(10,10,10,0.95); backdrop-filter: blur(16px); }
+  .legal-nav-logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; letter-spacing: 0.05em; color: var(--white); text-decoration: none; }
+  .legal-nav-logo span { color: var(--red); }
+  .legal-nav-back { font-size: 0.78rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(247,245,240,0.4); text-decoration: none; transition: color 0.2s; }
+  .legal-nav-back:hover { color: var(--white); }
+  .legal-container { max-width: 760px; margin: 0 auto; padding: 8rem 2rem 6rem; }
+  .legal-eyebrow { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--red); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.8rem; }
+  .legal-eyebrow::before { content: ''; width: 24px; height: 1px; background: var(--red); }
+  .legal-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(3rem, 6vw, 5rem); line-height: 1; color: var(--white); margin-bottom: 0.5rem; }
+  .legal-date { font-size: 0.78rem; color: rgba(247,245,240,0.3); margin-bottom: 4rem; }
+  .legal-section { margin-bottom: 3rem; padding-bottom: 3rem; border-bottom: 1px solid var(--border); }
+  .legal-section:last-child { border-bottom: none; }
+  .legal-section h2 { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; color: var(--white); margin-bottom: 1rem; }
+  .legal-section p { font-size: 0.92rem; line-height: 1.8; color: rgba(247,245,240,0.55); margin-bottom: 1rem; }
+  .legal-section p:last-child { margin-bottom: 0; }
+  .legal-section ul { list-style: none; margin: 1rem 0; display: flex; flex-direction: column; gap: 0.5rem; }
+  .legal-section ul li { font-size: 0.92rem; line-height: 1.7; color: rgba(247,245,240,0.55); display: flex; align-items: flex-start; gap: 0.8rem; }
+  .legal-section ul li::before { content: '→'; color: var(--red); flex-shrink: 0; }
+  .legal-section a { color: var(--red); text-decoration: none; }
+  .legal-highlight { background: rgba(247,245,240,0.04); border-left: 2px solid var(--red); padding: 1.2rem 1.5rem; border-radius: 0 2px 2px 0; margin: 1.5rem 0; }
+  .legal-highlight p { color: rgba(247,245,240,0.7) !important; }
+
+  /* FOOTER */
   .footer { background: var(--black); padding: 2rem 3rem; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--border); font-size: 0.75rem; color: rgba(247,245,240,0.2); }
-  .footer-logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; color: rgba(247,245,240,0.4); letter-spacing: 0.05em; }
+  .footer-logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; color: rgba(247,245,240,0.4); }
   .footer-logo span { color: var(--red); }
   .footer-links { display: flex; gap: 2rem; }
   .footer-links a { color: rgba(247,245,240,0.2); text-decoration: none; transition: color 0.2s; }
@@ -143,20 +198,23 @@ const styles = `
   .reveal.visible { opacity: 1; transform: translateY(0); }
 
   @media (max-width: 900px) {
-    .nav { padding: 1rem 1.5rem; }
+    .nav, .legal-nav { padding: 1rem 1.5rem; }
     .nav-links { display: none; }
-    .hero { padding: 7rem 1.5rem 4rem; }
-    .hero-bg-number { display: none; }
+    .hero, .scuse-hero { padding: 7rem 1.5rem 4rem; }
+    .hero-bg-number, .scuse-hero-bg { display: none; }
     .hero-cost { gap: 1.5rem; }
-    .excuse-row { grid-template-columns: 1fr; gap: 1rem; }
+    .excuse-row, .hall-item { grid-template-columns: 1fr; gap: 1rem; }
     .excuse-right { border-left: none; border-top: 1px solid rgba(10,10,10,0.08); padding-left: 0; padding-top: 1rem; }
+    .hall-risposta { border-left: none; border-top: 1px solid var(--border); padding-left: 0; padding-top: 1rem; }
     .how-step { grid-template-columns: 50px 1fr; }
     .how-step-tag { display: none; }
     .forwho-grid { grid-template-columns: 1fr; }
-    .excuses, .sentence-section, .how-section, .forwho-section, .cta-section { padding: 4rem 1.5rem; }
-    .cta-form { flex-direction: column; }
+    .excuses, .sentence-section, .how-section, .forwho-section, .cta-section, .scuse-form-section, .hall-section { padding: 4rem 1.5rem; }
+    .cta-form, .scuse-input-wrap { flex-direction: column; }
     .cta-input { border-right: 2px solid rgba(10,10,10,0.15); border-bottom: none; border-radius: 2px 2px 0 0; }
     .btn-cta-submit { border-radius: 0 0 2px 2px; }
+    .scuse-textarea { border-right: 2px solid rgba(10,10,10,0.15); border-bottom: none; border-radius: 2px 2px 0 0; }
+    .scuse-submit { border-radius: 0 0 2px 2px; padding: 1rem; }
     .footer { flex-direction: column; gap: 1.5rem; text-align: center; padding: 2rem 1.5rem; }
     .footer-links { flex-wrap: wrap; justify-content: center; }
   }
@@ -181,31 +239,66 @@ const excuses = [
   { text: '"Non saprei come fare le foto giuste."', answer: <><strong>RealAIstate valuta ogni foto che carichi</strong> e ti dice esattamente cosa migliorare, stanza per stanza.</> },
   { text: '"Per il notaio e i documenti ho bisogno di aiuto."', answer: <><strong>La piattaforma ti connette direttamente</strong> con notai, periti e professionisti certificati. Senza intermediari.</> },
   { text: '"Non riesco a capire se il prezzo è giusto."', answer: <><strong>Il Fair Price Score ti dice in 3 secondi</strong> se stai pagando troppo — e perché. Con dati, non opinioni.</> },
-  { text: '"Ho paura di sbagliare senza qualcuno che mi segue."', answer: <><strong>L&apos;AI è con te in ogni passaggio</strong> — dalla valutazione alla trattativa, fino al rogito. Sempre disponibile, mai di parte.</> },
-  { text: '"Non voglio dover negoziare con gli acquirenti."', answer: <><strong>L&apos;AI negozia per te. Senza fretta, senza conflitti.</strong> Non ha una commissione da incassare — ottimizza il tuo prezzo, non la sua velocità.</> },
-  { text: '"Ho bisogno di qualcuno che faccia vedere la casa."', answer: <><strong>Chi conosce casa tua meglio di te? Nessuno.</strong> RealAIstate ti prepara con script, domande frequenti e punti di forza da valorizzare. Tu sei il miglior agente di casa tua.</> },
+  { text: '"Ho paura di sbagliare senza qualcuno che mi segue."', answer: <><strong>L&apos;AI è con te in ogni passaggio</strong> — dalla valutazione alla trattativa, fino al rogito.</> },
+  { text: '"Non voglio dover negoziare con gli acquirenti."', answer: <><strong>L&apos;AI negozia per te. Senza fretta, senza conflitti.</strong> Non ha commissioni da incassare — ottimizza il tuo prezzo.</> },
+  { text: '"Ho bisogno di qualcuno che faccia vedere la casa."', answer: <><strong>Chi conosce casa tua meglio di te? Nessuno.</strong> RealAIstate ti prepara con script e punti di forza. Tu sei il miglior agente di casa tua.</> },
+];
+
+const hallOfFame = [
+  { scusa: '"Non mi fido a vendere casa senza un esperto."', risposta: <><strong>L&apos;esperto ha un conflitto di interessi.</strong> Vuole chiudere veloce, tu vuoi vendere al prezzo giusto. Non sono la stessa cosa.</> },
+  { scusa: '"E se mi chiamano alle 3 di notte per una visita?"', risposta: <><strong>Con RealAIstate gestisci tu gli orari.</strong> Nessuno ti chiama. Tu decidi quando fare vedere casa. Sempre.</> },
+  { scusa: '"Non ho tempo per gestire tutto."', risposta: <><strong>Ci vuole meno tempo di quanto pensi.</strong> L&apos;AI genera l&apos;annuncio, risponde alle domande e coordina i professionisti. Tu approvi.</> },
+  { scusa: '"E se arriva un acquirente strano?"', risposta: <><strong>Chi porta gli acquirenti oggi? L&apos;agenzia.</strong> Gli stessi che entrano in casa tua. Almeno con RealAIstate sai chi hai di fronte.</> },
 ];
 
 const sellerSteps = [
-  { title: "Pubblica il tuo immobile", desc: "Inserisci i dati base. L'AI genera titolo, descrizione ottimizzata e ti dice il prezzo di mercato corretto.", tag: "AI", tagClass: "tag-ai" },
-  { title: "Valuta le tue foto", desc: "Carica le immagini. RealAIstate analizza luminosità, angolazione e composizione. Ti dice cosa rifare.", tag: "AI", tagClass: "tag-ai" },
-  { title: "Ricevi le proposte", desc: "Gli acquirenti ti contattano direttamente. Nessun intermediario. Nessuna percentuale da pagare.", tag: "Automatico", tagClass: "tag-auto" },
-  { title: "Chiudi con i professionisti", desc: "Notaio, perito energetico, geometra. Li trovi tutti sulla piattaforma, certificati e a prezzo trasparente.", tag: "Rete Pro", tagClass: "tag-pro" },
+  { title: "Pubblica il tuo immobile", desc: "L'AI genera titolo, descrizione ottimizzata e ti dice il prezzo di mercato corretto.", tag: "AI", tagClass: "tag-ai" },
+  { title: "Valuta le tue foto", desc: "RealAIstate analizza luminosità, angolazione e composizione. Ti dice cosa rifare.", tag: "AI", tagClass: "tag-ai" },
+  { title: "Ricevi le proposte", desc: "Gli acquirenti ti contattano direttamente. Nessun intermediario. Nessuna percentuale.", tag: "Automatico", tagClass: "tag-auto" },
+  { title: "Chiudi con i professionisti", desc: "Notaio, perito energetico, geometra. Li trovi tutti sulla piattaforma, a prezzo trasparente.", tag: "Rete Pro", tagClass: "tag-pro" },
 ];
 
 const buyerSteps = [
-  { title: "Cerca senza filtri inutili", desc: "Zona, budget, obiettivo. La mappa mostra gli immobili ordinati per Fair Price Score, non per chi paga di più.", tag: "AI", tagClass: "tag-ai" },
-  { title: "Analizza ogni scheda", desc: "Valutazione del prezzo, punti di forza, criticità, domande da fare. Tutto generato dall'AI in automatico.", tag: "AI", tagClass: "tag-ai" },
-  { title: "Fai un'offerta diretta", desc: "Contatta il venditore. RealAIstate ti supporta nella trattativa con dati di mercato reali.", tag: "Automatico", tagClass: "tag-auto" },
+  { title: "Cerca senza filtri inutili", desc: "Zona, budget, obiettivo. La mappa mostra gli immobili ordinati per Fair Price Score.", tag: "AI", tagClass: "tag-ai" },
+  { title: "Analizza ogni scheda", desc: "Valutazione del prezzo, punti di forza, criticità, domande da fare. Tutto in automatico.", tag: "AI", tagClass: "tag-ai" },
+  { title: "Fai un'offerta diretta", desc: "Contatta il venditore. RealAIstate ti supporta nella trattativa con dati reali.", tag: "Automatico", tagClass: "tag-auto" },
   { title: "Chiudi in sicurezza", desc: "Perizia, APE, atti notarili. La piattaforma coordina tutto. Tu arrivi al rogito preparato.", tag: "Rete Pro", tagClass: "tag-pro" },
 ];
 
 const cards = [
-  { role: "Stai vendendo", name: "Pubblica. Incassa. Tutto.", desc: "Smetti di cedere migliaia di euro a chi mette il tuo annuncio su un portale e risponde al telefono al posto tuo.", items: ["Valutazione AI del prezzo di mercato", "Analisi e miglioramento delle foto", "Annuncio generato e ottimizzato dall'AI", "Rete di professionisti certificati", "Gestione trattativa diretta col compratore"] },
-  { role: "Stai comprando", name: "Cerca. Analizza. Decidi.", desc: "Finisci di dipendere da qualcuno che rappresenta il venditore e si fa pagare anche da te.", items: ["Fair Price Score su ogni immobile", "Analisi AI di punti di forza e criticità", "Domande consigliate prima della visita", "Connessione diretta col venditore", "Supporto AI dalla proposta al rogito"] },
-  { role: "Sei un investitore", name: "Dati. Score. Pipeline.", desc: "Ogni ora persa a confrontare annunci è denaro. Il workspace investitore centralizza tutto in un flusso unico.", items: ["Investment Score con spiegazione", "Classificazione: rendita, flip, affitto breve", "Pipeline opportunità con stato avanzamento", "Report decisionale esportabile", "Alert automatici su nuovi immobili"] },
-  { role: "Sei un professionista", name: "Entra nella rete.", desc: "Notai, periti, geometri, ingegneri: RealAIstate ti porta clienti qualificati, già informati, pronti a procedere.", items: ["Profilo verificato sulla piattaforma", "Richieste da utenti già qualificati dall'AI", "Nessuna agenzia nel mezzo", "Pagamenti trasparenti e tracciati", "Visibilità su tutto il territorio"] },
+  { role: "Stai vendendo", name: "Pubblica. Incassa. Tutto.", desc: "Smetti di cedere migliaia di euro a chi mette il tuo annuncio su un portale.", items: ["Valutazione AI del prezzo di mercato", "Analisi e miglioramento delle foto", "Annuncio generato dall'AI", "Rete di professionisti certificati", "Gestione trattativa diretta"] },
+  { role: "Stai comprando", name: "Cerca. Analizza. Decidi.", desc: "Finisci di dipendere da qualcuno che rappresenta il venditore e si fa pagare anche da te.", items: ["Fair Price Score su ogni immobile", "Analisi AI punti di forza e criticità", "Domande consigliate pre-visita", "Connessione diretta col venditore", "Supporto AI dalla proposta al rogito"] },
+  { role: "Sei un investitore", name: "Dati. Score. Pipeline.", desc: "Ogni ora persa a confrontare annunci è denaro. Il workspace investitore centralizza tutto.", items: ["Investment Score con spiegazione", "Classificazione: rendita, flip, affitto", "Pipeline opportunità con stato", "Report decisionale esportabile", "Alert automatici su nuovi immobili"] },
+  { role: "Sei un professionista", name: "Entra nella rete.", desc: "RealAIstate ti porta clienti qualificati, già informati, pronti a procedere.", items: ["Profilo verificato sulla piattaforma", "Richieste da utenti qualificati dall'AI", "Nessuna agenzia nel mezzo", "Pagamenti trasparenti e tracciati", "Visibilità su tutto il territorio"] },
 ];
+
+function Nav() {
+  return (
+    <nav className="nav">
+      <a href="/" className="nav-logo">Real<span>AI</span>state</a>
+      <ul className="nav-links">
+        <li><a href="/#perche">Perché</a></li>
+        <li><a href="/scuse">Le scuse</a></li>
+        <li><a href="/#per-chi">Per chi</a></li>
+        <li><a href="/#early" className="nav-cta">Accesso anticipato</a></li>
+      </ul>
+    </nav>
+  );
+}
+
+function Footer() {
+  return (
+    <footer className="footer">
+      <div className="footer-logo">Real<span>AI</span>state</div>
+      <div className="footer-links">
+        <a href="/privacy">Privacy</a>
+        <a href="/scuse">Le scuse</a>
+        <a href="mailto:info@realaistate.ai">Contatti</a>
+      </div>
+      <div>© 2025 RealAIstate</div>
+    </footer>
+  );
+}
 
 function CTA() {
   const [email, setEmail] = useState("");
@@ -224,7 +317,7 @@ function CTA() {
       <h2 className="cta-title">Basta<br /><span>scuse.</span></h2>
       <p className="cta-sub">Stiamo costruendo RealAIstate. Entra in lista d&apos;attesa e ricevi l&apos;accesso anticipato.</p>
       {status === "success" ? (
-        <div><div className="cta-success">✓ Sei dentro.</div><div className="cta-success-sub">Ti contatteremo non appena apriamo l&apos;accesso.</div></div>
+        <div><div className="cta-success">✓ Sei dentro.</div><div className="cta-success-sub">Ti contatteremo non appena apriamo.</div></div>
       ) : (
         <>
           <div className="cta-form">
@@ -239,56 +332,28 @@ function CTA() {
   );
 }
 
-function Footer() {
-  return (
-    <footer className="footer">
-      <div className="footer-logo">Real<span>AI</span>state</div>
-      <div className="footer-links"><a href="/privacy">Privacy</a><a href="/scuse">Le scuse</a><a href="mailto:info@realaistate.ai">Contatti</a></div>
-      <div>© 2025 RealAIstate</div>
-    </footer>
-  );
-}
-
+// ── HOME ──
 function Home() {
   useScrollReveal();
   const [tab, setTab] = useState("venditore");
   const steps = tab === "venditore" ? sellerSteps : buyerSteps;
-
   return (
     <>
-      <nav className="nav">
-        <a href="/" className="nav-logo">Real<span>AI</span>state</a>
-        <ul className="nav-links">
-          <li><a href="#perche">Perché</a></li>
-          <li><a href="/scuse">Le scuse</a></li>
-          <li><a href="#per-chi">Per chi</a></li>
-          <li><a href="#early" className="nav-cta">Accesso anticipato</a></li>
-        </ul>
-      </nav>
-
+      <Nav />
       <section className="hero">
         <div className="hero-bg-number">90%</div>
         <div className="hero-eyebrow">Piattaforma AI · Compra e vendi casa</div>
-
         <h1 className="hero-h1">
           E se ti dicessi che puoi<br />
           spendere il <span className="highlight">90% in meno</span><br />
           di <span className="strike">commissioni</span>?
         </h1>
-
-        <p className="hero-challenge">
-          Che scusa hai per non usare <strong>RealAIstate</strong>?
-        </p>
-
-        <p className="hero-sub">
-          Venditore e compratore si incontrano direttamente. L&apos;AI fa la valutazione, analizza le foto, trova i professionisti. Tu tieni i soldi.
-        </p>
-
+        <p className="hero-challenge">Che scusa hai per non usare <strong>RealAIstate</strong>?</p>
+        <p className="hero-sub">Venditore e compratore si incontrano direttamente. L&apos;AI fa la valutazione, analizza le foto, trova i professionisti. Tu tieni i soldi.</p>
         <div className="hero-actions">
           <a href="#early" className="btn-red">Entra in lista d&apos;attesa</a>
           <a href="/scuse" className="btn-outline"><span>→</span> Smonta la tua scusa</a>
         </div>
-
         <div className="hero-cost">
           <div><div className="cost-num red">3–6%</div><div className="cost-label">Commissione media agenzia</div></div>
           <div className="cost-divider" />
@@ -356,15 +421,187 @@ function Home() {
   );
 }
 
-export default function App() {
+// ── SCUSE PAGE ──
+function ScusePage() {
   useScrollReveal();
+  useEffect(() => { window.scrollTo(0, 0); }, []);
+  const [scusa, setScusa] = useState("");
+  const [status, setStatus] = useState("idle");
+  const [risposta, setRisposta] = useState("");
+
+  const handleSubmit = async () => {
+    if (!scusa.trim() || status === "loading") return;
+    setStatus("loading");
+    setRisposta("");
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1000,
+          system: `Sei il brand voice di RealAIstate, piattaforma che elimina le agenzie immobiliari dalla compravendita. Tono: diretto, tagliente, ironico ma mai scortese. Come Fineco "No Excuses". L'utente ti manda una scusa per cui pensa di aver bisogno di un'agenzia. Smontala in 2-3 frasi max. Inizia con la confutazione diretta, poi aggiungi come RealAIstate risolve. Usa **grassetto** per le parole chiave. Rispondi in italiano.`,
+          messages: [{ role: "user", content: `La mia scusa è: "${scusa}"` }]
+        })
+      });
+      const data = await res.json();
+      const text = data.content?.[0]?.text || "Risposta non disponibile.";
+      setRisposta(text);
+      setStatus("done");
+    } catch { setStatus("error"); }
+  };
+
+  const formatText = (text) => text.split(/\*\*(.*?)\*\*/g).map((part, i) =>
+    i % 2 === 1 ? <strong key={i}>{part}</strong> : part
+  );
+
+  return (
+    <>
+      <Nav />
+      <section className="scuse-hero">
+        <div className="scuse-hero-bg">?</div>
+        <div className="hero-eyebrow">Il grande libro delle scuse</div>
+        <h1 className="hero-h1" style={{ fontSize: "clamp(3rem, 8vw, 8rem)" }}>
+          La tua scusa<br />non regge.
+        </h1>
+        <p className="hero-sub">Hai una scusa per cui pensi di aver bisogno di un&apos;agenzia? Mandacela. L&apos;AI te la smonta in 3 secondi.</p>
+      </section>
+
+      <section className="scuse-form-section">
+        <div className="scuse-section-label">Sfida l&apos;AI</div>
+        <h2 className="scuse-form-title">Scrivi la tua scusa.</h2>
+        <p className="scuse-form-sub">Qual è il motivo per cui pensi di aver bisogno di un&apos;agenzia? Scrivila qui sotto.</p>
+        <div className="scuse-input-wrap">
+          <textarea
+            className="scuse-textarea"
+            placeholder='"Ho paura di fare errori senza un esperto..."'
+            value={scusa}
+            onChange={(e) => setScusa(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSubmit(); } }}
+          />
+          <button className="scuse-submit" onClick={handleSubmit} disabled={status === "loading" || !scusa.trim()}>
+            {status === "loading" ? "..." : "Smontala →"}
+          </button>
+        </div>
+        {status === "loading" && (
+          <div className="scuse-loading">
+            <div className="scuse-dot" /><div className="scuse-dot" /><div className="scuse-dot" />
+            <span>L&apos;AI sta analizzando la tua scusa...</span>
+          </div>
+        )}
+        {status === "done" && risposta && (
+          <div className="scuse-response">
+            <div className="scuse-response-label">● Risposta di RealAIstate</div>
+            <div className="scuse-response-text">{formatText(risposta)}</div>
+          </div>
+        )}
+        {status === "error" && (
+          <div className="scuse-response">
+            <div className="scuse-response-text" style={{ color: "var(--red)" }}>Qualcosa è andato storto. Riprova tra un momento.</div>
+          </div>
+        )}
+      </section>
+
+      <section className="hall-section">
+        <div className="hall-label">Hall of Fame</div>
+        <h2 className="hall-title">Le scuse più creative.<br />Smontate.</h2>
+        <div>
+          {hallOfFame.map((item, i) => (
+            <div className="hall-item reveal" key={i}>
+              <div className="hall-scusa">{item.scusa}</div>
+              <div className="hall-risposta">{item.risposta}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <CTA />
+      <Footer />
+    </>
+  );
+}
+
+// ── PRIVACY PAGE ──
+function PrivacyPage() {
+  useEffect(() => { window.scrollTo(0, 0); }, []);
+  return (
+    <>
+      <nav className="legal-nav">
+        <a href="/" className="legal-nav-logo">Real<span>AI</span>state</a>
+        <a href="/" className="legal-nav-back">← Torna alla home</a>
+      </nav>
+      <div className="legal-container">
+        <div className="legal-eyebrow">Documento legale</div>
+        <h1 className="legal-title">Privacy Policy</h1>
+        <div className="legal-date">Ultimo aggiornamento: aprile 2025</div>
+        <div className="legal-section">
+          <h2>Chi siamo</h2>
+          <p>RealAIstate è una piattaforma web per la compravendita immobiliare assistita da intelligenza artificiale, attualmente in fase di sviluppo e raccolta di early access.</p>
+          <div className="legal-highlight">
+            <p><strong>Titolare del trattamento:</strong> Fabio Piccoli<br /><strong>Email:</strong> <a href="mailto:privacy@realaistate.ai">privacy@realaistate.ai</a><br /><strong>Sito web:</strong> www.realaistate.ai</p>
+          </div>
+        </div>
+        <div className="legal-section">
+          <h2>Dati che raccogliamo</h2>
+          <p>Raccogliamo solo i dati strettamente necessari:</p>
+          <ul>
+            <li><strong>Indirizzo email</strong> — fornito volontariamente tramite il modulo di iscrizione alla lista d&apos;attesa early access</li>
+            <li><strong>Dati di navigazione</strong> — raccolti automaticamente tramite Google Analytics (IP anonimizzato, pagine visitate, durata sessione)</li>
+          </ul>
+        </div>
+        <div className="legal-section">
+          <h2>Come utilizziamo i tuoi dati</h2>
+          <ul>
+            <li>Gestire la lista d&apos;attesa early access e comunicare l&apos;apertura della piattaforma</li>
+            <li>Inviare aggiornamenti sul progresso del prodotto (solo con consenso)</li>
+            <li>Analizzare il traffico sul sito per migliorare l&apos;esperienza utente</li>
+          </ul>
+          <p>Non vendiamo, affittiamo o cediamo i tuoi dati a terze parti per finalità commerciali.</p>
+        </div>
+        <div className="legal-section">
+          <h2>Servizi di terze parti</h2>
+          <ul>
+            <li><strong>Brevo</strong> — gestione lista email. <a href="https://www.brevo.com/legal/privacypolicy/" target="_blank" rel="noopener noreferrer">Privacy policy Brevo</a></li>
+            <li><strong>Google Analytics</strong> — analisi traffico con IP anonimizzato. <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Privacy policy Google</a></li>
+            <li><strong>Vercel</strong> — hosting del sito. <a href="https://vercel.com/legal/privacy-policy" target="_blank" rel="noopener noreferrer">Privacy policy Vercel</a></li>
+          </ul>
+        </div>
+        <div className="legal-section">
+          <h2>I tuoi diritti (GDPR)</h2>
+          <ul>
+            <li>Accedere ai tuoi dati personali in nostro possesso</li>
+            <li>Richiedere la rettifica di dati inesatti</li>
+            <li>Richiedere la cancellazione dei tuoi dati</li>
+            <li>Opporti al trattamento dei tuoi dati</li>
+            <li>Revocare il consenso in qualsiasi momento</li>
+          </ul>
+          <p>Per esercitare i tuoi diritti: <a href="mailto:privacy@realaistate.ai">privacy@realaistate.ai</a>. Risponderemo entro 30 giorni.</p>
+        </div>
+        <div className="legal-section">
+          <h2>Contatti</h2>
+          <div className="legal-highlight">
+            <p><strong>Fabio Piccoli — RealAIstate</strong><br />Email: <a href="mailto:privacy@realaistate.ai">privacy@realaistate.ai</a></p>
+          </div>
+          <p>Hai il diritto di proporre reclamo al <a href="https://www.garanteprivacy.it" target="_blank" rel="noopener noreferrer">Garante per la Protezione dei Dati Personali</a>.</p>
+        </div>
+      </div>
+      <footer className="footer">
+        <div className="footer-logo">Real<span>AI</span>state</div>
+        <div className="footer-links"><a href="/privacy">Privacy</a><a href="/scuse">Le scuse</a><a href="mailto:info@realaistate.ai">Contatti</a></div>
+        <div>© 2025 RealAIstate</div>
+      </footer>
+    </>
+  );
+}
+
+export default function App() {
   return (
     <>
       <style>{styles}</style>
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/privacy" element={<Privacy />} />
-        <Route path="/scuse" element={<Home />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/scuse" element={<ScusePage />} />
       </Routes>
     </>
   );
