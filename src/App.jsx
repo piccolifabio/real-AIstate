@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Routes, Route } from "react-router-dom";
 import Privacy from "./Privacy.jsx";
 
@@ -20,29 +20,10 @@ const styles = `
   }
 
   html { scroll-behavior: smooth; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--black); color: var(--white); overflow-x: hidden; }
+  body::after { content: ''; position: fixed; inset: 0; z-index: 9999; pointer-events: none; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); opacity: 0.025; }
 
-  body {
-    font-family: 'DM Sans', sans-serif;
-    background: var(--black);
-    color: var(--white);
-    overflow-x: hidden;
-  }
-
-  body::after {
-    content: '';
-    position: fixed; inset: 0; z-index: 9999; pointer-events: none;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-    opacity: 0.025;
-  }
-
-  .nav {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 1.2rem 3rem;
-    border-bottom: 1px solid var(--border);
-    background: rgba(10,10,10,0.9);
-    backdrop-filter: blur(16px);
-  }
+  .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 1.2rem 3rem; border-bottom: 1px solid var(--border); background: rgba(10,10,10,0.9); backdrop-filter: blur(16px); }
   .nav-logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; letter-spacing: 0.05em; color: var(--white); text-decoration: none; }
   .nav-logo span { color: var(--red); }
   .nav-links { display: flex; gap: 2.5rem; list-style: none; }
@@ -77,7 +58,10 @@ const styles = `
   .excuses { background: var(--white); color: var(--black); padding: 7rem 3rem; }
   .excuses-label { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--red); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.8rem; }
   .excuses-label::before { content: ''; width: 24px; height: 1px; background: var(--red); }
-  .excuses-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2.5rem, 5vw, 5rem); line-height: 1; color: var(--black); margin-bottom: 4rem; max-width: 700px; }
+  .excuses-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2.5rem, 5vw, 5rem); line-height: 1; color: var(--black); margin-bottom: 0.8rem; max-width: 700px; }
+  .excuses-subtitle { font-size: 0.9rem; color: var(--muted); margin-bottom: 3rem; }
+  .excuses-subtitle a { color: var(--red); text-decoration: none; font-weight: 500; }
+  .excuses-subtitle a:hover { text-decoration: underline; }
   .excuse-row { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid rgba(10,10,10,0.1); padding: 2rem 0; transition: background 0.2s; }
   .excuse-row:last-child { border-bottom: 1px solid rgba(10,10,10,0.1); }
   .excuse-row:hover { background: rgba(10,10,10,0.02); }
@@ -142,9 +126,47 @@ const styles = `
   .btn-cta-submit:hover:not(:disabled) { background: var(--red-dark); border-color: var(--red-dark); }
   .btn-cta-submit:disabled { opacity: 0.6; cursor: not-allowed; }
   .cta-note { font-size: 0.72rem; color: rgba(10,10,10,0.3); margin-top: 1rem; }
-  .cta-success { font-size: 1.1rem; color: var(--green); font-weight: 600; margin-top: 0.5rem; }
+  .cta-success { font-size: 1.1rem; color: var(--green); font-weight: 600; }
   .cta-success-sub { font-size: 0.85rem; color: rgba(10,10,10,0.4); margin-top: 0.5rem; }
   .cta-error { font-size: 0.85rem; color: var(--red); margin-top: 0.5rem; }
+
+  /* ── SCUSE PAGE ── */
+  .scuse-hero { min-height: 60vh; display: flex; flex-direction: column; justify-content: center; padding: 9rem 3rem 4rem; position: relative; overflow: hidden; background: var(--black); }
+  .scuse-hero-bg { position: absolute; right: -2rem; top: 50%; transform: translateY(-50%); font-family: 'Bebas Neue', sans-serif; font-size: clamp(180px, 28vw, 380px); color: rgba(247,245,240,0.025); line-height: 1; user-select: none; pointer-events: none; }
+  .scuse-form-section { background: var(--white); padding: 5rem 3rem; }
+  .scuse-form-section .section-label { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--red); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.8rem; }
+  .scuse-form-section .section-label::before { content: ''; width: 24px; height: 1px; background: var(--red); }
+  .scuse-form-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2rem, 4vw, 3.5rem); line-height: 1; color: var(--black); margin-bottom: 0.8rem; }
+  .scuse-form-sub { font-size: 0.95rem; color: var(--muted); margin-bottom: 2.5rem; max-width: 560px; line-height: 1.6; }
+  .scuse-input-wrap { display: flex; gap: 0; max-width: 640px; }
+  .scuse-textarea { flex: 1; padding: 1rem 1.5rem; border: 2px solid rgba(10,10,10,0.15); border-right: none; background: transparent; color: var(--black); font-family: 'DM Serif Display', serif; font-size: 1.1rem; font-style: italic; border-radius: 2px 0 0 2px; outline: none; transition: border-color 0.2s; resize: none; height: 64px; }
+  .scuse-textarea::placeholder { color: rgba(10,10,10,0.25); font-style: italic; }
+  .scuse-textarea:focus { border-color: var(--red); }
+  .scuse-submit { background: var(--red); color: white; border: 2px solid var(--red); padding: 0 2rem; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; border-radius: 0 2px 2px 0; transition: background 0.2s; white-space: nowrap; }
+  .scuse-submit:hover:not(:disabled) { background: var(--red-dark); }
+  .scuse-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+  .scuse-response { margin-top: 2rem; max-width: 640px; background: var(--black); border-radius: 3px; padding: 2rem; border-left: 3px solid var(--red); animation: fadeIn 0.5s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  .scuse-response-label { font-size: 0.65rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--red); margin-bottom: 0.8rem; display: flex; align-items: center; gap: 0.4rem; }
+  .scuse-response-text { font-size: 1rem; line-height: 1.7; color: var(--white); }
+  .scuse-response-text strong { color: var(--gold); }
+  .scuse-loading { display: flex; align-items: center; gap: 0.6rem; color: var(--muted); font-size: 0.9rem; margin-top: 2rem; }
+  .scuse-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--red); animation: bounce 1.2s infinite; }
+  .scuse-dot:nth-child(2) { animation-delay: 0.2s; }
+  .scuse-dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce { 0%,80%,100% { transform: scale(0.6); opacity: 0.3; } 40% { transform: scale(1); opacity: 1; } }
+
+  .hall-section { background: var(--surface); padding: 5rem 3rem; }
+  .hall-label { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.8rem; }
+  .hall-label::before { content: ''; width: 24px; height: 1px; background: var(--gold); }
+  .hall-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2rem, 4vw, 3.5rem); line-height: 1; color: var(--white); margin-bottom: 3rem; }
+  .hall-grid { display: flex; flex-direction: column; gap: 0; }
+  .hall-item { border-top: 1px solid var(--border); padding: 1.8rem 0; display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; transition: background 0.2s; }
+  .hall-item:last-child { border-bottom: 1px solid var(--border); }
+  .hall-item:hover { background: rgba(247,245,240,0.02); }
+  .hall-scusa { font-family: 'DM Serif Display', serif; font-size: 1.1rem; font-style: italic; color: rgba(247,245,240,0.35); line-height: 1.4; }
+  .hall-risposta { font-size: 0.9rem; line-height: 1.6; color: rgba(247,245,240,0.7); padding-left: 2rem; border-left: 1px solid var(--border); }
+  .hall-risposta strong { color: var(--white); }
 
   .footer { background: var(--black); padding: 2rem 3rem; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--border); font-size: 0.75rem; color: rgba(247,245,240,0.2); }
   .footer-logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; color: rgba(247,245,240,0.4); letter-spacing: 0.05em; }
@@ -159,18 +181,20 @@ const styles = `
   @media (max-width: 900px) {
     .nav { padding: 1rem 1.5rem; }
     .nav-links { display: none; }
-    .hero { padding: 7rem 1.5rem 4rem; }
-    .hero-bg-number { display: none; }
+    .hero, .scuse-hero { padding: 7rem 1.5rem 4rem; }
+    .hero-bg-number, .scuse-hero-bg { display: none; }
     .hero-cost { gap: 1.5rem; flex-wrap: wrap; }
-    .excuse-row { grid-template-columns: 1fr; gap: 1rem; }
+    .excuse-row, .hall-item { grid-template-columns: 1fr; gap: 1rem; }
     .excuse-right { border-left: none; border-top: 1px solid rgba(10,10,10,0.08); padding-left: 0; padding-top: 1rem; }
+    .hall-risposta { border-left: none; border-top: 1px solid var(--border); padding-left: 0; padding-top: 1rem; }
     .how-step { grid-template-columns: 50px 1fr; }
     .how-step-tag { display: none; }
     .forwho-grid { grid-template-columns: 1fr; }
-    .excuses, .sentence-section, .how-section, .forwho-section, .cta-section { padding: 5rem 1.5rem; }
-    .cta-form { flex-direction: column; }
+    .excuses, .sentence-section, .how-section, .forwho-section, .cta-section, .scuse-form-section, .hall-section { padding: 4rem 1.5rem; }
+    .cta-form, .scuse-input-wrap { flex-direction: column; }
     .cta-input { border-right: 2px solid rgba(10,10,10,0.15); border-bottom: none; border-radius: 2px 2px 0 0; }
-    .btn-cta-submit { border-radius: 0 0 2px 2px; }
+    .btn-cta-submit, .scuse-submit { border-radius: 0 0 2px 2px; padding: 1rem; }
+    .scuse-textarea { border-right: 2px solid rgba(10,10,10,0.15); border-bottom: none; border-radius: 2px 2px 0 0; }
     .footer { flex-direction: column; gap: 1.5rem; text-align: center; padding: 2rem 1.5rem; }
     .footer-links { flex-wrap: wrap; justify-content: center; }
   }
@@ -196,6 +220,8 @@ const excuses = [
   { text: '"Per il notaio e i documenti ho bisogno di aiuto."', answer: <><strong>La piattaforma ti connette direttamente</strong> con notai, periti e professionisti certificati. Senza intermediari.</> },
   { text: '"Non riesco a capire se il prezzo è giusto."', answer: <><strong>Il Fair Price Score ti dice in 3 secondi</strong> se stai pagando troppo — e perché. Con dati, non opinioni.</> },
   { text: '"Ho paura di sbagliare senza qualcuno che mi segue."', answer: <><strong>L&apos;AI è con te in ogni passaggio</strong> — dalla valutazione alla trattativa, fino al rogito. Sempre disponibile, mai di parte.</> },
+  { text: '"Non voglio dover negoziare con gli acquirenti."', answer: <><strong>L&apos;AI negozia per te. Senza fretta, senza conflitti.</strong> Non ha una commissione da incassare — ottimizza il tuo prezzo, non la sua velocità.</> },
+  { text: '"Ho bisogno di qualcuno che faccia vedere la casa."', answer: <><strong>Chi conosce casa tua meglio di te? Nessuno.</strong> RealAIstate ti prepara con script, domande frequenti e punti di forza da valorizzare. Tu sei il miglior agente di casa tua.</> },
 ];
 
 const sellerSteps = [
@@ -219,34 +245,55 @@ const cards = [
   { role: "Sei un professionista", name: "Entra nella rete.", desc: "Notai, periti, geometri, ingegneri: RealAIstate ti porta clienti qualificati, già informati, pronti a procedere.", items: ["Profilo verificato sulla piattaforma", "Richieste da utenti già qualificati dall'AI", "Nessuna agenzia nel mezzo", "Pagamenti trasparenti e tracciati", "Visibilità su tutto il territorio"] },
 ];
 
+const hallOfFame = [
+  { scusa: '"Non mi fido a vendere casa senza un esperto."', risposta: <><strong>L&apos;esperto ha un conflitto di interessi.</strong> Vuole chiudere veloce, tu vuoi vendere al prezzo giusto. Non sono la stessa cosa.</> },
+  { scusa: '"E se mi chiamano alle 3 di notte per una visita?"', risposta: <><strong>Con RealAIstate gestisci tu gli orari.</strong> Nessuno ti chiama. Tu decidi quando fare vedere casa. Sempre.</> },
+  { scusa: '"Non ho tempo per gestire tutto."', risposta: <><strong>Ci vuole meno tempo di quanto pensi.</strong> L&apos;AI genera l&apos;annuncio, risponde alle domande frequenti e coordina i professionisti. Tu approvi.</> },
+  { scusa: '"E se arriva un acquirente strano?"', risposta: <><strong>La piattaforma verifica le richieste.</strong> E comunque, chi porta gli acquirenti oggi? L&apos;agenzia. Gli stessi che entrano in casa tua.</> },
+];
+
+function Nav({ dark = false }) {
+  return (
+    <nav className="nav">
+      <a href="/" className="nav-logo">Real<span>AI</span>state</a>
+      <ul className="nav-links">
+        <li><a href="/#perche">Perché</a></li>
+        <li><a href="/scuse">Le scuse</a></li>
+        <li><a href="/#per-chi">Per chi</a></li>
+        <li><a href="/#early" className="nav-cta">Accesso anticipato</a></li>
+      </ul>
+    </nav>
+  );
+}
+
+function Footer() {
+  return (
+    <footer className="footer">
+      <div className="footer-logo">Real<span>AI</span>state</div>
+      <div className="footer-links"><a href="/privacy">Privacy</a><a href="#">Termini</a><a href="mailto:info@realaistate.ai">Contatti</a></div>
+      <div>© 2025 RealAIstate</div>
+    </footer>
+  );
+}
+
 function CTA() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState("idle");
-
   const handleSubmit = async () => {
     if (!email || !email.includes("@")) return;
     setStatus("loading");
     try {
-      const res = await fetch("/api/subscribe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      if (res.ok) { setStatus("success"); setEmail(""); }
-      else setStatus("error");
+      const res = await fetch("/api/subscribe", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) });
+      if (res.ok) { setStatus("success"); setEmail(""); } else setStatus("error");
     } catch { setStatus("error"); }
   };
-
   return (
     <section className="cta-section" id="early">
       <div className="cta-pre">Early Access</div>
       <h2 className="cta-title">Basta<br /><span>scuse.</span></h2>
-      <p className="cta-sub">Stiamo costruendo RealAIstate. Entra in lista d&apos;attesa e ricevi l&apos;accesso anticipato quando apriamo.</p>
+      <p className="cta-sub">Stiamo costruendo RealAIstate. Entra in lista d&apos;attesa e ricevi l&apos;accesso anticipato.</p>
       {status === "success" ? (
-        <div>
-          <div className="cta-success">✓ Sei dentro.</div>
-          <div className="cta-success-sub">Ti contatteremo non appena apriamo l&apos;accesso.</div>
-        </div>
+        <div><div className="cta-success">✓ Sei dentro.</div><div className="cta-success-sub">Ti contatteremo non appena apriamo l&apos;accesso.</div></div>
       ) : (
         <>
           <div className="cta-form">
@@ -265,19 +312,9 @@ function Home() {
   useScrollReveal();
   const [tab, setTab] = useState("venditore");
   const steps = tab === "venditore" ? sellerSteps : buyerSteps;
-
   return (
     <>
-      <nav className="nav">
-        <a href="/" className="nav-logo">Real<span>AI</span>state</a>
-        <ul className="nav-links">
-          <li><a href="#perche">Perché</a></li>
-          <li><a href="#come-funziona">Come funziona</a></li>
-          <li><a href="#per-chi">Per chi</a></li>
-          <li><a href="#early" className="nav-cta">Accesso anticipato</a></li>
-        </ul>
-      </nav>
-
+      <Nav />
       <section className="hero">
         <div className="hero-bg-number">€15K</div>
         <div className="hero-eyebrow">Piattaforma AI · Compra e vendi casa</div>
@@ -300,6 +337,7 @@ function Home() {
       <section className="excuses" id="perche">
         <div className="excuses-label">Le scuse finiscono qui</div>
         <h2 className="excuses-title">Perché continui<br />a pagare l&apos;agenzia?</h2>
+        <p className="excuses-subtitle">Le scuse più comuni — smontate una per una. <a href="/scuse">Hai una scusa diversa? Mandacela →</a></p>
         <div>
           {excuses.map((e, i) => (
             <div className="excuse-row reveal" key={i}>
@@ -349,27 +387,126 @@ function Home() {
       </section>
 
       <CTA />
+      <Footer />
+    </>
+  );
+}
 
-      <footer className="footer">
-        <div className="footer-logo">Real<span>AI</span>state</div>
-        <div className="footer-links">
-          <a href="/privacy">Privacy</a>
-          <a href="#">Termini</a>
-          <a href="mailto:info@realaistate.ai">Contatti</a>
+function ScusePage() {
+  useScrollReveal();
+  useEffect(() => { window.scrollTo(0, 0); }, []);
+  const [scusa, setScusa] = useState("");
+  const [status, setStatus] = useState("idle"); // idle | loading | done | error
+  const [risposta, setRisposta] = useState("");
+
+  const handleSubmit = async () => {
+    if (!scusa.trim() || status === "loading") return;
+    setStatus("loading");
+    setRisposta("");
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1000,
+          system: `Sei il brand voice di RealAIstate, una piattaforma che elimina le agenzie immobiliari dalla compravendita. Il tuo tono è: diretto, tagliente, ironico ma mai scortese. Come Fineco "No Excuses". L'utente ti manda una scusa per cui pensa di aver bisogno di un'agenzia. Tu la smonti in 2-3 frasi max. Inizia sempre con la confutazione diretta, poi aggiungi come RealAIstate risolve il problema. Usa grassetto con ** per enfatizzare le parole chiave. Rispondi in italiano.`,
+          messages: [{ role: "user", content: `La mia scusa è: "${scusa}"` }]
+        })
+      });
+      const data = await res.json();
+      const text = data.content?.[0]?.text || "Risposta non disponibile.";
+      setRisposta(text);
+      setStatus("done");
+    } catch {
+      setStatus("error");
+    }
+  };
+
+  const formatRisposta = (text) => {
+    const parts = text.split(/\*\*(.*?)\*\*/g);
+    return parts.map((part, i) =>
+      i % 2 === 1 ? <strong key={i}>{part}</strong> : part
+    );
+  };
+
+  return (
+    <>
+      <Nav />
+
+      <section className="scuse-hero">
+        <div className="scuse-hero-bg">SCUSE</div>
+        <div className="hero-eyebrow">Il grande libro delle scuse</div>
+        <h1 className="hero-h1" style={{fontSize: "clamp(3rem, 8vw, 8rem)"}}>La tua scusa<br />non regge.</h1>
+        <p className="hero-sub">Hai una scusa per cui pensi di aver bisogno di un&apos;agenzia? Mandacela. L&apos;AI te la smonta in 3 secondi.</p>
+      </section>
+
+      <section className="scuse-form-section">
+        <div className="section-label">Sfida l&apos;AI</div>
+        <h2 className="scuse-form-title">Scrivi la tua scusa.</h2>
+        <p className="scuse-form-sub">Qual è il motivo per cui pensi di aver bisogno di un&apos;agenzia immobiliare? Scrivila qui — te la smontiamo.</p>
+        <div className="scuse-input-wrap">
+          <textarea
+            className="scuse-textarea"
+            placeholder='"Ho paura di fare errori senza un esperto..."'
+            value={scusa}
+            onChange={(e) => setScusa(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSubmit(); } }}
+          />
+          <button className="scuse-submit" onClick={handleSubmit} disabled={status === "loading" || !scusa.trim()}>
+            {status === "loading" ? "..." : "Smontala →"}
+          </button>
         </div>
-        <div>© 2025 RealAIstate</div>
-      </footer>
+
+        {status === "loading" && (
+          <div className="scuse-loading">
+            <div className="scuse-dot" /><div className="scuse-dot" /><div className="scuse-dot" />
+            <span>L&apos;AI sta analizzando la tua scusa...</span>
+          </div>
+        )}
+
+        {status === "done" && risposta && (
+          <div className="scuse-response">
+            <div className="scuse-response-label">● Risposta di RealAIstate</div>
+            <div className="scuse-response-text">{formatRisposta(risposta)}</div>
+          </div>
+        )}
+
+        {status === "error" && (
+          <div className="scuse-response" style={{borderLeftColor: "var(--red)"}}>
+            <div className="scuse-response-text" style={{color: "var(--red)"}}>Qualcosa è andato storto. Riprova tra un momento.</div>
+          </div>
+        )}
+      </section>
+
+      <section className="hall-section">
+        <div className="hall-label">Hall of Fame</div>
+        <h2 className="hall-title">Le scuse più creative.<br />Smontate.</h2>
+        <div className="hall-grid">
+          {hallOfFame.map((item, i) => (
+            <div className="hall-item reveal" key={i}>
+              <div className="hall-scusa">{item.scusa}</div>
+              <div className="hall-risposta">{item.risposta}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <CTA />
+      <Footer />
     </>
   );
 }
 
 export default function App() {
+  useScrollReveal();
   return (
     <>
       <style>{styles}</style>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/privacy" element={<Privacy />} />
+        <Route path="/scuse" element={<ScusePage />} />
       </Routes>
     </>
   );
