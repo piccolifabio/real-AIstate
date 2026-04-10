@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { Routes, Route } from "react-router-dom";
 import Privacy from "./Privacy.jsx";
 
@@ -36,12 +36,13 @@ const styles = `
   .hero-bg-number { position: absolute; right: -2rem; top: 50%; transform: translateY(-50%); font-family: 'Bebas Neue', sans-serif; font-size: clamp(200px, 30vw, 420px); color: rgba(247,245,240,0.025); line-height: 1; user-select: none; pointer-events: none; }
   .hero-eyebrow { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--red); margin-bottom: 2rem; display: flex; align-items: center; gap: 0.8rem; }
   .hero-eyebrow::before { content: ''; width: 32px; height: 1px; background: var(--red); }
-  .hero-h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(4rem, 10vw, 10rem); line-height: 0.92; letter-spacing: 0.01em; color: var(--white); max-width: 900px; margin-bottom: 0.5rem; }
+  .hero-h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(3rem, 7vw, 7.5rem); line-height: 0.95; letter-spacing: 0.01em; color: var(--white); max-width: 900px; margin-bottom: 1rem; }
   .hero-h1 .strike { position: relative; display: inline-block; color: rgba(247,245,240,0.2); }
   .hero-h1 .strike::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 4px; background: var(--red); transform: rotate(-2deg); }
-  .hero-answer { font-family: 'Bebas Neue', sans-serif; font-size: clamp(3.5rem, 7vw, 7rem); color: var(--red); line-height: 1; letter-spacing: 0.02em; margin-bottom: 3rem; }
-  .hero-sub { font-size: 1.1rem; font-weight: 300; line-height: 1.7; color: rgba(247,245,240,0.5); max-width: 500px; margin-bottom: 3rem; }
-  .hero-sub strong { color: var(--white); font-weight: 500; }
+  .hero-h1 .highlight { color: var(--red); }
+  .hero-challenge { font-family: 'DM Serif Display', serif; font-size: clamp(1.1rem, 2vw, 1.4rem); font-style: italic; color: rgba(247,245,240,0.5); margin-bottom: 3rem; max-width: 600px; line-height: 1.5; }
+  .hero-challenge strong { color: var(--white); font-style: normal; font-family: 'DM Sans', sans-serif; font-weight: 500; }
+  .hero-sub { font-size: 1rem; font-weight: 300; line-height: 1.7; color: rgba(247,245,240,0.45); max-width: 480px; margin-bottom: 2.8rem; }
   .hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; }
 
   .btn-red { background: var(--red); color: var(--white); border: none; padding: 1rem 2.2rem; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; border-radius: 2px; transition: background 0.2s, transform 0.15s; text-decoration: none; display: inline-block; }
@@ -49,9 +50,10 @@ const styles = `
   .btn-outline { background: transparent; color: rgba(247,245,240,0.6); border: 1px solid rgba(247,245,240,0.15); padding: 1rem 2.2rem; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 400; cursor: pointer; border-radius: 2px; transition: all 0.2s; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; }
   .btn-outline:hover { border-color: rgba(247,245,240,0.4); color: var(--white); }
 
-  .hero-cost { margin-top: 4rem; padding-top: 2.5rem; border-top: 1px solid var(--border); display: flex; gap: 3rem; align-items: center; }
+  .hero-cost { margin-top: 4rem; padding-top: 2.5rem; border-top: 1px solid var(--border); display: flex; gap: 3rem; align-items: center; flex-wrap: wrap; }
   .cost-num { font-family: 'Bebas Neue', sans-serif; font-size: 3rem; line-height: 1; color: var(--white); }
   .cost-num.red { color: var(--red); }
+  .cost-num.green { color: #4ade80; }
   .cost-label { font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(247,245,240,0.35); margin-top: 0.25rem; }
   .cost-divider { width: 1px; height: 48px; background: var(--border); }
 
@@ -130,44 +132,6 @@ const styles = `
   .cta-success-sub { font-size: 0.85rem; color: rgba(10,10,10,0.4); margin-top: 0.5rem; }
   .cta-error { font-size: 0.85rem; color: var(--red); margin-top: 0.5rem; }
 
-  /* ── SCUSE PAGE ── */
-  .scuse-hero { min-height: 60vh; display: flex; flex-direction: column; justify-content: center; padding: 9rem 3rem 4rem; position: relative; overflow: hidden; background: var(--black); }
-  .scuse-hero-bg { position: absolute; right: -2rem; top: 50%; transform: translateY(-50%); font-family: 'Bebas Neue', sans-serif; font-size: clamp(180px, 28vw, 380px); color: rgba(247,245,240,0.025); line-height: 1; user-select: none; pointer-events: none; }
-  .scuse-form-section { background: var(--white); padding: 5rem 3rem; }
-  .scuse-form-section .section-label { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--red); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.8rem; }
-  .scuse-form-section .section-label::before { content: ''; width: 24px; height: 1px; background: var(--red); }
-  .scuse-form-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2rem, 4vw, 3.5rem); line-height: 1; color: var(--black); margin-bottom: 0.8rem; }
-  .scuse-form-sub { font-size: 0.95rem; color: var(--muted); margin-bottom: 2.5rem; max-width: 560px; line-height: 1.6; }
-  .scuse-input-wrap { display: flex; gap: 0; max-width: 640px; }
-  .scuse-textarea { flex: 1; padding: 1rem 1.5rem; border: 2px solid rgba(10,10,10,0.15); border-right: none; background: transparent; color: var(--black); font-family: 'DM Serif Display', serif; font-size: 1.1rem; font-style: italic; border-radius: 2px 0 0 2px; outline: none; transition: border-color 0.2s; resize: none; height: 64px; }
-  .scuse-textarea::placeholder { color: rgba(10,10,10,0.25); font-style: italic; }
-  .scuse-textarea:focus { border-color: var(--red); }
-  .scuse-submit { background: var(--red); color: white; border: 2px solid var(--red); padding: 0 2rem; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; border-radius: 0 2px 2px 0; transition: background 0.2s; white-space: nowrap; }
-  .scuse-submit:hover:not(:disabled) { background: var(--red-dark); }
-  .scuse-submit:disabled { opacity: 0.5; cursor: not-allowed; }
-  .scuse-response { margin-top: 2rem; max-width: 640px; background: var(--black); border-radius: 3px; padding: 2rem; border-left: 3px solid var(--red); animation: fadeIn 0.5s ease; }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-  .scuse-response-label { font-size: 0.65rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--red); margin-bottom: 0.8rem; display: flex; align-items: center; gap: 0.4rem; }
-  .scuse-response-text { font-size: 1rem; line-height: 1.7; color: var(--white); }
-  .scuse-response-text strong { color: var(--gold); }
-  .scuse-loading { display: flex; align-items: center; gap: 0.6rem; color: var(--muted); font-size: 0.9rem; margin-top: 2rem; }
-  .scuse-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--red); animation: bounce 1.2s infinite; }
-  .scuse-dot:nth-child(2) { animation-delay: 0.2s; }
-  .scuse-dot:nth-child(3) { animation-delay: 0.4s; }
-  @keyframes bounce { 0%,80%,100% { transform: scale(0.6); opacity: 0.3; } 40% { transform: scale(1); opacity: 1; } }
-
-  .hall-section { background: var(--surface); padding: 5rem 3rem; }
-  .hall-label { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.8rem; }
-  .hall-label::before { content: ''; width: 24px; height: 1px; background: var(--gold); }
-  .hall-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2rem, 4vw, 3.5rem); line-height: 1; color: var(--white); margin-bottom: 3rem; }
-  .hall-grid { display: flex; flex-direction: column; gap: 0; }
-  .hall-item { border-top: 1px solid var(--border); padding: 1.8rem 0; display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; transition: background 0.2s; }
-  .hall-item:last-child { border-bottom: 1px solid var(--border); }
-  .hall-item:hover { background: rgba(247,245,240,0.02); }
-  .hall-scusa { font-family: 'DM Serif Display', serif; font-size: 1.1rem; font-style: italic; color: rgba(247,245,240,0.35); line-height: 1.4; }
-  .hall-risposta { font-size: 0.9rem; line-height: 1.6; color: rgba(247,245,240,0.7); padding-left: 2rem; border-left: 1px solid var(--border); }
-  .hall-risposta strong { color: var(--white); }
-
   .footer { background: var(--black); padding: 2rem 3rem; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--border); font-size: 0.75rem; color: rgba(247,245,240,0.2); }
   .footer-logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; color: rgba(247,245,240,0.4); letter-spacing: 0.05em; }
   .footer-logo span { color: var(--red); }
@@ -181,20 +145,18 @@ const styles = `
   @media (max-width: 900px) {
     .nav { padding: 1rem 1.5rem; }
     .nav-links { display: none; }
-    .hero, .scuse-hero { padding: 7rem 1.5rem 4rem; }
-    .hero-bg-number, .scuse-hero-bg { display: none; }
-    .hero-cost { gap: 1.5rem; flex-wrap: wrap; }
-    .excuse-row, .hall-item { grid-template-columns: 1fr; gap: 1rem; }
+    .hero { padding: 7rem 1.5rem 4rem; }
+    .hero-bg-number { display: none; }
+    .hero-cost { gap: 1.5rem; }
+    .excuse-row { grid-template-columns: 1fr; gap: 1rem; }
     .excuse-right { border-left: none; border-top: 1px solid rgba(10,10,10,0.08); padding-left: 0; padding-top: 1rem; }
-    .hall-risposta { border-left: none; border-top: 1px solid var(--border); padding-left: 0; padding-top: 1rem; }
     .how-step { grid-template-columns: 50px 1fr; }
     .how-step-tag { display: none; }
     .forwho-grid { grid-template-columns: 1fr; }
-    .excuses, .sentence-section, .how-section, .forwho-section, .cta-section, .scuse-form-section, .hall-section { padding: 4rem 1.5rem; }
-    .cta-form, .scuse-input-wrap { flex-direction: column; }
+    .excuses, .sentence-section, .how-section, .forwho-section, .cta-section { padding: 4rem 1.5rem; }
+    .cta-form { flex-direction: column; }
     .cta-input { border-right: 2px solid rgba(10,10,10,0.15); border-bottom: none; border-radius: 2px 2px 0 0; }
-    .btn-cta-submit, .scuse-submit { border-radius: 0 0 2px 2px; padding: 1rem; }
-    .scuse-textarea { border-right: 2px solid rgba(10,10,10,0.15); border-bottom: none; border-radius: 2px 2px 0 0; }
+    .btn-cta-submit { border-radius: 0 0 2px 2px; }
     .footer { flex-direction: column; gap: 1.5rem; text-align: center; padding: 2rem 1.5rem; }
     .footer-links { flex-wrap: wrap; justify-content: center; }
   }
@@ -245,37 +207,6 @@ const cards = [
   { role: "Sei un professionista", name: "Entra nella rete.", desc: "Notai, periti, geometri, ingegneri: RealAIstate ti porta clienti qualificati, già informati, pronti a procedere.", items: ["Profilo verificato sulla piattaforma", "Richieste da utenti già qualificati dall'AI", "Nessuna agenzia nel mezzo", "Pagamenti trasparenti e tracciati", "Visibilità su tutto il territorio"] },
 ];
 
-const hallOfFame = [
-  { scusa: '"Non mi fido a vendere casa senza un esperto."', risposta: <><strong>L&apos;esperto ha un conflitto di interessi.</strong> Vuole chiudere veloce, tu vuoi vendere al prezzo giusto. Non sono la stessa cosa.</> },
-  { scusa: '"E se mi chiamano alle 3 di notte per una visita?"', risposta: <><strong>Con RealAIstate gestisci tu gli orari.</strong> Nessuno ti chiama. Tu decidi quando fare vedere casa. Sempre.</> },
-  { scusa: '"Non ho tempo per gestire tutto."', risposta: <><strong>Ci vuole meno tempo di quanto pensi.</strong> L&apos;AI genera l&apos;annuncio, risponde alle domande frequenti e coordina i professionisti. Tu approvi.</> },
-  { scusa: '"E se arriva un acquirente strano?"', risposta: <><strong>La piattaforma verifica le richieste.</strong> E comunque, chi porta gli acquirenti oggi? L&apos;agenzia. Gli stessi che entrano in casa tua.</> },
-];
-
-function Nav({ dark = false }) {
-  return (
-    <nav className="nav">
-      <a href="/" className="nav-logo">Real<span>AI</span>state</a>
-      <ul className="nav-links">
-        <li><a href="/#perche">Perché</a></li>
-        <li><a href="/scuse">Le scuse</a></li>
-        <li><a href="/#per-chi">Per chi</a></li>
-        <li><a href="/#early" className="nav-cta">Accesso anticipato</a></li>
-      </ul>
-    </nav>
-  );
-}
-
-function Footer() {
-  return (
-    <footer className="footer">
-      <div className="footer-logo">Real<span>AI</span>state</div>
-      <div className="footer-links"><a href="/privacy">Privacy</a><a href="#">Termini</a><a href="mailto:info@realaistate.ai">Contatti</a></div>
-      <div>© 2025 RealAIstate</div>
-    </footer>
-  );
-}
-
 function CTA() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState("idle");
@@ -308,36 +239,69 @@ function CTA() {
   );
 }
 
+function Footer() {
+  return (
+    <footer className="footer">
+      <div className="footer-logo">Real<span>AI</span>state</div>
+      <div className="footer-links"><a href="/privacy">Privacy</a><a href="/scuse">Le scuse</a><a href="mailto:info@realaistate.ai">Contatti</a></div>
+      <div>© 2025 RealAIstate</div>
+    </footer>
+  );
+}
+
 function Home() {
   useScrollReveal();
   const [tab, setTab] = useState("venditore");
   const steps = tab === "venditore" ? sellerSteps : buyerSteps;
+
   return (
     <>
-      <Nav />
+      <nav className="nav">
+        <a href="/" className="nav-logo">Real<span>AI</span>state</a>
+        <ul className="nav-links">
+          <li><a href="#perche">Perché</a></li>
+          <li><a href="/scuse">Le scuse</a></li>
+          <li><a href="#per-chi">Per chi</a></li>
+          <li><a href="#early" className="nav-cta">Accesso anticipato</a></li>
+        </ul>
+      </nav>
+
       <section className="hero">
-        <div className="hero-bg-number">€15K</div>
+        <div className="hero-bg-number">90%</div>
         <div className="hero-eyebrow">Piattaforma AI · Compra e vendi casa</div>
-        <h1 className="hero-h1">Hai davvero bisogno<br />di un&apos;<span className="strike">agenzia</span>?</h1>
-        <div className="hero-answer">No.</div>
-        <p className="hero-sub"><strong>RealAIstate</strong> mette venditore e compratore direttamente in contatto. L&apos;AI fa la valutazione, analizza le foto, trova i professionisti. Tu tieni i soldi.</p>
+
+        <h1 className="hero-h1">
+          E se ti dicessi che puoi<br />
+          spendere il <span className="highlight">90% in meno</span><br />
+          di <span className="strike">commissioni</span>?
+        </h1>
+
+        <p className="hero-challenge">
+          Che scusa hai per non usare <strong>RealAIstate</strong>?
+        </p>
+
+        <p className="hero-sub">
+          Venditore e compratore si incontrano direttamente. L&apos;AI fa la valutazione, analizza le foto, trova i professionisti. Tu tieni i soldi.
+        </p>
+
         <div className="hero-actions">
           <a href="#early" className="btn-red">Entra in lista d&apos;attesa</a>
-          <a href="#perche" className="btn-outline"><span>↓</span> Scopri perché</a>
+          <a href="/scuse" className="btn-outline"><span>→</span> Smonta la tua scusa</a>
         </div>
+
         <div className="hero-cost">
           <div><div className="cost-num red">3–6%</div><div className="cost-label">Commissione media agenzia</div></div>
           <div className="cost-divider" />
           <div><div className="cost-num red">€9.000–18.000</div><div className="cost-label">Su una casa da €300k</div></div>
           <div className="cost-divider" />
-          <div><div className="cost-num">€0</div><div className="cost-label">Con RealAIstate</div></div>
+          <div><div className="cost-num green">90% in meno</div><div className="cost-label">Con RealAIstate</div></div>
         </div>
       </section>
 
       <section className="excuses" id="perche">
         <div className="excuses-label">Le scuse finiscono qui</div>
         <h2 className="excuses-title">Perché continui<br />a pagare l&apos;agenzia?</h2>
-        <p className="excuses-subtitle">Le scuse più comuni — smontate una per una. <a href="/scuse">Hai una scusa diversa? Mandacela →</a></p>
+        <p className="excuses-subtitle">Le scuse più comuni — smontate una per una. <a href="/scuse">Hai una scusa diversa? Sfida l&apos;AI →</a></p>
         <div>
           {excuses.map((e, i) => (
             <div className="excuse-row reveal" key={i}>
@@ -392,112 +356,6 @@ function Home() {
   );
 }
 
-function ScusePage() {
-  useScrollReveal();
-  useEffect(() => { window.scrollTo(0, 0); }, []);
-  const [scusa, setScusa] = useState("");
-  const [status, setStatus] = useState("idle"); // idle | loading | done | error
-  const [risposta, setRisposta] = useState("");
-
-  const handleSubmit = async () => {
-    if (!scusa.trim() || status === "loading") return;
-    setStatus("loading");
-    setRisposta("");
-    try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          system: `Sei il brand voice di RealAIstate, una piattaforma che elimina le agenzie immobiliari dalla compravendita. Il tuo tono è: diretto, tagliente, ironico ma mai scortese. Come Fineco "No Excuses". L'utente ti manda una scusa per cui pensa di aver bisogno di un'agenzia. Tu la smonti in 2-3 frasi max. Inizia sempre con la confutazione diretta, poi aggiungi come RealAIstate risolve il problema. Usa grassetto con ** per enfatizzare le parole chiave. Rispondi in italiano.`,
-          messages: [{ role: "user", content: `La mia scusa è: "${scusa}"` }]
-        })
-      });
-      const data = await res.json();
-      const text = data.content?.[0]?.text || "Risposta non disponibile.";
-      setRisposta(text);
-      setStatus("done");
-    } catch {
-      setStatus("error");
-    }
-  };
-
-  const formatRisposta = (text) => {
-    const parts = text.split(/\*\*(.*?)\*\*/g);
-    return parts.map((part, i) =>
-      i % 2 === 1 ? <strong key={i}>{part}</strong> : part
-    );
-  };
-
-  return (
-    <>
-      <Nav />
-
-      <section className="scuse-hero">
-        <div className="scuse-hero-bg">SCUSE</div>
-        <div className="hero-eyebrow">Il grande libro delle scuse</div>
-        <h1 className="hero-h1" style={{fontSize: "clamp(3rem, 8vw, 8rem)"}}>La tua scusa<br />non regge.</h1>
-        <p className="hero-sub">Hai una scusa per cui pensi di aver bisogno di un&apos;agenzia? Mandacela. L&apos;AI te la smonta in 3 secondi.</p>
-      </section>
-
-      <section className="scuse-form-section">
-        <div className="section-label">Sfida l&apos;AI</div>
-        <h2 className="scuse-form-title">Scrivi la tua scusa.</h2>
-        <p className="scuse-form-sub">Qual è il motivo per cui pensi di aver bisogno di un&apos;agenzia immobiliare? Scrivila qui — te la smontiamo.</p>
-        <div className="scuse-input-wrap">
-          <textarea
-            className="scuse-textarea"
-            placeholder='"Ho paura di fare errori senza un esperto..."'
-            value={scusa}
-            onChange={(e) => setScusa(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSubmit(); } }}
-          />
-          <button className="scuse-submit" onClick={handleSubmit} disabled={status === "loading" || !scusa.trim()}>
-            {status === "loading" ? "..." : "Smontala →"}
-          </button>
-        </div>
-
-        {status === "loading" && (
-          <div className="scuse-loading">
-            <div className="scuse-dot" /><div className="scuse-dot" /><div className="scuse-dot" />
-            <span>L&apos;AI sta analizzando la tua scusa...</span>
-          </div>
-        )}
-
-        {status === "done" && risposta && (
-          <div className="scuse-response">
-            <div className="scuse-response-label">● Risposta di RealAIstate</div>
-            <div className="scuse-response-text">{formatRisposta(risposta)}</div>
-          </div>
-        )}
-
-        {status === "error" && (
-          <div className="scuse-response" style={{borderLeftColor: "var(--red)"}}>
-            <div className="scuse-response-text" style={{color: "var(--red)"}}>Qualcosa è andato storto. Riprova tra un momento.</div>
-          </div>
-        )}
-      </section>
-
-      <section className="hall-section">
-        <div className="hall-label">Hall of Fame</div>
-        <h2 className="hall-title">Le scuse più creative.<br />Smontate.</h2>
-        <div className="hall-grid">
-          {hallOfFame.map((item, i) => (
-            <div className="hall-item reveal" key={i}>
-              <div className="hall-scusa">{item.scusa}</div>
-              <div className="hall-risposta">{item.risposta}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <CTA />
-      <Footer />
-    </>
-  );
-}
-
 export default function App() {
   useScrollReveal();
   return (
@@ -506,7 +364,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/privacy" element={<Privacy />} />
-        <Route path="/scuse" element={<ScusePage />} />
+        <Route path="/scuse" element={<Home />} />
       </Routes>
     </>
   );
