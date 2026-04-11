@@ -160,6 +160,11 @@ const styles = `
   .chat-typing { display: flex; align-items: center; gap: 0.4rem; padding: 0.5rem 0; }
   .chat-typing span { font-size: 0.75rem; color: var(--muted); font-style: italic; }
 
+  .chat-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); animation: bounce 1.2s infinite; display: inline-block; }
+  .chat-dot:nth-child(2) { animation-delay: 0.2s; }
+  .chat-dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce { 0%,80%,100% { transform: scale(0.6); opacity: 0.3; } 40% { transform: scale(1); opacity: 1; } }
+
   /* FOOTER */
   .footer { background: var(--black); padding: 2rem 3rem; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--border); font-size: 0.75rem; color: rgba(247,245,240,0.2); margin-top: 4rem; }
   .footer-logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; color: rgba(247,245,240,0.4); }
@@ -315,7 +320,7 @@ function AiChat() {
           <div className="chat-msg ai">
             <div className="chat-msg-sender">✦ AI RealAIstate</div>
             <div className="chat-typing">
-              <div className="scuse-dot" /><div className="scuse-dot" /><div className="scuse-dot" />
+              <div className="chat-dot" /><div className="chat-dot" /><div className="chat-dot" />
               <span>Sto elaborando...</span>
             </div>
           </div>
