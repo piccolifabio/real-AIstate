@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Serif+Display:ital@0;1&display=swap');
@@ -137,6 +137,29 @@ const styles = `
   .verified-box-title { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--green-light); margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.4rem; }
   .verified-box-text { font-size: 0.78rem; color: rgba(247,245,240,0.5); line-height: 1.5; }
 
+  /* CHAT */
+  .chat-section { margin-bottom: 2rem; }
+  .chat-box { background: var(--warm); border: 1px solid var(--border); border-radius: 3px; overflow: hidden; }
+  .chat-messages { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; min-height: 280px; max-height: 400px; overflow-y: auto; }
+  .chat-msg { display: flex; flex-direction: column; gap: 0.3rem; max-width: 85%; }
+  .chat-msg.ai { align-self: flex-start; }
+  .chat-msg.user { align-self: flex-end; }
+  .chat-msg-sender { font-size: 0.65rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+  .chat-msg.ai .chat-msg-sender { color: var(--gold); }
+  .chat-msg.user .chat-msg-sender { color: var(--muted); text-align: right; }
+  .chat-msg-bubble { padding: 0.8rem 1rem; border-radius: 2px; font-size: 0.88rem; line-height: 1.6; }
+  .chat-msg.ai .chat-msg-bubble { background: rgba(247,245,240,0.06); color: rgba(247,245,240,0.8); border-left: 2px solid var(--gold); }
+  .chat-msg.user .chat-msg-bubble { background: rgba(217,48,37,0.1); color: rgba(247,245,240,0.8); border-right: 2px solid var(--red); }
+  .chat-msg-note { font-size: 0.68rem; color: var(--muted); font-style: italic; }
+  .chat-input-row { display: flex; gap: 0; border-top: 1px solid var(--border); }
+  .chat-input { flex: 1; background: transparent; border: none; padding: 1rem 1.2rem; color: var(--white); font-family: 'DM Sans', sans-serif; font-size: 0.88rem; outline: none; }
+  .chat-input::placeholder { color: rgba(247,245,240,0.2); }
+  .chat-send { background: var(--red); border: none; color: white; padding: 1rem 1.5rem; font-family: 'DM Sans', sans-serif; font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: background 0.2s; letter-spacing: 0.06em; }
+  .chat-send:hover:not(:disabled) { background: var(--red-dark); }
+  .chat-send:disabled { opacity: 0.4; cursor: not-allowed; }
+  .chat-typing { display: flex; align-items: center; gap: 0.4rem; padding: 0.5rem 0; }
+  .chat-typing span { font-size: 0.75rem; color: var(--muted); font-style: italic; }
+
   /* FOOTER */
   .footer { background: var(--black); padding: 2rem 3rem; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--border); font-size: 0.75rem; color: rgba(247,245,240,0.2); margin-top: 4rem; }
   .footer-logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; color: rgba(247,245,240,0.4); }
@@ -161,7 +184,7 @@ const styles = `
 const immobile = {
   id: 1,
   titolo: "Appartamento con garage e terrazzino",
-  zona: "Milano · Bande Nere / Lorenteggio",
+  zona: "Milano · San Siro",
   indirizzo: "Via Alfonso Capecelatro, 51",
   prezzo: 400000,
   superficie: 67,
@@ -218,6 +241,102 @@ const immobile = {
 };
 
 const deltaLabel = { higher: "▲ +5% vs questo", lower: "▼ -3% vs questo", similar: "≈ Allineato" };
+
+const initialMessages = [
+  {
+    role: "ai",
+    text: "Ciao! Sono l'assistente AI di RealAIstate. Posso risponderti subito su prezzi, documenti e caratteristiche dell'immobile. Per domande al venditore, medierò io la conversazione. Come posso aiutarti?",
+    note: null,
+  }
+];
+
+function AiChat() {
+  const [messages, setMessages] = useState(initialMessages);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const bottomRef = useRef(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loading]);
+
+  const send = async () => {
+    if (!input.trim() || loading) return;
+    const userMsg = input.trim();
+    setInput("");
+    setMessages(prev => [...prev, { role: "user", text: userMsg, note: "In attesa di revisione AI" }]);
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/chat-immobile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          domanda: userMsg,
+          immobile: {
+            indirizzo: immobile.indirizzo,
+            zona: immobile.zona,
+            prezzo: immobile.prezzo,
+            superficie: immobile.superficie,
+            locali: immobile.locali,
+            piano: immobile.piano,
+            classe_energetica: immobile.classe_energetica,
+            anno_costruzione: immobile.anno_costruzione,
+            anno_ristrutturazione: immobile.anno_ristrutturazione,
+            spese_condominio: immobile.spese_condominio,
+            garage: immobile.garage,
+            fair_price_score: immobile.scores.prezzo,
+          }
+        })
+      });
+      const data = await res.json();
+      setMessages(prev => [
+        ...prev.slice(0, -1),
+        { ...prev[prev.length - 1], note: null },
+        { role: "ai", text: data.risposta, note: data.forwarded ? "Inoltrato al venditore — risponderà entro 24h" : null }
+      ]);
+    } catch {
+      setMessages(prev => [...prev, { role: "ai", text: "Qualcosa è andato storto. Riprova tra un momento.", note: null }]);
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className="chat-box">
+      <div className="chat-messages">
+        {messages.map((m, i) => (
+          <div className={`chat-msg ${m.role}`} key={i}>
+            <div className="chat-msg-sender">{m.role === "ai" ? "✦ AI RealAIstate" : "Tu"}</div>
+            <div className="chat-msg-bubble">{m.text}</div>
+            {m.note && <div className="chat-msg-note">{m.note}</div>}
+          </div>
+        ))}
+        {loading && (
+          <div className="chat-msg ai">
+            <div className="chat-msg-sender">✦ AI RealAIstate</div>
+            <div className="chat-typing">
+              <div className="scuse-dot" /><div className="scuse-dot" /><div className="scuse-dot" />
+              <span>Sto elaborando...</span>
+            </div>
+          </div>
+        )}
+        <div ref={bottomRef} />
+      </div>
+      <div className="chat-input-row">
+        <input
+          className="chat-input"
+          placeholder="Chiedi qualcosa sull'immobile..."
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={e => e.key === "Enter" && send()}
+        />
+        <button className="chat-send" onClick={send} disabled={loading || !input.trim()}>
+          Invia →
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function ImmobilePage() {
   const [saved, setSaved] = useState(false);
@@ -394,8 +513,18 @@ export default function ImmobilePage() {
             </div>
           </div>
 
-          {/* COMPARABLES */}
-          <div className="comps-section">
+          {/* AI CHAT */}
+          <div className="chat-section">
+            <h2 className="section-title">Chatta con l&apos;AI — o col venditore</h2>
+            <div style={{ fontSize: "0.82rem", color: "var(--muted)", marginBottom: "0.5rem" }}>
+              L&apos;AI risponde subito alle domande che conosce. Per tutto il resto, media la conversazione con il venditore — filtrando i toni e proteggendo entrambe le parti.
+            </div>
+            <div style={{ fontSize: "0.78rem", color: "var(--gold)", marginBottom: "1.5rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+              <span>✦</span>
+              <span>Ogni messaggio è revisionato dall&apos;AI prima di essere consegnato. Nessuna sorpresa, nessuna tensione.</span>
+            </div>
+            <AiChat />
+          </div>
             <h2 className="section-title">Immobili comparabili</h2>
             <div style={{ fontSize: "0.82rem", color: "var(--muted)", marginBottom: "1rem" }}>
               Selezionati dall'AI nella stessa zona, metratura simile, stesso numero di locali.
