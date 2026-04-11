@@ -12,6 +12,7 @@ export default async function handler(req, res) {
   }
 
   try {
+    // Call Claude API
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -28,13 +29,23 @@ export default async function handler(req, res) {
     });
 
     const data = await response.json();
+    if (!response.ok) return res.status(500).json({ error: "Errore API" });
 
-    if (!response.ok) {
-      return res.status(500).json({ error: "Errore API", detail: data });
-    }
+    const risposta = data.content?.[0]?.text || "Risposta non disponibile.";
 
-    const text = data.content?.[0]?.text || "Risposta non disponibile.";
-    return res.status(200).json({ risposta: text });
+    // Save to Supabase
+    await fetch(`${process.env.SUPABASE_URL}/rest/v1/scuse`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": process.env.SUPABASE_SECRET_KEY,
+        "Authorization": `Bearer ${process.env.SUPABASE_SECRET_KEY}`,
+        "Prefer": "return=minimal"
+      },
+      body: JSON.stringify({ scusa: scusa.trim(), risposta, fonte: "pagina-scuse" })
+    });
+
+    return res.status(200).json({ risposta });
 
   } catch (err) {
     return res.status(500).json({ error: "Errore server", detail: err.message });
