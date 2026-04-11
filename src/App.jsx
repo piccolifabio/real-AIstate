@@ -435,19 +435,14 @@ function ScusePage() {
     setStatus("loading");
     setRisposta("");
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch("/api/smonta", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          system: `Sei il brand voice di RealAIstate, piattaforma che elimina le agenzie immobiliari dalla compravendita. Tono: diretto, tagliente, ironico ma mai scortese. Come Fineco "No Excuses". L'utente ti manda una scusa per cui pensa di aver bisogno di un'agenzia. Smontala in 2-3 frasi max. Inizia con la confutazione diretta, poi aggiungi come RealAIstate risolve. Usa **grassetto** per le parole chiave. Rispondi in italiano.`,
-          messages: [{ role: "user", content: `La mia scusa è: "${scusa}"` }]
-        })
+        body: JSON.stringify({ scusa })
       });
       const data = await res.json();
-      const text = data.content?.[0]?.text || "Risposta non disponibile.";
-      setRisposta(text);
+      if (!res.ok) throw new Error(data.error || "Errore");
+      setRisposta(data.risposta);
       setStatus("done");
     } catch { setStatus("error"); }
   };
