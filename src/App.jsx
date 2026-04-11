@@ -244,6 +244,8 @@ const excuses = [
   { text: '"Ho paura di sbagliare senza qualcuno che mi segue."', answer: <><strong>L&apos;AI è con te in ogni passaggio</strong> — dalla valutazione alla trattativa, fino al rogito.</> },
   { text: '"Non voglio dover negoziare con gli acquirenti."', answer: <><strong>L&apos;AI negozia per te. Senza fretta, senza conflitti.</strong> Non ha commissioni da incassare — ottimizza il tuo prezzo.</> },
   { text: '"Ho bisogno di qualcuno che faccia vedere la casa."', answer: <><strong>Chi conosce casa tua meglio di te? Nessuno.</strong> RealAIstate ti prepara con script e punti di forza. Tu sei il miglior agente di casa tua.</> },
+  { text: '"Non ho nessuno a cui lasciare l\'assegno della caparra. Di certo non posso lasciarlo al venditore."', answer: <><strong>L&apos;assegno non lo lasci a nessuno — lo blocchi.</strong> Con RealAIstate usi un escrow digitale: i soldi restano congelati su un conto terzo fino al rogito. Niente fiducia cieca, niente intermediari in giacca che ti chiedono il 3%.</> },
+  { text: '"Non conosco nessun notaio valido di cui fidarmi. Almeno l\'agente può consigliarmene uno."', answer: <><strong>L&apos;agente ti consiglia il notaio con cui lavora abitualmente.</strong> Indovina chi paga le commissioni di riferimento? Su RealAIstate scegli tra notai certificati e indipendenti — senza conflitti di interessi.</> },
 ];
 
 const hallOfFame = [
@@ -251,6 +253,8 @@ const hallOfFame = [
   { scusa: '"E se mi chiamano alle 3 di notte per una visita?"', risposta: <><strong>Con RealAIstate gestisci tu gli orari.</strong> Nessuno ti chiama. Tu decidi quando fare vedere casa. Sempre.</> },
   { scusa: '"Non ho tempo per gestire tutto."', risposta: <><strong>Ci vuole meno tempo di quanto pensi.</strong> L&apos;AI genera l&apos;annuncio, risponde alle domande e coordina i professionisti. Tu approvi.</> },
   { scusa: '"E se arriva un acquirente strano?"', risposta: <><strong>Chi porta gli acquirenti oggi? L&apos;agenzia.</strong> Gli stessi che entrano in casa tua. Almeno con RealAIstate sai chi hai di fronte.</> },
+  { scusa: '"Non ho nessuno a cui lasciare l\'assegno della caparra. Di certo non posso lasciarlo al venditore."', risposta: <><strong>L&apos;assegno non lo lasci a nessuno — lo blocchi.</strong> Con RealAIstate usi un escrow digitale: i soldi restano congelati su un conto terzo fino al rogito. Il tizio in giacca che ti chiede il 3% non serve più.</> },
+  { scusa: '"Non conosco nessun notaio valido di cui fidarmi. Almeno l\'agente può consigliarmene uno."', risposta: <><strong>L&apos;agente ti consiglia il notaio con cui lavora abitualmente.</strong> Indovina chi paga le commissioni di riferimento? Su RealAIstate scegli tra notai certificati e indipendenti — nessun conflitto di interessi.</> },
 ];
 
 const sellerSteps = [
