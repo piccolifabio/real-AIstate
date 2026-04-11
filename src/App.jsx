@@ -32,6 +32,7 @@ const styles = `
   .hero-h1 .strike { position: relative; display: inline-block; color: rgba(247,245,240,0.2); }
   .hero-h1 .strike::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 4px; background: var(--red); transform: rotate(-2deg); }
   .hero-h1 .highlight { color: var(--red); }
+  .hero-answer { font-family: 'Bebas Neue', sans-serif; font-size: clamp(3.5rem, 7vw, 7rem); color: var(--red); line-height: 1; letter-spacing: 0.02em; margin-bottom: 1.5rem; }
   .hero-challenge { font-family: 'DM Serif Display', serif; font-size: clamp(1.1rem, 2vw, 1.4rem); font-style: italic; color: rgba(247,245,240,0.5); margin-bottom: 2.5rem; max-width: 600px; line-height: 1.5; }
   .hero-challenge strong { color: var(--white); font-style: normal; font-family: 'DM Sans', sans-serif; font-weight: 500; }
   .hero-sub { font-size: 1rem; font-weight: 300; line-height: 1.7; color: rgba(247,245,240,0.45); max-width: 480px; margin-bottom: 2.8rem; }
@@ -341,13 +342,13 @@ function Home() {
     <>
       <Nav />
       <section className="hero">
-        <div className="hero-bg-number">90%</div>
+        <div className="hero-bg-number">NO.</div>
         <div className="hero-eyebrow">Piattaforma AI · Compra e vendi casa</div>
         <h1 className="hero-h1">
-          E se ti dicessi che puoi<br />
-          spendere il <span className="highlight">90% in meno</span><br />
-          di <span className="strike">commissioni</span>?
+          Hai davvero bisogno<br />
+          di un&apos;<span className="strike">agenzia</span>?
         </h1>
+        <div className="hero-answer">No.</div>
         <p className="hero-challenge">Che scusa hai per non usare <strong>RealAIstate</strong>?</p>
         <p className="hero-sub">Venditore e compratore si incontrano direttamente. L&apos;AI fa la valutazione, analizza le foto, trova i professionisti. Tu tieni i soldi.</p>
         <div className="hero-actions">
