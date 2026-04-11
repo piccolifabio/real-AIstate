@@ -530,9 +530,12 @@ export default function ImmobilePage() {
             </div>
             <AiChat />
           </div>
+
+          {/* COMPARABLES */}
+          <div className="comps-section">
             <h2 className="section-title">Immobili comparabili</h2>
             <div style={{ fontSize: "0.82rem", color: "var(--muted)", marginBottom: "1rem" }}>
-              Selezionati dall'AI nella stessa zona, metratura simile, stesso numero di locali.
+              Selezionati dall&apos;AI nella stessa zona, metratura simile, stesso numero di locali.
             </div>
             {immobile.comparabili.map((c, i) => (
               <div className="comp-item" key={i}>
