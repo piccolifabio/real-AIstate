@@ -360,17 +360,35 @@ function Home() {
         </h1>
         <div className="hero-answer">No.</div>
         <p className="hero-challenge">Che scusa hai per non usare <strong>RealAIstate</strong>?</p>
-        <p className="hero-sub">Venditore e compratore si incontrano direttamente. L&apos;AI fa la valutazione, analizza le foto, trova i professionisti. Tu tieni i soldi.</p>
+        <p className="hero-sub">Venditore e compratore si incontrano direttamente. L&apos;AI fa la valutazione, analizza le foto, trova i professionisti. Il 3–6% rimane nelle vostre tasche.</p>
         <div className="hero-actions">
           <a href="#early" className="btn-red">Entra in lista d&apos;attesa</a>
           <a href="/scuse" className="btn-outline"><span>→</span> Smonta la tua scusa</a>
         </div>
         <div className="hero-cost">
-          <div><div className="cost-num red">3–6%</div><div className="cost-label">Commissione media agenzia</div></div>
-          <div className="cost-divider" />
-          <div><div className="cost-num red">€9.000–18.000</div><div className="cost-label">Su una casa da €300k</div></div>
-          <div className="cost-divider" />
-          <div><div className="cost-num green">90% in meno</div><div className="cost-label">Con RealAIstate</div></div>
+          <div style={{ width: "100%" }}>
+            <div style={{ fontSize: "0.65rem", fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--red)", marginBottom: "1rem" }}>SE COMPRI</div>
+            <div style={{ display: "flex", gap: "3rem", alignItems: "center", flexWrap: "wrap", marginBottom: "2rem" }}>
+              <div><div className="cost-num red">3–6%</div><div className="cost-label">Commissione media agenzia compratore</div></div>
+              <div className="cost-divider" />
+              <div><div className="cost-num red">€9.000–18.000</div><div className="cost-label">Su una casa da €300k</div></div>
+              <div className="cost-divider" />
+              <div><div className="cost-num green">90% in meno</div><div className="cost-label">Con RealAIstate</div></div>
+            </div>
+            <div style={{ width: "100%", height: "1px", background: "var(--border)", marginBottom: "2rem" }} />
+            <div style={{ fontSize: "0.65rem", fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--red)", marginBottom: "1rem" }}>SE VENDI</div>
+            <div style={{ display: "flex", gap: "3rem", alignItems: "center", flexWrap: "wrap", marginBottom: "1.5rem" }}>
+              <div><div className="cost-num red">1%</div><div className="cost-label">Commissione media agenzia venditore</div></div>
+              <div className="cost-divider" />
+              <div><div className="cost-num red">€3.000</div><div className="cost-label">Su una casa da €300k</div></div>
+              <div className="cost-divider" />
+              <div><div className="cost-num green">50% in meno</div><div className="cost-label">Con RealAIstate</div></div>
+            </div>
+            <div style={{ borderLeft: "3px solid var(--red)", paddingLeft: "1rem", marginTop: "0.5rem" }}>
+              <div style={{ fontSize: "1rem", fontWeight: 600, color: "var(--white)", marginBottom: "0.3rem" }}>Il prezzo giusto.</div>
+              <div style={{ fontSize: "0.85rem", color: "rgba(247,245,240,0.4)", lineHeight: 1.6 }}>L&apos;AI non ha fretta di chiudere. Tu decidi quando vendere.</div>
+            </div>
+          </div>
         </div>
       </section>
 
