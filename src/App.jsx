@@ -223,9 +223,15 @@ const styles = `
   }
 `;
 
-function useScrollReveal() {
+function useScrollReveal(dep) {
   useEffect(() => {
     const els = document.querySelectorAll(".reveal");
+    els.forEach(el => {
+      const rect = el.getBoundingClientRect();
+      if (rect.top < window.innerHeight * 0.92) {
+        el.classList.add("visible");
+      }
+    });
     const obs = new IntersectionObserver(
       (entries) => entries.forEach((e, i) => {
         if (e.isIntersecting) setTimeout(() => e.target.classList.add("visible"), i * 100);
@@ -234,7 +240,7 @@ function useScrollReveal() {
     );
     els.forEach((el) => obs.observe(el));
     return () => obs.disconnect();
-  }, []);
+  }, [dep]);
 }
 
 const excuses = [
@@ -349,8 +355,11 @@ const proSteps = [
   { title: "Lavora con clienti preparati", desc: "L'AI prepara il cliente prima che ti contatti — documenti, domande, aspettative chiare. Meno tempo perso, più transazioni concluse.", tag: "AI", tagClass: "tag-ai" },
   { title: "Pagamenti trasparenti", desc: "Fee fissa per ogni incarico completato. Nessuna percentuale nascosta, nessuna agenzia di mezzo che prende la sua parte.", tag: "Rete Pro", tagClass: "tag-pro" },
 ];
-  useScrollReveal();
+
+// ── HOME ──
+function Home() {
   const [tab, setTab] = useState("venditore");
+  useScrollReveal(tab);
   const steps = tab === "venditore" ? sellerSteps : tab === "compratore" ? buyerSteps : proSteps;
   return (
     <>
