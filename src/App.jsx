@@ -425,7 +425,7 @@ const proSteps = [
         </div>
         <div key={tab}>
           {steps.map((s, i) => (
-            <div className="how-step reveal" key={i}>
+            <div className="how-step" key={i}>
               <div className="how-step-num">0{i + 1}</div>
               <div><div className="how-step-title">{s.title}</div><div className="how-step-desc">{s.desc}</div></div>
               <span className={`how-step-tag ${s.tagClass}`}>{s.tag}</span>
