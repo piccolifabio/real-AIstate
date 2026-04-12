@@ -202,16 +202,14 @@ const styles = `
 
   .nav-hamburger { display: none; flex-direction: column; gap: 5px; background: none; border: none; cursor: pointer; padding: 4px; }
   .nav-hamburger span { display: block; width: 24px; height: 2px; background: var(--white); border-radius: 2px; transition: all 0.2s; }
-  .nav-mobile-menu { display: none; position: fixed; top: 57px; left: 0; right: 0; z-index: 99; background: rgba(10,10,10,0.98); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); flex-direction: column; padding: 1.5rem 2rem; gap: 0; }
-  .nav-mobile-menu a { font-size: 1rem; font-weight: 500; color: rgba(247,245,240,0.6); text-decoration: none; padding: 1rem 0; border-bottom: 1px solid var(--border); transition: color 0.2s; letter-spacing: 0.04em; }
+  .nav-mobile-menu { position: fixed; top: 57px; left: 0; right: 0; z-index: 99; background: rgba(10,10,10,0.98); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); flex-direction: column; padding: 1.5rem 2rem; gap: 0; display: none; }
+  .nav-mobile-menu a { font-size: 1rem; font-weight: 500; color: rgba(247,245,240,0.6); text-decoration: none; padding: 1rem 0; border-bottom: 1px solid var(--border); transition: color 0.2s; letter-spacing: 0.04em; display: block; }
   .nav-mobile-menu a:last-child { border-bottom: none; }
   .nav-mobile-menu a:hover { color: var(--white); }
   .nav-mobile-cta { color: var(--red) !important; font-weight: 600 !important; }
 
   @media (max-width: 900px) {
     .nav-hamburger { display: flex; }
-    .nav-mobile-menu { display: flex; }
-  }
     .nav-links { display: none; }
     .hero, .scuse-hero { padding: 7rem 1.5rem 4rem; }
     .hero-bg-number, .scuse-hero-bg { display: none; }
@@ -307,7 +305,7 @@ function Nav() {
         </button>
       </nav>
       {open && (
-        <div className="nav-mobile-menu">
+        <div className="nav-mobile-menu" style={{ display: "flex" }}>
           <a href="/" onClick={() => setOpen(false)}>Home</a>
           <a href="/#perche" onClick={() => setOpen(false)}>Perché</a>
           <a href="/scuse" onClick={() => setOpen(false)}>Le scuse</a>
