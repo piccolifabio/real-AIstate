@@ -200,8 +200,18 @@ const styles = `
   .reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.6s ease, transform 0.6s ease; }
   .reveal.visible { opacity: 1; transform: translateY(0); }
 
+  .nav-hamburger { display: none; flex-direction: column; gap: 5px; background: none; border: none; cursor: pointer; padding: 4px; }
+  .nav-hamburger span { display: block; width: 24px; height: 2px; background: var(--white); border-radius: 2px; transition: all 0.2s; }
+  .nav-mobile-menu { display: none; position: fixed; top: 57px; left: 0; right: 0; z-index: 99; background: rgba(10,10,10,0.98); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); flex-direction: column; padding: 1.5rem 2rem; gap: 0; }
+  .nav-mobile-menu a { font-size: 1rem; font-weight: 500; color: rgba(247,245,240,0.6); text-decoration: none; padding: 1rem 0; border-bottom: 1px solid var(--border); transition: color 0.2s; letter-spacing: 0.04em; }
+  .nav-mobile-menu a:last-child { border-bottom: none; }
+  .nav-mobile-menu a:hover { color: var(--white); }
+  .nav-mobile-cta { color: var(--red) !important; font-weight: 600 !important; }
+
   @media (max-width: 900px) {
-    .nav, .legal-nav { padding: 1rem 1.5rem; }
+    .nav-hamburger { display: flex; }
+    .nav-mobile-menu { display: flex; }
+  }
     .nav-links { display: none; }
     .hero, .scuse-hero { padding: 7rem 1.5rem 4rem; }
     .hero-bg-number, .scuse-hero-bg { display: none; }
@@ -281,16 +291,31 @@ const cards = [
 ];
 
 function Nav() {
+  const [open, setOpen] = useState(false);
   return (
-    <nav className="nav">
-      <a href="/" className="nav-logo">Real<span>AI</span>state</a>
-      <ul className="nav-links">
-        <li><a href="/#perche">Perché</a></li>
-        <li><a href="/scuse">Le scuse</a></li>
-        <li><a href="/#per-chi">Per chi</a></li>
-        <li><a href="/#early" className="nav-cta">Accesso anticipato</a></li>
-      </ul>
-    </nav>
+    <>
+      <nav className="nav">
+        <a href="/" className="nav-logo">Real<span>AI</span>state</a>
+        <ul className="nav-links">
+          <li><a href="/#perche">Perché</a></li>
+          <li><a href="/scuse">Le scuse</a></li>
+          <li><a href="/#per-chi">Per chi</a></li>
+          <li><a href="/#early" className="nav-cta">Accesso anticipato</a></li>
+        </ul>
+        <button className="nav-hamburger" onClick={() => setOpen(!open)} aria-label="Menu">
+          <span /><span /><span />
+        </button>
+      </nav>
+      {open && (
+        <div className="nav-mobile-menu">
+          <a href="/" onClick={() => setOpen(false)}>Home</a>
+          <a href="/#perche" onClick={() => setOpen(false)}>Perché</a>
+          <a href="/scuse" onClick={() => setOpen(false)}>Le scuse</a>
+          <a href="/#per-chi" onClick={() => setOpen(false)}>Per chi è</a>
+          <a href="/#early" className="nav-mobile-cta" onClick={() => setOpen(false)}>Accesso anticipato →</a>
+        </div>
+      )}
+    </>
   );
 }
 
