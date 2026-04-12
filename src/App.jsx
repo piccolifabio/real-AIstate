@@ -4,7 +4,7 @@ import ImmobilePage from "./Immobile.jsx";
 
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Serif+Display:ital@0;1&display=swap');
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; max-width: 100%; }
   :root {
     --black: #0a0a0a; --white: #f7f5f0; --red: #d93025; --red-dark: #b02020;
     --gold: #c9a84c; --muted: #6b6b6b; --surface: #141414;
