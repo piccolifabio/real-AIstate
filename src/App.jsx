@@ -223,20 +223,15 @@ const styles = `
   }
 `;
 
-function useScrollReveal(dep) {
+function useScrollReveal(dep = null) {
   useEffect(() => {
     const els = document.querySelectorAll(".reveal");
-    els.forEach(el => {
-      const rect = el.getBoundingClientRect();
-      if (rect.top < window.innerHeight * 0.92) {
-        el.classList.add("visible");
-      }
-    });
+    if (dep !== null) els.forEach(el => el.classList.remove("visible"));
     const obs = new IntersectionObserver(
       (entries) => entries.forEach((e, i) => {
-        if (e.isIntersecting) setTimeout(() => e.target.classList.add("visible"), i * 100);
+        if (e.isIntersecting) setTimeout(() => e.target.classList.add("visible"), i * 80);
       }),
-      { threshold: 0.08 }
+      { threshold: 0.05 }
     );
     els.forEach((el) => obs.observe(el));
     return () => obs.disconnect();
