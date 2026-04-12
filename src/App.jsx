@@ -43,8 +43,7 @@ const styles = `
   .btn-outline { background: transparent; color: rgba(247,245,240,0.6); border: 1px solid rgba(247,245,240,0.15); padding: 1rem 2.2rem; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 400; cursor: pointer; border-radius: 2px; transition: all 0.2s; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; }
   .btn-outline:hover { border-color: rgba(247,245,240,0.4); color: var(--white); }
   .hero-cost { margin-top: 4rem; padding-top: 2.5rem; border-top: 1px solid var(--border); display: flex; gap: 3rem; align-items: center; flex-wrap: wrap; }
-  .cost-row { display: flex; gap: 3rem; align-items: center; flex-wrap: wrap; margin-bottom: 2rem; }
-  .cost-num { font-family: 'Bebas Neue', sans-serif; font-size: 3rem; line-height: 1; color: var(--white); }
+  .cost-row { display: flex; gap: 3rem; align-items: center; flex-wrap: wrap; margin-bottom: 2rem; }  .cost-num { font-family: 'Bebas Neue', sans-serif; font-size: 3rem; line-height: 1; color: var(--white); }
   .cost-num.red { color: var(--red); }
   .cost-num.green { color: #4ade80; }
   .cost-label { font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(247,245,240,0.35); margin-top: 0.25rem; }
@@ -214,11 +213,15 @@ const styles = `
     .nav-links { display: none; }
     .nav { padding: 1rem 1.5rem; }
     .legal-nav { padding: 1rem 1.5rem; }
-    .hero, .scuse-hero { padding: 7rem 1.5rem 4rem; }
+    .hero { padding: 6rem 1.5rem 4rem; }
+    .scuse-hero { padding: 7rem 1.5rem 4rem; }
     .hero-bg-number, .scuse-hero-bg { display: none; }
-    .hero-cost { gap: 1rem; }
-    .cost-row { gap: 1.2rem; margin-bottom: 1.5rem; }
-    .cost-num { font-size: 2.2rem; }
+    .hero-h1 { font-size: clamp(2.5rem, 9vw, 5rem) !important; }
+    .hero-answer { font-size: clamp(2.5rem, 9vw, 5rem) !important; }
+    .hero-cost { gap: 0; flex-direction: column; align-items: flex-start; }
+    .hero-cost > div { width: 100%; }
+    .cost-row { gap: 1.2rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+    .cost-num { font-size: 2rem; }
     .cost-divider { display: none; }
     .excuse-row { grid-template-columns: 1fr; gap: 1rem; }
     .excuse-right { border-left: none; border-top: 1px solid rgba(10,10,10,0.08); padding-left: 0; padding-top: 1rem; }
