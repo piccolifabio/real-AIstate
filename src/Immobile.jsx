@@ -544,7 +544,7 @@ export default function ImmobilePage() {
               {mapTab === "streetview" ? (
                 <iframe
                   className="map-frame"
-                  src="https://www.google.com/maps/embed?pb=!4v1700000000000!6m8!1m7!1sCAoSLEFGMVFpcE1YYVF2TXVyOGZUZ3lVZ3dMNk5hR2hWNVlSMkRJeXVFNlhYWQ!2m2!1d45.4654!2d9.1389!3f180!4f0!5f0.7820865974627469&key=AIzaSyD-9tSrke72PouQMnMX-a7eZSW0jkFMBWY"
+                  src="https://www.google.com/maps/embed?pb=!4v1775988656589!6m8!1m7!1sDG_9D_LELR8eSKQj9bghTA!2m2!1d45.47161747952469!2d9.12922276417182!3f227.02966046055374!4f-2.0427435132226037!5f0.7820865974627469"
                   allowFullScreen
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
