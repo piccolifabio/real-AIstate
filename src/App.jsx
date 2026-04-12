@@ -343,11 +343,15 @@ function CTA() {
   );
 }
 
-// ── HOME ──
-function Home() {
+const proSteps = [
+  { title: "Entra nella rete certificata", desc: "Crea il tuo profilo verificato su RealAIstate. Notaio, perito, geometra, ingegnere — ogni categoria ha il suo spazio dedicato.", tag: "Gratis", tagClass: "tag-auto" },
+  { title: "Ricevi lead qualificati", desc: "Gli utenti della piattaforma vengono indirizzati ai professionisti nella loro zona. Nessun intermediario nel mezzo — il cliente arriva direttamente a te.", tag: "AI", tagClass: "tag-ai" },
+  { title: "Lavora con clienti preparati", desc: "L'AI prepara il cliente prima che ti contatti — documenti, domande, aspettative chiare. Meno tempo perso, più transazioni concluse.", tag: "AI", tagClass: "tag-ai" },
+  { title: "Pagamenti trasparenti", desc: "Fee fissa per ogni incarico completato. Nessuna percentuale nascosta, nessuna agenzia di mezzo che prende la sua parte.", tag: "Rete Pro", tagClass: "tag-pro" },
+];
   useScrollReveal();
   const [tab, setTab] = useState("venditore");
-  const steps = tab === "venditore" ? sellerSteps : buyerSteps;
+  const steps = tab === "venditore" ? sellerSteps : tab === "compratore" ? buyerSteps : proSteps;
   return (
     <>
       <Nav />
@@ -417,10 +421,11 @@ function Home() {
         <div className="how-tabs">
           <button className={`how-tab ${tab === "venditore" ? "active" : ""}`} onClick={() => setTab("venditore")}>Sei un venditore</button>
           <button className={`how-tab ${tab === "compratore" ? "active" : ""}`} onClick={() => setTab("compratore")}>Sei un compratore</button>
+          <button className={`how-tab ${tab === "professionista" ? "active" : ""}`} onClick={() => setTab("professionista")}>Sei un professionista</button>
         </div>
-        <div>
+        <div key={tab}>
           {steps.map((s, i) => (
-            <div className="how-step reveal" key={i + tab}>
+            <div className="how-step reveal" key={i}>
               <div className="how-step-num">0{i + 1}</div>
               <div><div className="how-step-title">{s.title}</div><div className="how-step-desc">{s.desc}</div></div>
               <span className={`how-step-tag ${s.tagClass}`}>{s.tag}</span>
