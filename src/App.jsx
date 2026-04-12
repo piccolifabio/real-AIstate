@@ -43,6 +43,7 @@ const styles = `
   .btn-outline { background: transparent; color: rgba(247,245,240,0.6); border: 1px solid rgba(247,245,240,0.15); padding: 1rem 2.2rem; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 400; cursor: pointer; border-radius: 2px; transition: all 0.2s; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; }
   .btn-outline:hover { border-color: rgba(247,245,240,0.4); color: var(--white); }
   .hero-cost { margin-top: 4rem; padding-top: 2.5rem; border-top: 1px solid var(--border); display: flex; gap: 3rem; align-items: center; flex-wrap: wrap; }
+  .cost-row { display: flex; gap: 3rem; align-items: center; flex-wrap: wrap; margin-bottom: 2rem; }
   .cost-num { font-family: 'Bebas Neue', sans-serif; font-size: 3rem; line-height: 1; color: var(--white); }
   .cost-num.red { color: var(--red); }
   .cost-num.green { color: #4ade80; }
@@ -215,11 +216,13 @@ const styles = `
     .legal-nav { padding: 1rem 1.5rem; }
     .hero, .scuse-hero { padding: 7rem 1.5rem 4rem; }
     .hero-bg-number, .scuse-hero-bg { display: none; }
-    .hero-cost { gap: 1rem; flex-direction: column; align-items: flex-start; }
+    .hero-cost { gap: 1rem; }
+    .cost-row { gap: 1.2rem; margin-bottom: 1.5rem; }
+    .cost-num { font-size: 2.2rem; }
     .cost-divider { display: none; }
-    .cost-num { font-size: 2rem; }
     .excuse-row { grid-template-columns: 1fr; gap: 1rem; }
     .excuse-right { border-left: none; border-top: 1px solid rgba(10,10,10,0.08); padding-left: 0; padding-top: 1rem; }
+    .excuse-left { padding-right: 0; }
     .hall-item { grid-template-columns: 1fr; gap: 1rem; }
     .hall-risposta { border-left: none; border-top: 1px solid var(--border); padding-left: 0; padding-top: 1rem; }
     .how-step { grid-template-columns: 50px 1fr; }
@@ -404,7 +407,7 @@ function Home() {
         <div className="hero-cost">
           <div style={{ width: "100%" }}>
             <div style={{ fontSize: "0.65rem", fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--red)", marginBottom: "1rem" }}>SE COMPRI</div>
-            <div style={{ display: "flex", gap: "3rem", alignItems: "center", flexWrap: "wrap", marginBottom: "2rem" }}>
+            <div className="cost-row">
               <div><div className="cost-num red">3–6%</div><div className="cost-label">Commissione media agenzia</div></div>
               <div className="cost-divider" />
               <div><div className="cost-num red">€9.000–18.000</div><div className="cost-label">Su una casa da €300k</div></div>
@@ -413,7 +416,7 @@ function Home() {
             </div>
             <div style={{ width: "100%", height: "1px", background: "var(--border)", marginBottom: "2rem" }} />
             <div style={{ fontSize: "0.65rem", fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--red)", marginBottom: "1rem" }}>SE VENDI</div>
-            <div style={{ display: "flex", gap: "3rem", alignItems: "center", flexWrap: "wrap", marginBottom: "1.5rem" }}>
+            <div className="cost-row">
               <div><div className="cost-num red">1%</div><div className="cost-label">Commissione media agenzia</div></div>
               <div className="cost-divider" />
               <div><div className="cost-num red">€3.000</div><div className="cost-label">Su una casa da €300k</div></div>
