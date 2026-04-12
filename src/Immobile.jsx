@@ -137,6 +137,15 @@ const styles = `
   .verified-box-title { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--green-light); margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.4rem; }
   .verified-box-text { font-size: 0.78rem; color: rgba(247,245,240,0.5); line-height: 1.5; }
 
+  /* MAP */
+  .map-section { margin-bottom: 2rem; }
+  .map-container { border-radius: 3px; overflow: hidden; border: 1px solid var(--border); }
+  .map-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); }
+  .map-tab { padding: 0.7rem 1.4rem; font-size: 0.75rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(247,245,240,0.35); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.2s; background: none; border-top: none; border-left: none; border-right: none; font-family: 'DM Sans', sans-serif; }
+  .map-tab.active { color: var(--white); border-bottom-color: var(--red); }
+  .map-tab:hover { color: rgba(247,245,240,0.7); }
+  .map-frame { width: 100%; height: 380px; border: none; display: block; }
+
   /* CHAT */
   .chat-section { margin-bottom: 2rem; }
   .chat-box { background: var(--warm); border: 1px solid var(--border); border-radius: 3px; overflow: hidden; }
@@ -346,6 +355,7 @@ function AiChat() {
 export default function ImmobilePage() {
   const [saved, setSaved] = useState(false);
   const [activeTab, setActiveTab] = useState("analisi");
+  const [mapTab, setMapTab] = useState("streetview");
 
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
@@ -515,6 +525,41 @@ export default function ImmobilePage() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* MAP & STREET VIEW */}
+          <div className="map-section">
+            <h2 className="section-title">Posizione e Street View</h2>
+            <div style={{ fontSize: "0.82rem", color: "var(--muted)", marginBottom: "1rem" }}>
+              Via Alfonso Capecelatro, 51 · Milano · San Siro
+            </div>
+            <div className="map-container">
+              <div style={{ background: "var(--warm)", borderBottom: "1px solid var(--border)" }}>
+                <div className="map-tabs">
+                  <button className={`map-tab ${mapTab === "streetview" ? "active" : ""}`} onClick={() => setMapTab("streetview")}>📷 Street View</button>
+                  <button className={`map-tab ${mapTab === "mappa" ? "active" : ""}`} onClick={() => setMapTab("mappa")}>🗺 Mappa</button>
+                </div>
+              </div>
+              {mapTab === "streetview" ? (
+                <iframe
+                  className="map-frame"
+                  src="https://www.google.com/maps/embed?pb=!4v1700000000000!6m8!1m7!1sCAoSLEFGMVFpcE1YYVF2TXVyOGZUZ3lVZ3dMNk5hR2hWNVlSMkRJeXVFNlhYWQ!2m2!1d45.4654!2d9.1389!3f180!4f0!5f0.7820865974627469&key=AIzaSyD-9tSrke72PouQMnMX-a7eZSW0jkFMBWY"
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  title="Street View Via Capecelatro 51 Milano"
+                />
+              ) : (
+                <iframe
+                  className="map-frame"
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2799.5!2d9.1369!3d45.4654!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4786c3b3b3b3b3b3%3A0x4786c3b3b3b3b3b3!2sVia%20Alfonso%20Capecelatro%2C%2051%2C%2020148%20Milano%20MI!5e0!3m2!1sit!2sit!4v1700000000000"
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  title="Mappa Via Capecelatro 51 Milano"
+                />
+              )}
             </div>
           </div>
 
