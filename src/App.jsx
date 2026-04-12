@@ -79,8 +79,9 @@ const styles = `
   .how-label { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--red); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.8rem; }
   .how-label::before { content: ''; width: 24px; height: 1px; background: var(--red); }
   .how-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2.5rem, 5vw, 5rem); line-height: 1; color: var(--white); margin-bottom: 3rem; max-width: 600px; }
-  .how-tabs { display: flex; gap: 0; margin-bottom: 3rem; border-bottom: 1px solid var(--border); }
-  .how-tab { padding: 0.8rem 1.2rem; font-size: 0.78rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(247,245,240,0.35); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.2s; background: none; border-top: none; border-left: none; border-right: none; font-family: 'DM Sans', sans-serif; text-align: center; flex: 1; }
+  .how-tabs { display: flex; gap: 0; margin-bottom: 3rem; border-bottom: 1px solid var(--border); overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .how-tabs::-webkit-scrollbar { display: none; }
+  .how-tab { padding: 0.8rem 1.2rem; font-size: 0.78rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(247,245,240,0.35); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.2s; background: none; border-top: none; border-left: none; border-right: none; font-family: 'DM Sans', sans-serif; text-align: center; flex: 1; min-width: 0; }
   .how-tab.active { color: var(--white); border-bottom-color: var(--red); }
   .how-tab:hover { color: rgba(247,245,240,0.7); }
   .how-step { display: grid; grid-template-columns: 80px 1fr auto; align-items: center; gap: 2rem; padding: 2rem 0; border-bottom: 1px solid var(--border); transition: background 0.2s; }
