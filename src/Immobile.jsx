@@ -11,6 +11,7 @@ const styles = `
     --warm: #1e1e1e;
   }
   html { scroll-behavior: smooth; }
+  html { scroll-behavior: smooth; overflow-x: hidden; }
   body { font-family: 'DM Sans', sans-serif; background: var(--black); color: var(--white); overflow-x: hidden; }
 
   /* NAV */
@@ -191,6 +192,13 @@ const styles = `
     .ai-scores { grid-template-columns: repeat(3,1fr); }
     .ai-grid { grid-template-columns: 1fr; }
     .docs-grid { grid-template-columns: 1fr; }
+    .comp-item { grid-template-columns: 1fr; gap: 0.5rem; }
+    .map-frame { height: 260px; }
+    .chat-messages { max-height: 300px; }
+    .sticky-card-body { padding: 1rem; }
+    .sticky-cta { padding: 1rem; }
+    .verified-box { margin: 0 1rem 1rem; }
+    .prop-specs { gap: 1rem; flex-wrap: wrap; }
     .footer { flex-direction: column; gap: 1rem; text-align: center; padding: 2rem 1.5rem; }
   }
 `;
