@@ -189,7 +189,7 @@ const immobile = {
   spese_condominio: 200,
   anno_costruzione: 2010,
   anno_ristrutturazione: 2023,
-  scores: { prezzo: 78, investimento: 81, qualita: 88 },
+  scores: { prezzo: 88, investimento: 81, qualita: 88 },
   ai_summary: "Il tuo annuncio è in buona forma. Il prezzo è allineato al mercato di San Siro per questa metratura. La ristrutturazione 2023 è un punto di forza da valorizzare maggiormente. Mancano ancora 2 documenti — completali per ottenere il badge 'Immobile Verificato' e aumentare le probabilità di contatto.",
   punti_forza: [
     "Costruzione 2010 — edificio moderno",
@@ -207,7 +207,7 @@ const immobile = {
     { tipo: "warn", icon: "📸", titolo: "Aggiungi foto del garage", desc: "Il garage è un punto di forza chiave — non ha ancora una foto. Gli acquirenti lo cercano." },
     { tipo: "warn", icon: "📄", titolo: "Carica Regolamento Condominiale", desc: "Mancano ancora 2 documenti. Senza badge Verificato ricevi il 40% di contatti in meno." },
     { tipo: "tip", icon: "✍️", titolo: "Valorizza la ristrutturazione 2023", desc: "Menziona cosa è stato rifatto — cucina, bagno, impianti? I dettagli aumentano la fiducia." },
-    { tipo: "ok", icon: "✓", titolo: "Prezzo allineato al mercato", desc: "Il Fair Price Score è 78/100. Sei nella fascia giusta per San Siro con questa metratura." },
+    { tipo: "ok", icon: "✓", titolo: "Prezzo allineato al mercato", desc: "Il Fair Price Score è 88/100. Sei nella fascia giusta per San Siro con questa metratura." },
   ],
   domande_attese: [
     { q: "Ci sono lavori straordinari in programma?", hint: "Prepara: verbale ultima assemblea condominiale" },
@@ -310,17 +310,18 @@ export default function ImmobileVenditore() {
       </nav>
 
       <div className="gallery">
-        <div className="gallery-main" style={{ background: `url(${BASE_URL}IMG_4782.jpg) center/cover no-repeat` }}>
+        <div className="gallery-main" style={{ background: `url(${BASE_URL}IMG_4782.jpg) center/cover no-repeat`, position: "relative" }}>
           <div className="gallery-badge">
             <span className="badge badge-gold">✦ Vista Venditore</span>
             <span className="badge badge-green">{docsVerified}/{docsTotal} Documenti</span>
           </div>
+          <div style={{ position: "absolute", bottom: "1.5rem", right: "1.5rem", background: "rgba(251,146,60,0.92)", color: "#0a0a0a", padding: "0.3rem 0.8rem", borderRadius: "2px", fontSize: "0.82rem", fontWeight: 700, zIndex: 2 }}>Soggiorno 65/100</div>
         </div>
         <div className="gallery-thumb" style={{ background: `url(${BASE_URL}IMG_4788.jpg) center/cover no-repeat`, position: "relative" }}>
-          <div style={{ position: "absolute", bottom: "0.5rem", right: "0.5rem", background: "rgba(74,222,128,0.9)", color: "#0a0a0a", padding: "0.2rem 0.5rem", borderRadius: "2px", fontSize: "0.7rem", fontWeight: 700 }}>70/100</div>
+          <div style={{ position: "absolute", bottom: "0.5rem", right: "0.5rem", background: "rgba(74,222,128,0.92)", color: "#0a0a0a", padding: "0.2rem 0.5rem", borderRadius: "2px", fontSize: "0.7rem", fontWeight: 700 }}>Studio 70/100</div>
         </div>
         <div className="gallery-thumb" style={{ background: `url(${BASE_URL}IMG_4789.jpg) center/cover no-repeat`, position: "relative" }}>
-          <div style={{ position: "absolute", bottom: "0.5rem", right: "0.5rem", background: "rgba(248,113,113,0.9)", color: "#0a0a0a", padding: "0.2rem 0.5rem", borderRadius: "2px", fontSize: "0.7rem", fontWeight: 700 }}>35/100</div>
+          <div style={{ position: "absolute", bottom: "0.5rem", right: "0.5rem", background: "rgba(248,113,113,0.92)", color: "#0a0a0a", padding: "0.2rem 0.5rem", borderRadius: "2px", fontSize: "0.7rem", fontWeight: 700 }}>Terrazzo 35/100</div>
         </div>
       </div>
 
@@ -350,7 +351,7 @@ export default function ImmobileVenditore() {
             <div className="stat-item"><div className="stat-num gold">47</div><div className="stat-label">Visualizzazioni</div></div>
             <div className="stat-item"><div className="stat-num green">8</div><div className="stat-label">Salvati</div></div>
             <div className="stat-item"><div className="stat-num">3</div><div className="stat-label">Richieste contatto</div></div>
-            <div className="stat-item"><div className="stat-num gold">78</div><div className="stat-label">Fair Price Score</div></div>
+            <div className="stat-item"><div className="stat-num gold">88</div><div className="stat-label">Fair Price Score</div></div>
           </div>
 
           {/* AI PANEL */}
@@ -514,7 +515,7 @@ export default function ImmobileVenditore() {
                 ["Visualizzazioni", "47 (+12 oggi)"],
                 ["Salvati", "8"],
                 ["Richieste contatto", "3"],
-                ["Fair Price Score", "78/100"],
+                ["Fair Price Score", "88/100"],
                 ["Documenti", `${docsVerified}/${docsTotal} verificati`],
                 ["Pubblicato il", "13 aprile 2025"],
               ].map(([k, v]) => (
