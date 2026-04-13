@@ -222,22 +222,22 @@ const immobile = {
   anno_costruzione: 2010,
   anno_ristrutturazione: 2023,
   scores: {
-    prezzo: 78,
+    prezzo: 88,
     investimento: 81,
     qualita: 88,
   },
-  ai_summary: "Appartamento moderno in zona ovest di Milano, con un prezzo di €5.970/m² comprensivo di garage — competitivo per il mercato attuale di Bande Nere. La ristrutturazione interna del 2023 e l'anno di costruzione recente (2010) lo rendono interessante sia per abitazione che per investimento a reddito. La classe energetica C è nella media per l'edificio, ma potrebbe essere migliorata. Il garage da 20 mq è un asset raro e prezioso in questa zona.",
+  ai_summary: "Scorporando il valore del garage (20 mq × €2.400/mq OMI = €48.000), il prezzo dell'appartamento puro è €352.000 — ovvero €5.254/mq. Il range OMI per abitazioni civili Ottimo in zona D24 è €4.300–€6.300/mq: il prezzo si posiziona quasi esattamente al centro (47,7%). Valutazione equilibrata e difendibile. Fonte: Agenzia delle Entrate – OMI, zona D24, 2° sem. 2025.",
   punti_forza: [
+    "Prezzo al centro del range OMI — €5.254/mq su range €4.300–€6.300 (zona D24, 2025)",
+    "Garage scorporato: valore OMI €48.000 — incluso nel prezzo totale",
     "Costruzione 2010 — edificio moderno, impianti recenti",
     "Ristrutturazione interna 2023 — pronto da abitare",
-    "Garage 20 mq incluso — valore aggiunto significativo in zona",
     "Giardino condominiale — qualità della vita elevata",
-    "Zona Bande Nere in costante rivalutazione",
     "Ascensore presente — accessibile e rivendibile facilmente",
   ],
   criticita: [
     "Classe energetica C — margine di miglioramento con cappotto o infissi",
-    "Spese condominiali €200/mese — verificare la composizione",
+    "Spese condominiali €200/mese — verificare la composizione dettagliata",
     "67 mq — metratura contenuta per famiglie numerose",
   ],
   domande: [
@@ -455,6 +455,11 @@ export default function ImmobilePage() {
             </div>
 
             <div className="ai-summary">{immobile.ai_summary}</div>
+
+            <div style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", background: "rgba(45,106,79,0.12)", border: "1px solid rgba(45,106,79,0.25)", borderRadius: "2px", padding: "0.4rem 0.9rem", marginBottom: "1.5rem" }}>
+              <span style={{ color: "var(--green-light)", fontSize: "0.7rem", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase" }}>✓ Validato da dati OMI — Agenzia delle Entrate · Zona D24 · 2° sem. 2025</span>
+              <a href="/metodologia" style={{ color: "var(--gold)", fontSize: "0.7rem", textDecoration: "none", borderLeft: "1px solid rgba(247,245,240,0.1)", paddingLeft: "0.5rem", marginLeft: "0.2rem" }}>Come calcoliamo →</a>
+            </div>
 
             <div className="ai-scores">
               {[
