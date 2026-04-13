@@ -80,9 +80,12 @@ const styles = `
   }
 `;
 
+const BASE_URL = "https://strigywjvkhbubyszuxp.supabase.co/storage/v1/object/public/immobili/";
+
 const rooms = [
   {
     title: "Soggiorno + Cucina open space",
+    photo: `${BASE_URL}IMG_4782.jpg`,
     score: 65,
     scoreClass: "score-mid",
     pros: ["Spazio ampio", "Pavimento legno chiaro", "Doppio accesso terrazzo"],
@@ -96,6 +99,7 @@ const rooms = [
   },
   {
     title: "Corridoio zona notte",
+    photo: `${BASE_URL}IMG_4784.jpg`,
     score: 60,
     scoreClass: "score-mid",
     pros: ["Porte scure di qualità", "Pavimento continuo"],
@@ -107,6 +111,7 @@ const rooms = [
   },
   {
     title: "Camera principale",
+    photo: `${BASE_URL}IMG_4785.jpg`,
     score: 55,
     scoreClass: "score-mid",
     pros: ["Armadio scorrevole di design", "Finestra con verde esterno", "Quadro Magritte — personalità"],
@@ -119,6 +124,7 @@ const rooms = [
   },
   {
     title: "Bagno principale + bagno secondario",
+    photo: `${BASE_URL}IMG_4786.jpg`,
     score: 50,
     scoreClass: "score-mid",
     pros: ["Doppio bagno — asset raro a Milano", "Box doccia in maiolica scura", "Sanitari sospesi moderni"],
@@ -132,6 +138,7 @@ const rooms = [
   },
   {
     title: "Studio / seconda camera",
+    photo: `${BASE_URL}IMG_4788.jpg`,
     score: 70,
     scoreClass: "score-good",
     pros: ["Standing desk — moderno", "Libreria curata", "Stampe Da Vinci — carattere"],
@@ -143,6 +150,7 @@ const rooms = [
   },
   {
     title: "Terrazzo",
+    photo: `${BASE_URL}IMG_4789.jpg`,
     score: 35,
     scoreClass: "score-bad",
     pros: ["Ampio — oltre 8 mq stimati", "Verde cortile visibile"],
@@ -231,9 +239,25 @@ export default function ReportFotoPage() {
               <div className="room-title">{room.title}</div>
               <span className={`score-badge ${room.scoreClass}`}>{room.score}/100</span>
             </div>
-            <div className="tag-row">
-              {room.pros.map(p => <span key={p} className="tag tag-pro">✓ {p}</span>)}
-              {room.cons.map(c => <span key={c} className="tag tag-con">✗ {c}</span>)}
+            <div style={{ display: "grid", gridTemplateColumns: "160px 1fr", gap: "1.2rem", marginBottom: "1rem" }}>
+              <div style={{ position: "relative", flexShrink: 0 }}>
+                <img
+                  src={room.photo}
+                  alt={room.title}
+                  style={{ width: "160px", height: "110px", objectFit: "cover", borderRadius: "2px", display: "block" }}
+                />
+                <div style={{
+                  position: "absolute", bottom: "0.4rem", right: "0.4rem",
+                  background: scoreColor(room.score) === "#4ade80" ? "rgba(74,222,128,0.92)" : scoreColor(room.score) === "#fb923c" ? "rgba(251,146,60,0.92)" : "rgba(248,113,113,0.92)",
+                  color: "#0a0a0a", padding: "0.15rem 0.5rem", borderRadius: "2px", fontSize: "0.7rem", fontWeight: 700
+                }}>{room.score}/100</div>
+              </div>
+              <div>
+                <div className="tag-row">
+                  {room.pros.map(p => <span key={p} className="tag tag-pro">✓ {p}</span>)}
+                  {room.cons.map(c => <span key={c} className="tag tag-con">✗ {c}</span>)}
+                </div>
+              </div>
             </div>
             <div className="fix-title">Da correggere prima di scattare</div>
             {room.fixes.map((fix, j) => (
