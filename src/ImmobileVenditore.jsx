@@ -174,6 +174,8 @@ const styles = `
   }
 `;
 
+const BASE_URL = "https://strigywjvkhbubyszuxp.supabase.co/storage/v1/object/public/immobili/";
+
 const immobile = {
   titolo: "Appartamento con garage e terrazzino",
   zona: "Milano · San Siro",
@@ -308,17 +310,18 @@ export default function ImmobileVenditore() {
       </nav>
 
       <div className="gallery">
-        <div className="gallery-main">
-          <div className="gallery-placeholder">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-          </div>
+        <div className="gallery-main" style={{ background: `url(${BASE_URL}IMG_4782.jpg) center/cover no-repeat` }}>
           <div className="gallery-badge">
             <span className="badge badge-gold">✦ Vista Venditore</span>
             <span className="badge badge-green">{docsVerified}/{docsTotal} Documenti</span>
           </div>
         </div>
-        <div className="gallery-thumb"><div className="gallery-placeholder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></div></div>
-        <div className="gallery-thumb"><div className="gallery-placeholder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></div></div>
+        <div className="gallery-thumb" style={{ background: `url(${BASE_URL}IMG_4788.jpg) center/cover no-repeat`, position: "relative" }}>
+          <div style={{ position: "absolute", bottom: "0.5rem", right: "0.5rem", background: "rgba(74,222,128,0.9)", color: "#0a0a0a", padding: "0.2rem 0.5rem", borderRadius: "2px", fontSize: "0.7rem", fontWeight: 700 }}>70/100</div>
+        </div>
+        <div className="gallery-thumb" style={{ background: `url(${BASE_URL}IMG_4789.jpg) center/cover no-repeat`, position: "relative" }}>
+          <div style={{ position: "absolute", bottom: "0.5rem", right: "0.5rem", background: "rgba(248,113,113,0.9)", color: "#0a0a0a", padding: "0.2rem 0.5rem", borderRadius: "2px", fontSize: "0.7rem", fontWeight: 700 }}>35/100</div>
+        </div>
       </div>
 
       <div className="page-layout">
