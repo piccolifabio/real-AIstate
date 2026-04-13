@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Routes, Route } from "react-router-dom";
 import ImmobilePage from "./Immobile.jsx";
 import ImmobileVenditore from "./ImmobileVenditore.jsx";
+import MetodologiaPage from "./Metodologia.jsx";
 
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Serif+Display:ital@0;1&display=swap');
@@ -673,6 +674,7 @@ export default function App() {
         <Route path="/scuse" element={<ScusePage />} />
         <Route path="/immobile/:id" element={<ImmobilePage />} />
         <Route path="/immobile/:id/vendi" element={<ImmobileVenditore />} />
+        <Route path="/metodologia" element={<MetodologiaPage />} />
       </Routes>
     </>
   );
