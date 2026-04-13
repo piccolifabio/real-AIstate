@@ -386,6 +386,44 @@ export default function ImmobileVenditore() {
             </div>
           </div>
 
+          {/* PHOTO SCORE */}
+          <div className="improve-section">
+            <h2 className="section-title">Analisi foto AI</h2>
+            <div style={{ background: "var(--warm)", border: "1px solid var(--border)", borderRadius: "3px", padding: "1.5rem", marginBottom: "0.75rem" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
+                <div>
+                  <div style={{ fontSize: "0.68rem", fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--muted)", marginBottom: "0.3rem" }}>📸 Photo Score</div>
+                  <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "2.4rem", color: "#fb923c", lineHeight: 1 }}>58<span style={{ fontSize: "1.2rem", color: "var(--muted)" }}>/100</span></div>
+                  <div style={{ fontSize: "0.78rem", color: "#fb923c", marginTop: "0.2rem" }}>Pubblicabile — ma lascia €€€ sul tavolo</div>
+                </div>
+                <a href="/immobile/1/report-foto" style={{ background: "var(--red)", color: "white", padding: "0.7rem 1.2rem", borderRadius: "2px", fontSize: "0.8rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", textDecoration: "none", whiteSpace: "nowrap" }}>
+                  Vedi report completo →
+                </a>
+              </div>
+              <div style={{ fontSize: "0.82rem", color: "rgba(247,245,240,0.5)", lineHeight: 1.6, marginBottom: "1rem", fontStyle: "italic", fontFamily: "'DM Serif Display', serif" }}>
+                Immobile con buone fondamenta: spazi renovati, materiali di qualità, layout funzionale. Le foto sono scattate da chi ci vive, non da chi vende — con un reshoot lo score sale a 85+.
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                {[
+                  { label: "Studio", score: 70, color: "#4ade80" },
+                  { label: "Soggiorno/Cucina", score: 65, color: "#4ade80" },
+                  { label: "Corridoio", score: 60, color: "#fb923c" },
+                  { label: "Camera", score: 55, color: "#fb923c" },
+                  { label: "Bagni", score: 50, color: "#fb923c" },
+                  { label: "Terrazzo", score: 35, color: "#f87171" },
+                ].map(({ label, score, color }) => (
+                  <div key={label} style={{ display: "flex", alignItems: "center", gap: "0.8rem" }}>
+                    <div style={{ fontSize: "0.75rem", color: "var(--muted)", width: "120px", flexShrink: 0 }}>{label}</div>
+                    <div style={{ flex: 1, height: "4px", background: "rgba(247,245,240,0.06)", borderRadius: "2px" }}>
+                      <div style={{ height: "4px", borderRadius: "2px", background: color, width: `${score}%`, transition: "width 1s ease" }} />
+                    </div>
+                    <div style={{ fontSize: "0.75rem", color, fontWeight: 600, width: "30px", textAlign: "right" }}>{score}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
           {/* MIGLIORA ANNUNCIO */}
           <div className="improve-section">
             <h2 className="section-title">Come migliorare l&apos;annuncio</h2>
