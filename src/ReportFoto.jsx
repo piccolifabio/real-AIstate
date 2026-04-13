@@ -165,7 +165,7 @@ const rooms = [
 ];
 
 const scoreColor = (score) => {
-  if (score >= 65) return "#4ade80";
+  if (score >= 70) return "#4ade80";
   if (score >= 50) return "#fb923c";
   return "#f87171";
 };
