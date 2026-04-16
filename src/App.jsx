@@ -47,7 +47,8 @@ const styles = `
   .btn-outline { background: transparent; color: rgba(247,245,240,0.6); border: 1px solid rgba(247,245,240,0.15); padding: 1rem 2.2rem; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 400; cursor: pointer; border-radius: 2px; transition: all 0.2s; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; }
   .btn-outline:hover { border-color: rgba(247,245,240,0.4); color: var(--white); }
   .hero-cost { margin-top: 4rem; padding-top: 2.5rem; border-top: 1px solid var(--border); display: flex; gap: 3rem; align-items: center; flex-wrap: wrap; }
-  .cost-row { display: flex; gap: 3rem; align-items: center; flex-wrap: wrap; margin-bottom: 2rem; }  .cost-num { font-family: 'Bebas Neue', sans-serif; font-size: 3rem; line-height: 1; color: var(--white); }
+  .cost-row { display: flex; gap: 3rem; align-items: center; flex-wrap: wrap; margin-bottom: 2rem; }
+  .cost-num { font-family: 'Bebas Neue', sans-serif; font-size: 3rem; line-height: 1; color: var(--white); }
   .cost-num.red { color: var(--red); }
   .cost-num.green { color: #4ade80; }
   .cost-label { font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(247,245,240,0.35); margin-top: 0.25rem; }
@@ -170,7 +171,7 @@ const styles = `
   .hall-risposta { font-size: 0.9rem; line-height: 1.6; color: rgba(247,245,240,0.7); padding-left: 2rem; border-left: 1px solid var(--border); }
   .hall-risposta strong { color: var(--white); }
 
-  /* PRIVACY */
+  /* LEGAL */
   .legal-nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 1.2rem 3rem; border-bottom: 1px solid var(--border); background: rgba(10,10,10,0.95); backdrop-filter: blur(16px); }
   .legal-nav-logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; letter-spacing: 0.05em; color: var(--white); text-decoration: none; }
   .legal-nav-logo span { color: var(--red); }
@@ -297,6 +298,13 @@ const buyerSteps = [
   { title: "Chiudi in sicurezza", desc: "Perizia, APE, atti notarili. La piattaforma coordina tutto. Tu arrivi al rogito preparato.", tag: "Rete Pro", tagClass: "tag-pro" },
 ];
 
+const proSteps = [
+  { title: "Entra nella rete certificata", desc: "Crea il tuo profilo verificato su RealAIstate. Notaio, perito, geometra, ingegnere — ogni categoria ha il suo spazio dedicato.", tag: "Gratis", tagClass: "tag-auto" },
+  { title: "Ricevi lead qualificati", desc: "Gli utenti della piattaforma vengono indirizzati ai professionisti nella loro zona. Nessun intermediario nel mezzo — il cliente arriva direttamente a te.", tag: "AI", tagClass: "tag-ai" },
+  { title: "Lavora con clienti preparati", desc: "L'AI prepara il cliente prima che ti contatti — documenti, domande, aspettative chiare. Meno tempo perso, più transazioni concluse.", tag: "AI", tagClass: "tag-ai" },
+  { title: "Pagamenti trasparenti", desc: "Fee fissa per ogni incarico completato. Nessuna percentuale nascosta, nessuna agenzia di mezzo che prende la sua parte.", tag: "Rete Pro", tagClass: "tag-pro" },
+];
+
 const cards = [
   { role: "Stai vendendo", name: "Pubblica. Incassa. Tutto.", desc: "Smetti di cedere migliaia di euro a chi mette il tuo annuncio su un portale.", items: ["Valutazione AI del prezzo di mercato", "Analisi e miglioramento delle foto", "Annuncio generato dall'AI", "Rete di professionisti certificati", "Gestione trattativa diretta"] },
   { role: "Stai comprando", name: "Cerca. Analizza. Decidi.", desc: "Finisci di dipendere da qualcuno che rappresenta il venditore e si fa pagare anche da te.", items: ["Fair Price Score su ogni immobile", "Analisi AI punti di forza e criticità", "Domande consigliate pre-visita", "Connessione diretta col venditore", "Supporto AI dalla proposta al rogito"] },
@@ -339,6 +347,7 @@ function Footer() {
       <div className="footer-logo">Real<span>AI</span>state</div>
       <div className="footer-links">
         <a href="/privacy">Privacy</a>
+        <a href="/termini">Termini</a>
         <a href="/scuse">Le scuse</a>
         <a href="mailto:info@realaistate.ai">Contatti</a>
         <a href="https://www.instagram.com/realaistate.ai" target="_blank" rel="noopener noreferrer" className="footer-ig">
@@ -382,13 +391,6 @@ function CTA() {
     </section>
   );
 }
-
-const proSteps = [
-  { title: "Entra nella rete certificata", desc: "Crea il tuo profilo verificato su RealAIstate. Notaio, perito, geometra, ingegnere — ogni categoria ha il suo spazio dedicato.", tag: "Gratis", tagClass: "tag-auto" },
-  { title: "Ricevi lead qualificati", desc: "Gli utenti della piattaforma vengono indirizzati ai professionisti nella loro zona. Nessun intermediario nel mezzo — il cliente arriva direttamente a te.", tag: "AI", tagClass: "tag-ai" },
-  { title: "Lavora con clienti preparati", desc: "L'AI prepara il cliente prima che ti contatti — documenti, domande, aspettative chiare. Meno tempo perso, più transazioni concluse.", tag: "AI", tagClass: "tag-ai" },
-  { title: "Pagamenti trasparenti", desc: "Fee fissa per ogni incarico completato. Nessuna percentuale nascosta, nessuna agenzia di mezzo che prende la sua parte.", tag: "Rete Pro", tagClass: "tag-pro" },
-];
 
 // ── HOME ──
 function Home() {
@@ -659,7 +661,110 @@ function PrivacyPage() {
       </div>
       <footer className="footer">
         <div className="footer-logo">Real<span>AI</span>state</div>
-        <div className="footer-links"><a href="/privacy">Privacy</a><a href="/scuse">Le scuse</a><a href="mailto:info@realaistate.ai">Contatti</a></div>
+        <div className="footer-links"><a href="/privacy">Privacy</a><a href="/termini">Termini</a><a href="/scuse">Le scuse</a><a href="mailto:info@realaistate.ai">Contatti</a></div>
+        <div>© 2025 RealAIstate</div>
+      </footer>
+    </>
+  );
+}
+
+// ── TERMINI PAGE ──
+function TerminiPage() {
+  useEffect(() => { window.scrollTo(0, 0); }, []);
+  return (
+    <>
+      <nav className="legal-nav">
+        <a href="/" className="legal-nav-logo">Real<span>AI</span>state</a>
+        <a href="/" className="legal-nav-back">← Torna alla home</a>
+      </nav>
+      <div className="legal-container">
+        <div className="legal-eyebrow">Documento legale</div>
+        <h1 className="legal-title">Termini di Servizio</h1>
+        <div className="legal-date">Ultimo aggiornamento: aprile 2025</div>
+
+        <div className="legal-section">
+          <h2>1. Accettazione dei termini</h2>
+          <p>Accedendo a RealAIstate (realaistate.ai) accetti i presenti Termini di Servizio. Se non li accetti, ti invitiamo a non utilizzare il sito.</p>
+          <div className="legal-highlight">
+            <p><strong>RealAIstate è attualmente in fase beta.</strong> Il servizio è in sviluppo attivo. Alcune funzionalità potrebbero non essere disponibili o essere modificate senza preavviso.</p>
+          </div>
+        </div>
+
+        <div className="legal-section">
+          <h2>2. Descrizione del servizio</h2>
+          <p>RealAIstate è una piattaforma digitale che fornisce strumenti basati su intelligenza artificiale per supportare la compravendita immobiliare tra privati. Il servizio include:</p>
+          <ul>
+            <li>Valutazione automatica degli immobili tramite AI (Fair Price Score)</li>
+            <li>Analisi delle fotografie degli immobili</li>
+            <li>Generazione di descrizioni e annunci ottimizzati</li>
+            <li>Connessione con professionisti certificati (notai, periti, geometri)</li>
+            <li>Supporto alla negoziazione tramite strumenti AI</li>
+          </ul>
+        </div>
+
+        <div className="legal-section">
+          <h2>3. Natura informativa del servizio</h2>
+          <p>Le valutazioni, i punteggi e le analisi fornite dall&apos;AI di RealAIstate hanno natura <strong>esclusivamente informativa</strong> e non costituiscono:</p>
+          <ul>
+            <li>Consulenza professionale immobiliare ai sensi di legge</li>
+            <li>Perizia tecnica o stima ufficiale del valore dell&apos;immobile</li>
+            <li>Consulenza legale o fiscale</li>
+            <li>Garanzia sul prezzo di vendita o acquisto</li>
+          </ul>
+          <p>RealAIstate non è un&apos;agenzia immobiliare e non svolge attività di intermediazione ai sensi della Legge 39/1989. L&apos;utente è responsabile delle proprie decisioni di acquisto o vendita.</p>
+        </div>
+
+        <div className="legal-section">
+          <h2>4. Obblighi dell&apos;utente</h2>
+          <p>Utilizzando RealAIstate ti impegni a:</p>
+          <ul>
+            <li>Fornire informazioni veritiere e accurate sugli immobili</li>
+            <li>Non utilizzare il servizio per finalità illecite o fraudolente</li>
+            <li>Non pubblicare contenuti offensivi, discriminatori o lesivi di diritti di terzi</li>
+            <li>Non tentare di aggirare i sistemi di sicurezza della piattaforma</li>
+            <li>Rispettare la normativa vigente in materia di compravendita immobiliare</li>
+          </ul>
+        </div>
+
+        <div className="legal-section">
+          <h2>5. Limitazione di responsabilità</h2>
+          <p>RealAIstate non è responsabile per:</p>
+          <ul>
+            <li>Decisioni di acquisto o vendita prese sulla base delle analisi AI</li>
+            <li>Eventuali discrepanze tra il Fair Price Score e il valore reale di mercato</li>
+            <li>Il comportamento di terzi (acquirenti, venditori, professionisti) connessi tramite la piattaforma</li>
+            <li>Interruzioni del servizio dovute a manutenzione o cause tecniche</li>
+            <li>Perdite economiche derivanti dall&apos;utilizzo del servizio</li>
+          </ul>
+          <p>Il servizio è fornito "così com&apos;è" (as is), senza garanzie esplicite o implicite di risultato.</p>
+        </div>
+
+        <div className="legal-section">
+          <h2>6. Proprietà intellettuale</h2>
+          <p>Tutti i contenuti di RealAIstate — inclusi testi, grafica, codice, loghi e design — sono di proprietà di Fabio Piccoli / RealAIstate e sono protetti dalle leggi sul diritto d&apos;autore. È vietata la riproduzione senza autorizzazione scritta.</p>
+          <p>I contenuti caricati dagli utenti (foto, descrizioni) rimangono di proprietà dell&apos;utente. Caricandoli, l&apos;utente concede a RealAIstate una licenza non esclusiva per utilizzarli ai fini del servizio.</p>
+        </div>
+
+        <div className="legal-section">
+          <h2>7. Modifiche al servizio</h2>
+          <p>RealAIstate si riserva il diritto di modificare, sospendere o interrompere il servizio in qualsiasi momento, con o senza preavviso. In caso di modifiche sostanziali ai presenti Termini, gli utenti registrati saranno informati via email.</p>
+        </div>
+
+        <div className="legal-section">
+          <h2>8. Legge applicabile</h2>
+          <p>I presenti Termini sono regolati dalla legge italiana. Per qualsiasi controversia è competente il Foro di Milano.</p>
+        </div>
+
+        <div className="legal-section">
+          <h2>9. Contatti</h2>
+          <div className="legal-highlight">
+            <p><strong>Fabio Piccoli — RealAIstate</strong><br />Email: <a href="mailto:info@realaistate.ai">info@realaistate.ai</a><br />Sito web: www.realaistate.ai</p>
+          </div>
+        </div>
+      </div>
+      <footer className="footer">
+        <div className="footer-logo">Real<span>AI</span>state</div>
+        <div className="footer-links"><a href="/privacy">Privacy</a><a href="/termini">Termini</a><a href="/scuse">Le scuse</a><a href="mailto:info@realaistate.ai">Contatti</a></div>
         <div>© 2025 RealAIstate</div>
       </footer>
     </>
@@ -673,6 +778,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/termini" element={<TerminiPage />} />
         <Route path="/scuse" element={<ScusePage />} />
         <Route path="/immobile/:id" element={<ImmobilePage />} />
         <Route path="/immobile/:id/vendi" element={<ImmobileVenditore />} />
