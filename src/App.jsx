@@ -678,6 +678,7 @@ export default function App() {
         <Route path="/immobile/:id/vendi" element={<ImmobileVenditore />} />
         <Route path="/immobile/:id/report-foto" element={<ReportFotoPage />} />
         <Route path="/metodologia" element={<MetodologiaPage />} />
+        <Route path="/admin" element={<AdminPage />} />
       </Routes>
     </>
   );
