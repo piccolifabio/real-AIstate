@@ -1,10 +1,6 @@
-// ── ADMIN PAGE ──
-// Aggiungila in App.jsx:
-// 1. Importa: niente da importare, usa solo useState e useEffect già importati
-// 2. Aggiungi la Route: <Route path="/admin" element={<AdminPage />} />
-// 3. Aggiungi su Vercel la variabile d'ambiente ADMIN_SECRET con una password a tua scelta
+import { useState, useEffect } from "react";
 
-function AdminPage() {
+export default function AdminPage() {
   const [password, setPassword] = useState("");
   const [authed, setAuthed] = useState(false);
   const [scuse, setScuse] = useState([]);
@@ -37,6 +33,10 @@ function AdminPage() {
   if (!authed) return (
     <>
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root { --black: #0a0a0a; --white: #f7f5f0; --red: #d93025; --red-dark: #b02020; --muted: #6b6b6b; --surface: #141414; --border: rgba(247,245,240,0.08); }
+        body { font-family: 'DM Sans', sans-serif; background: var(--black); color: var(--white); }
         .admin-login { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--black); }
         .admin-login-box { background: var(--surface); border: 1px solid var(--border); padding: 3rem; border-radius: 4px; width: 100%; max-width: 380px; }
         .admin-login-logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; color: var(--white); margin-bottom: 0.3rem; }
@@ -72,6 +72,10 @@ function AdminPage() {
   return (
     <>
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root { --black: #0a0a0a; --white: #f7f5f0; --red: #d93025; --red-dark: #b02020; --gold: #c9a84c; --muted: #6b6b6b; --surface: #141414; --border: rgba(247,245,240,0.08); }
+        body { font-family: 'DM Sans', sans-serif; background: var(--black); color: var(--white); }
         .admin-wrap { min-height: 100vh; background: var(--black); padding: 2rem 3rem; }
         .admin-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border); }
         .admin-logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; color: var(--white); }
@@ -88,7 +92,7 @@ function AdminPage() {
         .admin-table td { padding: 1.2rem 1rem; border-bottom: 1px solid rgba(247,245,240,0.04); vertical-align: top; font-size: 0.88rem; line-height: 1.6; }
         .admin-table tr:hover td { background: rgba(247,245,240,0.02); }
         .admin-td-date { color: var(--muted); white-space: nowrap; font-size: 0.75rem; }
-        .admin-td-scusa { color: rgba(247,245,240,0.5); font-style: italic; font-family: 'DM Serif Display', serif; max-width: 320px; }
+        .admin-td-scusa { color: rgba(247,245,240,0.5); font-style: italic; max-width: 320px; }
         .admin-td-risposta { color: var(--white); max-width: 460px; }
         .admin-td-fonte { color: var(--muted); font-size: 0.72rem; }
         .admin-empty { text-align: center; color: var(--muted); padding: 4rem; font-size: 0.9rem; }
