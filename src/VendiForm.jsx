@@ -486,7 +486,7 @@ export default function VendiForm() {
             <div className="vendi-doc-required">
               <div className="vendi-doc-required-title">Documenti obbligatori per la pubblicazione</div>
               <div className="vendi-doc-warning">
-                Senza questi documenti il tuo annuncio non viene pubblicato. Non prendiamo scorciatoie — a differenza di alcune agenzie immobiliari, su RealAIstate ogni immobile è verificato.
+                Senza questi documenti il tuo annuncio perde efficacia. Su RealAIstate vogliamo verificare ogni immobile — richiede un attimo più di lavoro prima, ma aumenta la fiducia del compratore, la credibilità dell'annuncio e, alla fine, vende casa più velocemente. 🚀
               </div>
 
               <div style={{ marginBottom: "1rem" }}>
@@ -527,15 +527,39 @@ export default function VendiForm() {
 
             <div className="vendi-doc-soon">
               <div className="vendi-doc-soon-title">Tienili pronti — ti serviranno a breve</div>
-              <div className="vendi-doc-soon-sub">Questi documenti non bloccano la pubblicazione oggi, ma sono obbligatori per arrivare al rogito. Meglio raccoglierli subito.</div>
+              <div className="vendi-doc-soon-sub">Non bloccano la pubblicazione oggi, ma sono obbligatori per arrivare al rogito. Ecco dove trovarli.</div>
               <ul className="vendi-doc-list">
-                <li>Visura catastale — richiedibile online sul sito dell'Agenzia delle Entrate</li>
-                <li>Atto di provenienza — l'atto con cui hai acquistato l'immobile</li>
-                <li>Delibera condominiale (se applicabile) — verbali delle ultime 3 assemblee</li>
-                <li>Certificato di agibilità — rilasciato dal Comune</li>
-                <li>Eventuali concessioni edilizie o permessi di costruire</li>
+                <li>
+                  <span>
+                    <strong style={{color:"var(--white)"}}>Visura catastale</strong> — richiedila gratis online sul sito dell'Agenzia delle Entrate.{" "}
+                    <a href="https://sister.agenziaentrate.gov.it" target="_blank" rel="noopener noreferrer" style={{color:"var(--red)"}}>Vai al sito →</a>
+                  </span>
+                </li>
+                <li>
+                  <span>
+                    <strong style={{color:"var(--white)"}}>Atto di provenienza</strong> — è l'atto notarile con cui hai acquistato l'immobile. Se non lo trovi, puoi richiederlo al notaio che ha rogitato o all'Agenzia delle Entrate tramite ispezione ipotecaria.{" "}
+                    <a href="https://www.agenziaentrate.gov.it/portale/web/guest/schede/istanze/ispezione-ipotecaria" target="_blank" rel="noopener noreferrer" style={{color:"var(--red)"}}>Come richiederla →</a>
+                  </span>
+                </li>
+                <li>
+                  <span>
+                    <strong style={{color:"var(--white)"}}>Delibere condominiali</strong> — chiedi all'amministratore di condominio i verbali delle ultime 3 assemblee e l'estratto del registro delle spese.
+                  </span>
+                </li>
+                <li>
+                  <span>
+                    <strong style={{color:"var(--white)"}}>Certificato di agibilità</strong> — rilasciato dal Comune. Se l'immobile è stato costruito prima del 1967 potrebbe non essere necessario. In caso di dubbio, contatta il tuo Comune o un geometra.
+                  </span>
+                </li>
+                <li>
+                  <span>
+                    <strong style={{color:"var(--white)"}}>Concessioni edilizie / permessi di costruire</strong> — se hai fatto lavori, recupera i titoli abilitativi (SCIA, DIA, permesso di costruire) dal Comune o dall'impresa che ha eseguito i lavori.
+                  </span>
+                </li>
               </ul>
-              <div className="vendi-bold-note"><strong>Non prendiamo scorciatoie.</strong> Un immobile con tutti i documenti in ordine si vende più velocemente e a un prezzo migliore. È matematico.</div>
+              <div className="vendi-bold-note" style={{marginTop:"1rem"}}>
+                Hai dubbi su un documento? <a href="mailto:info@realaistate.ai" style={{color:"var(--red)"}}>Scrivici</a> — ti aiutiamo a capire cosa ti serve.
+              </div>
             </div>
           </>}
 
