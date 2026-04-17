@@ -8,9 +8,8 @@ const vendiStyles = `
   .vendi-h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(3rem, 6vw, 5.5rem); line-height: 0.95; color: var(--white); margin-bottom: 1rem; }
   .vendi-sub { font-size: 1rem; color: rgba(247,245,240,0.45); line-height: 1.7; max-width: 560px; }
 
-  /* STEPPER */
   .vendi-stepper { display: flex; gap: 0; max-width: 760px; margin: 0 auto 3rem; }
-  .vendi-step { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.4rem; cursor: default; }
+  .vendi-step { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.4rem; }
   .vendi-step-num { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue', sans-serif; font-size: 0.9rem; border: 1px solid rgba(247,245,240,0.15); color: rgba(247,245,240,0.3); background: transparent; transition: all 0.3s; }
   .vendi-step.active .vendi-step-num { background: var(--red); border-color: var(--red); color: var(--white); }
   .vendi-step.done .vendi-step-num { background: rgba(217,48,37,0.15); border-color: var(--red); color: var(--red); }
@@ -20,27 +19,42 @@ const vendiStyles = `
   .vendi-step-line { flex: 1; height: 1px; background: rgba(247,245,240,0.1); margin-top: 16px; }
   .vendi-step-line.done { background: var(--red); }
 
-  /* FORM CARD */
   .vendi-card { max-width: 760px; margin: 0 auto; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 3rem; }
   .vendi-card-title { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; color: var(--white); margin-bottom: 0.5rem; }
   .vendi-card-sub { font-size: 0.88rem; color: rgba(247,245,240,0.4); margin-bottom: 2.5rem; line-height: 1.6; }
 
-  /* FIELDS */
   .vendi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; margin-bottom: 1.2rem; }
   .vendi-grid.single { grid-template-columns: 1fr; }
   .vendi-grid.three { grid-template-columns: 1fr 1fr 1fr; }
   .vendi-field { display: flex; flex-direction: column; gap: 0.4rem; }
-  .vendi-label { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(247,245,240,0.5); }
-  .vendi-label span { color: var(--red); }
+  .vendi-label { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(247,245,240,0.5); display: flex; align-items: center; gap: 0.4rem; }
+  .vendi-label span.req { color: var(--red); }
   .vendi-input, .vendi-select { background: rgba(247,245,240,0.04); border: 1px solid rgba(247,245,240,0.1); color: var(--white); font-family: 'DM Sans', sans-serif; font-size: 0.95rem; padding: 0.85rem 1rem; border-radius: 2px; outline: none; transition: border-color 0.2s; width: 100%; }
   .vendi-input:focus, .vendi-select:focus { border-color: var(--red); }
   .vendi-input::placeholder { color: rgba(247,245,240,0.2); }
   .vendi-select option { background: #1a1a1a; }
 
+  /* TOOLTIP */
+  .vendi-tooltip-wrap { position: relative; display: inline-flex; align-items: center; }
+  .vendi-tooltip-btn { width: 16px; height: 16px; border-radius: 50%; border: 1px solid rgba(247,245,240,0.25); background: transparent; color: rgba(247,245,240,0.4); font-size: 0.6rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; flex-shrink: 0; }
+  .vendi-tooltip-btn:hover { border-color: var(--red); color: var(--red); }
+  .vendi-tooltip-box { position: absolute; bottom: 120%; left: 50%; transform: translateX(-50%); background: #2a2a2a; border: 1px solid rgba(247,245,240,0.1); border-radius: 3px; padding: 0.6rem 0.8rem; font-size: 0.75rem; color: rgba(247,245,240,0.7); white-space: nowrap; z-index: 10; pointer-events: none; line-height: 1.5; }
+  .vendi-tooltip-box::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 5px solid transparent; border-top-color: #2a2a2a; }
+
+  /* PERTINENZE */
+  .vendi-pertinenza { background: rgba(247,245,240,0.02); border: 1px solid var(--border); border-radius: 3px; padding: 1.2rem; margin-bottom: 1rem; }
+  .vendi-pertinenza-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0; }
+  .vendi-pertinenza-title { font-size: 0.78rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(247,245,240,0.5); }
+  .vendi-toggle { display: flex; gap: 0; }
+  .vendi-toggle button { padding: 0.3rem 0.9rem; font-family: 'DM Sans', sans-serif; font-size: 0.75rem; font-weight: 600; border: 1px solid rgba(247,245,240,0.15); background: transparent; color: rgba(247,245,240,0.35); cursor: pointer; transition: all 0.2s; }
+  .vendi-toggle button:first-child { border-radius: 2px 0 0 2px; }
+  .vendi-toggle button:last-child { border-radius: 0 2px 2px 0; border-left: none; }
+  .vendi-toggle button.active { background: var(--red); border-color: var(--red); color: var(--white); }
+  .vendi-pertinenza-body { margin-top: 1rem; }
+
   /* DOCUMENTS */
   .vendi-doc-required { background: rgba(217,48,37,0.08); border: 1px solid rgba(217,48,37,0.3); border-radius: 3px; padding: 1.5rem; margin-bottom: 1.5rem; }
   .vendi-doc-required-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; color: var(--white); margin-bottom: 0.3rem; }
-  .vendi-doc-required-sub { font-size: 0.82rem; color: rgba(247,245,240,0.5); margin-bottom: 1.2rem; line-height: 1.5; }
   .vendi-doc-warning { font-size: 0.82rem; font-weight: 600; color: var(--red); margin-bottom: 1.2rem; padding: 0.8rem 1rem; border-left: 3px solid var(--red); background: rgba(217,48,37,0.06); }
   .vendi-doc-soon { background: rgba(247,245,240,0.03); border: 1px solid var(--border); border-radius: 3px; padding: 1.5rem; margin-bottom: 1.5rem; }
   .vendi-doc-soon-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; color: var(--white); margin-bottom: 0.3rem; }
@@ -51,31 +65,25 @@ const vendiStyles = `
   .vendi-bold-note { font-size: 0.8rem; font-style: italic; color: rgba(247,245,240,0.35); margin-top: 0.5rem; }
   .vendi-bold-note strong { color: rgba(247,245,240,0.6); font-style: normal; }
 
-  /* UPLOAD */
   .vendi-upload-area { border: 2px dashed rgba(247,245,240,0.15); border-radius: 3px; padding: 2rem; text-align: center; cursor: pointer; transition: all 0.2s; margin-bottom: 0.8rem; }
   .vendi-upload-area:hover { border-color: var(--red); background: rgba(217,48,37,0.04); }
-  .vendi-upload-area.has-files { border-color: rgba(217,48,37,0.4); background: rgba(217,48,37,0.04); }
   .vendi-upload-icon { font-size: 2rem; margin-bottom: 0.5rem; }
   .vendi-upload-text { font-size: 0.85rem; color: rgba(247,245,240,0.4); }
   .vendi-upload-text strong { color: var(--white); }
-  .vendi-file-list { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 0.8rem; }
-  .vendi-file-item { display: flex; align-items: center; justify-content: space-between; background: rgba(247,245,240,0.04); padding: 0.5rem 0.8rem; border-radius: 2px; font-size: 0.8rem; color: rgba(247,245,240,0.6); }
-  .vendi-file-remove { color: var(--red); cursor: pointer; font-size: 1rem; line-height: 1; }
+  .vendi-file-item { display: flex; align-items: center; justify-content: space-between; background: rgba(247,245,240,0.04); padding: 0.5rem 0.8rem; border-radius: 2px; font-size: 0.8rem; color: rgba(247,245,240,0.6); margin-bottom: 0.4rem; }
+  .vendi-file-remove { color: var(--red); cursor: pointer; font-size: 1rem; }
   .vendi-or { text-align: center; font-size: 0.75rem; color: rgba(247,245,240,0.25); margin: 0.8rem 0; letter-spacing: 0.1em; text-transform: uppercase; }
 
-  /* PHOTOS */
   .vendi-photos-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.8rem; margin-bottom: 1rem; }
   .vendi-photo-thumb { aspect-ratio: 1; border-radius: 2px; overflow: hidden; position: relative; background: rgba(247,245,240,0.04); border: 1px solid var(--border); }
   .vendi-photo-thumb img { width: 100%; height: 100%; object-fit: cover; }
   .vendi-photo-remove { position: absolute; top: 4px; right: 4px; background: rgba(10,10,10,0.8); color: var(--red); border: none; cursor: pointer; width: 20px; height: 20px; border-radius: 50%; font-size: 0.7rem; display: flex; align-items: center; justify-content: center; }
 
-  /* DISPONIBILITÀ */
   .vendi-check-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; margin-top: 0.5rem; }
   .vendi-check-item { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
   .vendi-check-item input { accent-color: var(--red); }
   .vendi-check-item label { font-size: 0.85rem; color: rgba(247,245,240,0.6); cursor: pointer; }
 
-  /* NAVIGATION */
   .vendi-nav { display: flex; justify-content: space-between; align-items: center; margin-top: 2.5rem; padding-top: 2rem; border-top: 1px solid var(--border); }
   .vendi-btn-back { background: transparent; border: 1px solid rgba(247,245,240,0.15); color: rgba(247,245,240,0.5); padding: 0.85rem 1.8rem; font-family: 'DM Sans', sans-serif; font-size: 0.82rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; border-radius: 2px; transition: all 0.2s; }
   .vendi-btn-back:hover { border-color: rgba(247,245,240,0.4); color: var(--white); }
@@ -84,7 +92,6 @@ const vendiStyles = `
   .vendi-btn-next:disabled { opacity: 0.5; cursor: not-allowed; }
   .vendi-step-counter { font-size: 0.75rem; color: rgba(247,245,240,0.3); letter-spacing: 0.1em; }
 
-  /* SUCCESS */
   .vendi-success { max-width: 760px; margin: 0 auto; text-align: center; padding: 4rem 2rem; }
   .vendi-success-icon { font-size: 3rem; margin-bottom: 1.5rem; }
   .vendi-success-title { font-family: 'Bebas Neue', sans-serif; font-size: 3rem; color: var(--white); margin-bottom: 1rem; }
@@ -94,8 +101,6 @@ const vendiStyles = `
   .vendi-success-step { display: flex; gap: 1rem; align-items: flex-start; }
   .vendi-success-step-num { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; color: var(--red); flex-shrink: 0; }
   .vendi-success-step-text { font-size: 0.88rem; color: rgba(247,245,240,0.6); line-height: 1.6; }
-
-  /* ERROR */
   .vendi-error { font-size: 0.8rem; color: var(--red); margin-top: 0.3rem; }
 
   @media (max-width: 900px) {
@@ -105,7 +110,7 @@ const vendiStyles = `
     .vendi-grid.three { grid-template-columns: 1fr 1fr; }
     .vendi-photos-grid { grid-template-columns: repeat(3, 1fr); }
     .vendi-check-grid { grid-template-columns: 1fr 1fr; }
-    .vendi-stepper { overflow-x: auto; padding-bottom: 0.5rem; }
+    .vendi-tooltip-box { white-space: normal; width: 200px; left: 0; transform: none; }
   }
 `;
 
@@ -122,6 +127,52 @@ const DISPONIBILITA = [
   "Sera (17-20)", "Weekend mattina", "Weekend pomeriggio"
 ];
 
+function Tooltip({ text }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="vendi-tooltip-wrap">
+      <button
+        className="vendi-tooltip-btn"
+        onClick={() => setOpen(!open)}
+        onBlur={() => setOpen(false)}
+        type="button"
+      >?</button>
+      {open && <div className="vendi-tooltip-box">{text}</div>}
+    </div>
+  );
+}
+
+function Pertinenza({ title, value, onToggle, metratura, onMetratura, tooltip }) {
+  return (
+    <div className="vendi-pertinenza">
+      <div className="vendi-pertinenza-header">
+        <div className="vendi-pertinenza-title">{title}</div>
+        <div className="vendi-toggle">
+          <button type="button" className={value === "si" ? "active" : ""} onClick={() => onToggle("si")}>Sì</button>
+          <button type="button" className={value === "no" ? "active" : ""} onClick={() => onToggle("no")}>No</button>
+        </div>
+      </div>
+      {value === "si" && (
+        <div className="vendi-pertinenza-body">
+          <div className="vendi-field">
+            <label className="vendi-label">
+              Metratura (mq)
+              {tooltip && <Tooltip text={tooltip} />}
+            </label>
+            <input
+              className="vendi-input"
+              type="number"
+              placeholder="es. 12"
+              value={metratura}
+              onChange={e => onMetratura(e.target.value)}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function VendiForm() {
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -129,34 +180,17 @@ export default function VendiForm() {
   const [error, setError] = useState("");
 
   const [form, setForm] = useState({
-    // Step 0 - Immobile
-    tipologia: "",
-    indirizzo: "",
-    piano: "",
-    ascensore: "",
-    metratura_commerciale: "",
-    metratura_netta: "",
-    vani: "",
-    camere: "",
-    bagni: "",
-    anno_costruzione: "",
-    stato: "",
-    classe_energetica: "",
-    // Step 1 - Prezzo
-    prezzo_desiderato: "",
-    note_prezzo: "",
-    // Step 2 - Foto (files)
+    tipologia: "", indirizzo: "", piano: "", ascensore: "",
+    metratura_commerciale: "", metratura_netta: "",
+    vani: "", camere: "", bagni: "",
+    anno_costruzione: "", stato: "", classe_energetica: "",
+    cantina: "", cantina_mq: "",
+    garage: "", garage_mq: "",
+    prezzo_desiderato: "", note_prezzo: "",
     foto: [],
-    // Step 3 - Documenti
-    planimetria: null,
-    ape: null,
-    // Step 4 - Contatti
-    nome: "",
-    cognome: "",
-    email: "",
-    telefono: "",
-    disponibilita: [],
-    note: "",
+    planimetria: null, ape: null,
+    nome: "", cognome: "", email: "", telefono: "",
+    disponibilita: [], note: "",
   });
 
   const planimetriaRef = useRef();
@@ -179,9 +213,7 @@ export default function VendiForm() {
     setForm(f => ({ ...f, foto: [...f.foto, ...files].slice(0, 20) }));
   };
 
-  const removeFoto = (i) => {
-    setForm(f => ({ ...f, foto: f.foto.filter((_, idx) => idx !== i) }));
-  };
+  const removeFoto = (i) => setForm(f => ({ ...f, foto: f.foto.filter((_, idx) => idx !== i) }));
 
   const handleDocUpload = (key, e) => {
     const file = e.target.files[0];
@@ -207,7 +239,7 @@ export default function VendiForm() {
         else if (k === "planimetria" && v) payload.append("planimetria", v);
         else if (k === "ape" && v) payload.append("ape", v);
         else if (k === "disponibilita") payload.append(k, v.join(", "));
-        else payload.append(k, v);
+        else payload.append(k, v || "");
       });
       const res = await fetch("/api/vendi-submit", { method: "POST", body: payload });
       if (!res.ok) throw new Error();
@@ -251,14 +283,12 @@ export default function VendiForm() {
       <style>{vendiStyles}</style>
       <div className="vendi-page">
 
-        {/* Hero */}
         <div className="vendi-hero">
           <div className="vendi-eyebrow">Vendi il tuo immobile</div>
           <h1 className="vendi-h1">Pubblica il tuo<br />immobile. Gratis.</h1>
           <p className="vendi-sub">Nessuna commissione. Nessuna agenzia. L'AI calcola il prezzo di mercato, analizziamo le tue foto e pubblichiamo il tuo annuncio sui principali portali.</p>
         </div>
 
-        {/* Stepper */}
         <div className="vendi-stepper">
           {STEPS.map((s, i) => (
             <>
@@ -273,7 +303,6 @@ export default function VendiForm() {
           ))}
         </div>
 
-        {/* Card */}
         <div className="vendi-card">
 
           {/* STEP 0 — Immobile */}
@@ -283,24 +312,20 @@ export default function VendiForm() {
 
             <div className="vendi-grid single">
               <div className="vendi-field">
-                <label className="vendi-label">Tipologia <span>*</span></label>
+                <label className="vendi-label">Tipologia <span className="req">*</span></label>
                 <select className="vendi-select" value={form.tipologia} onChange={e => update("tipologia", e.target.value)}>
                   <option value="">Seleziona...</option>
-                  <option>Appartamento</option>
-                  <option>Villa</option>
-                  <option>Villetta a schiera</option>
-                  <option>Attico</option>
-                  <option>Loft</option>
-                  <option>Monolocale</option>
-                  <option>Bilocale</option>
-                  <option>Altro</option>
+                  <option>Appartamento</option><option>Villa</option>
+                  <option>Villetta a schiera</option><option>Attico</option>
+                  <option>Loft</option><option>Monolocale</option>
+                  <option>Bilocale</option><option>Altro</option>
                 </select>
               </div>
             </div>
 
             <div className="vendi-grid single">
               <div className="vendi-field">
-                <label className="vendi-label">Indirizzo completo <span>*</span></label>
+                <label className="vendi-label">Indirizzo completo <span className="req">*</span></label>
                 <input className="vendi-input" placeholder="Via Roma 12, Milano" value={form.indirizzo} onChange={e => update("indirizzo", e.target.value)} />
               </div>
             </div>
@@ -314,19 +339,24 @@ export default function VendiForm() {
                 <label className="vendi-label">Ascensore</label>
                 <select className="vendi-select" value={form.ascensore} onChange={e => update("ascensore", e.target.value)}>
                   <option value="">Seleziona...</option>
-                  <option>Sì</option>
-                  <option>No</option>
+                  <option>Sì</option><option>No</option>
                 </select>
               </div>
             </div>
 
             <div className="vendi-grid">
               <div className="vendi-field">
-                <label className="vendi-label">Metratura commerciale (mq) <span>*</span></label>
+                <label className="vendi-label">
+                  Metratura commerciale (mq) <span className="req">*</span>
+                  <Tooltip text="La metratura commerciale include muri e pertinenze. La trovi nel rogito o in visura. Non sei sicuro? Puoi verificare e modificare dopo." />
+                </label>
                 <input className="vendi-input" placeholder="es. 95" type="number" value={form.metratura_commerciale} onChange={e => update("metratura_commerciale", e.target.value)} />
               </div>
               <div className="vendi-field">
-                <label className="vendi-label">Metratura netta (mq)</label>
+                <label className="vendi-label">
+                  Metratura netta (mq)
+                  <Tooltip text="La superficie calpestabile, senza muri. Di solito è il 75-80% della commerciale. Puoi verificare e modificare dopo." />
+                </label>
                 <input className="vendi-input" placeholder="es. 80" type="number" value={form.metratura_netta} onChange={e => update("metratura_netta", e.target.value)} />
               </div>
             </div>
@@ -362,7 +392,7 @@ export default function VendiForm() {
 
             <div className="vendi-grid single">
               <div className="vendi-field">
-                <label className="vendi-label">Stato dell'immobile <span>*</span></label>
+                <label className="vendi-label">Stato dell'immobile <span className="req">*</span></label>
                 <select className="vendi-select" value={form.stato} onChange={e => update("stato", e.target.value)}>
                   <option value="">Seleziona...</option>
                   <option>Ottimo / ristrutturato</option>
@@ -371,6 +401,27 @@ export default function VendiForm() {
                   <option>In costruzione</option>
                 </select>
               </div>
+            </div>
+
+            {/* PERTINENZE */}
+            <div style={{ marginTop: "1.5rem", marginBottom: "0.5rem" }}>
+              <div style={{ fontSize: "0.7rem", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(247,245,240,0.5)", marginBottom: "0.8rem" }}>Pertinenze</div>
+              <Pertinenza
+                title="Cantina"
+                value={form.cantina}
+                onToggle={v => update("cantina", v)}
+                metratura={form.cantina_mq}
+                onMetratura={v => update("cantina_mq", v)}
+                tooltip="La metratura della cantina. Puoi verificare sulla planimetria catastale e modificare dopo."
+              />
+              <Pertinenza
+                title="Garage / Box auto"
+                value={form.garage}
+                onToggle={v => update("garage", v)}
+                metratura={form.garage_mq}
+                onMetratura={v => update("garage_mq", v)}
+                tooltip="La metratura del garage o box auto. Puoi verificare sulla planimetria catastale e modificare dopo."
+              />
             </div>
           </>}
 
@@ -381,12 +432,12 @@ export default function VendiForm() {
 
             <div className="vendi-grid single">
               <div className="vendi-field">
-                <label className="vendi-label">Prezzo desiderato (€) <span>*</span></label>
+                <label className="vendi-label">Prezzo desiderato (€) <span className="req">*</span></label>
                 <input className="vendi-input" placeholder="es. 320000" type="number" value={form.prezzo_desiderato} onChange={e => update("prezzo_desiderato", e.target.value)} />
               </div>
             </div>
 
-            <div style={{ background: "rgba(247,245,240,0.03)", border: "1px solid var(--border)", borderLeft: "3px solid var(--red)", padding: "1.2rem 1.5rem", borderRadius: "0 2px 2px 0", marginTop: "1rem", marginBottom: "1.5rem" }}>
+            <div style={{ background: "rgba(247,245,240,0.03)", border: "1px solid var(--border)", borderLeft: "3px solid var(--red)", padding: "1.2rem 1.5rem", borderRadius: "0 2px 2px 0", marginBottom: "1.5rem" }}>
               <div style={{ fontSize: "0.82rem", color: "rgba(247,245,240,0.7)", lineHeight: 1.7 }}>
                 <strong style={{ color: "var(--white)" }}>Il Fair Price Score è neutro.</strong><br />
                 L'AI non ha commissioni da incassare. Analizza i dati OMI dell'Agenzia delle Entrate e le transazioni reali nella tua zona. Se il tuo prezzo è in linea, ottimo. Se no, ti diciamo perché — con i dati.
@@ -406,10 +457,7 @@ export default function VendiForm() {
             <div className="vendi-card-title">Le foto</div>
             <div className="vendi-card-sub">Carica almeno 3 foto. L'AI analizzerà luminosità, angolazione e composizione di ogni immagine e ti dirà cosa migliorare prima della pubblicazione.</div>
 
-            <div
-              className={`vendi-upload-area ${form.foto.length > 0 ? "has-files" : ""}`}
-              onClick={() => fotoRef.current.click()}
-            >
+            <div className={`vendi-upload-area ${form.foto.length > 0 ? "has-files" : ""}`} onClick={() => fotoRef.current.click()}>
               <div className="vendi-upload-icon">📷</div>
               <div className="vendi-upload-text">
                 <strong>Clicca per caricare le foto</strong><br />
@@ -428,17 +476,13 @@ export default function VendiForm() {
                 ))}
               </div>
             )}
-
-            {form.foto.length < 3 && (
-              <div className="vendi-error">Carica almeno 3 foto per procedere.</div>
-            )}
+            {form.foto.length < 3 && <div className="vendi-error">Carica almeno 3 foto per procedere.</div>}
           </>}
 
           {/* STEP 3 — Documenti */}
           {step === 3 && <>
             <div className="vendi-card-title">I documenti</div>
 
-            {/* Obbligatori subito */}
             <div className="vendi-doc-required">
               <div className="vendi-doc-required-title">Documenti obbligatori per la pubblicazione</div>
               <div className="vendi-doc-warning">
@@ -446,7 +490,7 @@ export default function VendiForm() {
               </div>
 
               <div style={{ marginBottom: "1rem" }}>
-                <div className="vendi-label" style={{ marginBottom: "0.5rem" }}>Planimetria catastale <span style={{ color: "var(--red)" }}>*</span></div>
+                <div className="vendi-label" style={{ marginBottom: "0.5rem" }}>Planimetria catastale <span className="req">*</span></div>
                 {form.planimetria ? (
                   <div className="vendi-file-item">
                     <span>✓ {form.planimetria.name}</span>
@@ -461,7 +505,7 @@ export default function VendiForm() {
               </div>
 
               <div>
-                <div className="vendi-label" style={{ marginBottom: "0.5rem" }}>APE — Attestato di Prestazione Energetica <span style={{ color: "var(--red)" }}>*</span></div>
+                <div className="vendi-label" style={{ marginBottom: "0.5rem" }}>APE — Attestato di Prestazione Energetica <span className="req">*</span></div>
                 {form.ape ? (
                   <div className="vendi-file-item">
                     <span>✓ {form.ape.name}</span>
@@ -481,10 +525,9 @@ export default function VendiForm() {
               </div>
             </div>
 
-            {/* Documenti a breve */}
             <div className="vendi-doc-soon">
               <div className="vendi-doc-soon-title">Tienili pronti — ti serviranno a breve</div>
-              <div className="vendi-doc-soon-sub">Questi documenti non bloccano la pubblicazione oggi, ma sono obbligatori per arrivare al rogito. Meglio raccoglierli subito — accelera tutto il processo.</div>
+              <div className="vendi-doc-soon-sub">Questi documenti non bloccano la pubblicazione oggi, ma sono obbligatori per arrivare al rogito. Meglio raccoglierli subito.</div>
               <ul className="vendi-doc-list">
                 <li>Visura catastale — richiedibile online sul sito dell'Agenzia delle Entrate</li>
                 <li>Atto di provenienza — l'atto con cui hai acquistato l'immobile</li>
@@ -503,7 +546,7 @@ export default function VendiForm() {
 
             <div className="vendi-grid">
               <div className="vendi-field">
-                <label className="vendi-label">Nome <span>*</span></label>
+                <label className="vendi-label">Nome <span className="req">*</span></label>
                 <input className="vendi-input" placeholder="Mario" value={form.nome} onChange={e => update("nome", e.target.value)} />
               </div>
               <div className="vendi-field">
@@ -514,11 +557,11 @@ export default function VendiForm() {
 
             <div className="vendi-grid">
               <div className="vendi-field">
-                <label className="vendi-label">Email <span>*</span></label>
+                <label className="vendi-label">Email <span className="req">*</span></label>
                 <input className="vendi-input" placeholder="mario@email.it" type="email" value={form.email} onChange={e => update("email", e.target.value)} />
               </div>
               <div className="vendi-field">
-                <label className="vendi-label">Telefono <span>*</span></label>
+                <label className="vendi-label">Telefono <span className="req">*</span></label>
                 <input className="vendi-input" placeholder="+39 333 1234567" value={form.telefono} onChange={e => update("telefono", e.target.value)} />
               </div>
             </div>
@@ -545,19 +588,14 @@ export default function VendiForm() {
             {error && <div className="vendi-error" style={{ marginTop: "1rem" }}>{error}</div>}
           </>}
 
-          {/* NAVIGATION */}
           <div className="vendi-nav">
             <div>
-              {step > 0 && (
-                <button className="vendi-btn-back" onClick={() => setStep(s => s - 1)}>← Indietro</button>
-              )}
+              {step > 0 && <button className="vendi-btn-back" onClick={() => setStep(s => s - 1)}>← Indietro</button>}
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
               <span className="vendi-step-counter">{step + 1} / {STEPS.length}</span>
               {step < STEPS.length - 1 ? (
-                <button className="vendi-btn-next" onClick={() => setStep(s => s + 1)} disabled={!canProceed()}>
-                  Continua →
-                </button>
+                <button className="vendi-btn-next" onClick={() => setStep(s => s + 1)} disabled={!canProceed()}>Continua →</button>
               ) : (
                 <button className="vendi-btn-next" onClick={handleSubmit} disabled={!canProceed() || loading}>
                   {loading ? "Invio in corso..." : "Pubblica il mio immobile →"}
