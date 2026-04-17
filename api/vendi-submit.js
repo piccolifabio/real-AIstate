@@ -2,7 +2,11 @@ export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
 
   try {
-    const dati = req.body;
+    // Leggi il body manualmente
+    const buffers = [];
+    for await (const chunk of req) buffers.push(chunk);
+    const raw = Buffer.concat(buffers).toString("utf8");
+    const dati = JSON.parse(raw);
 
     // Salva in Supabase
     const sbRes = await fetch(`${process.env.SUPABASE_URL}/rest/v1/venditori`, {
@@ -113,7 +117,7 @@ export default async function handler(req, res) {
             <p><strong>Telefono:</strong> ${dati.telefono}</p>
             <p><strong>Indirizzo:</strong> ${dati.indirizzo}</p>
             <p><strong>Tipologia:</strong> ${dati.tipologia} — ${dati.stato}</p>
-            <p><strong>Metratura:</strong> ${dati.metratura_commerciale} mq commerciali${dati.metratura_netta ? ` / ${dati.metratura_netta} mq netti` : ""}</p>
+            <p><strong>Metratura:</strong> ${dati.metratura_commerciale} mq${dati.metratura_netta ? ` / ${dati.metratura_netta} mq netti` : ""}</p>
             <p><strong>Vani:</strong> ${dati.vani || "—"} | Camere: ${dati.camere || "—"} | Bagni: ${dati.bagni || "—"}</p>
             <p><strong>Cantina:</strong> ${dati.cantina === "si" ? `Sì${dati.cantina_mq ? ` (${dati.cantina_mq} mq)` : ""}` : "No"}</p>
             <p><strong>Garage:</strong> ${dati.garage === "si" ? `Sì${dati.garage_mq ? ` (${dati.garage_mq} mq)` : ""}` : "No"}</p>
