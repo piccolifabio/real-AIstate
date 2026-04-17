@@ -229,17 +229,42 @@ export default function VendiForm() {
     return true;
   };
 
+  const uploadFile = async (file, folder) => {
+    const ext = file.name.split(".").pop();
+    const filename = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const res = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/documenti-venditori/${filename}`,
+      {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          "Content-Type": file.type || "application/octet-stream",
+        },
+        body: file,
+      }
+    );
+    if (!res.ok) throw new Error(`Upload fallito: ${file.name}`);
+    return filename;
+  };
+
   const handleSubmit = async () => {
     setLoading(true);
     setError("");
     try {
+      // Upload documenti obbligatori su Supabase Storage
+      const [planimetriaUrl, apeUrl] = await Promise.all([
+        form.planimetria ? uploadFile(form.planimetria, "planimetrie") : Promise.resolve(null),
+        form.ape ? uploadFile(form.ape, "ape") : Promise.resolve(null),
+      ]);
+
       const payload = {
         ...form,
         foto: form.foto.map(f => f.name),
-        planimetria: form.planimetria ? form.planimetria.name : null,
-        ape: form.ape ? form.ape.name : null,
+        planimetria: planimetriaUrl,
+        ape: apeUrl,
         disponibilita: form.disponibilita.join(", "),
       };
+
       const res = await fetch("/api/vendi-submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -247,7 +272,7 @@ export default function VendiForm() {
       });
       if (!res.ok) throw new Error();
       setSubmitted(true);
-    } catch {
+    } catch (e) {
       setError("Qualcosa è andato storto. Riprova o scrivici a info@realaistate.ai");
     }
     setLoading(false);
