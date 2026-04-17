@@ -232,6 +232,7 @@ export default function VendiForm() {
   const uploadFile = async (file, folder) => {
     const ext = file.name.split(".").pop();
     const filename = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    console.log("Uploading:", filename, "to", import.meta.env.VITE_SUPABASE_URL);
     const res = await fetch(
       `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/documenti-venditori/${filename}`,
       {
@@ -243,7 +244,9 @@ export default function VendiForm() {
         body: file,
       }
     );
-    if (!res.ok) throw new Error(`Upload fallito: ${file.name}`);
+    const text = await res.text();
+    console.log("Upload response:", res.status, text);
+    if (!res.ok) throw new Error(`Upload fallito: ${file.name} — ${res.status} ${text}`);
     return filename;
   };
 
@@ -251,11 +254,16 @@ export default function VendiForm() {
     setLoading(true);
     setError("");
     try {
-      // Upload documenti obbligatori su Supabase Storage
+      console.log("Starting submit...");
+      console.log("SUPABASE_URL:", import.meta.env.VITE_SUPABASE_URL);
+      console.log("ANON_KEY present:", !!import.meta.env.VITE_SUPABASE_ANON_KEY);
+
       const [planimetriaUrl, apeUrl] = await Promise.all([
         form.planimetria ? uploadFile(form.planimetria, "planimetrie") : Promise.resolve(null),
         form.ape ? uploadFile(form.ape, "ape") : Promise.resolve(null),
       ]);
+
+      console.log("Files uploaded:", planimetriaUrl, apeUrl);
 
       const payload = {
         ...form,
@@ -270,10 +278,12 @@ export default function VendiForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
+      console.log("API response:", res.status);
       if (!res.ok) throw new Error();
       setSubmitted(true);
     } catch (e) {
-      setError("Qualcosa è andato storto. Riprova o scrivici a info@realaistate.ai");
+      console.error("Submit error:", e);
+      setError(`Qualcosa è andato storto: ${e.message}`);
     }
     setLoading(false);
   };
