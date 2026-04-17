@@ -42,6 +42,8 @@ export default async function handler(req, res) {
         telefono: dati.telefono,
         disponibilita: dati.disponibilita,
         note: dati.note,
+        planimetria_url: dati.planimetria || null,
+        ape_url: dati.ape || null,
         status: "nuovo",
       }),
     });
@@ -134,3 +136,46 @@ export default async function handler(req, res) {
 </table>
 </div>
 `
+
+    // Notifica interna a Fabio
+    await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "api-key": process.env.BREVO_API_KEY,
+      },
+      body: JSON.stringify({
+        sender: { name: "RealAIstate", email: "info@realaistate.ai" },
+        to: [{ email: "info@realaistate.ai", name: "Fabio" }],
+        subject: `🏠 Nuovo venditore — ${dati.indirizzo}`,
+        htmlContent: `
+          <div style="font-family:Arial,sans-serif;max-width:600px;">
+            <h2>Nuovo venditore registrato</h2>
+            <p><strong>Nome:</strong> ${dati.nome} ${dati.cognome || ""}</p>
+            <p><strong>Email:</strong> ${dati.email}</p>
+            <p><strong>Telefono:</strong> ${dati.telefono}</p>
+            <p><strong>Indirizzo:</strong> ${dati.indirizzo}</p>
+            <p><strong>Tipologia:</strong> ${dati.tipologia} — ${dati.stato}</p>
+            <p><strong>Metratura:</strong> ${dati.metratura_commerciale} mq${dati.metratura_netta ? ` / ${dati.metratura_netta} mq netti` : ""}</p>
+            <p><strong>Vani:</strong> ${dati.vani || "—"} | Camere: ${dati.camere || "—"} | Bagni: ${dati.bagni || "—"}</p>
+            <p><strong>Cantina:</strong> ${dati.cantina === "si" ? `Sì${dati.cantina_mq ? ` (${dati.cantina_mq} mq)` : ""}` : "No"}</p>
+            <p><strong>Garage:</strong> ${dati.garage === "si" ? `Sì${dati.garage_mq ? ` (${dati.garage_mq} mq)` : ""}` : "No"}</p>
+            <p><strong>Prezzo desiderato:</strong> € ${parseInt(dati.prezzo_desiderato).toLocaleString("it-IT")}</p>
+            <p><strong>Disponibilità visite:</strong> ${dati.disponibilita || "non specificata"}</p>
+            <p><strong>Note:</strong> ${dati.note || "—"}</p>
+            <hr/>
+            <p><strong>Documenti caricati:</strong></p>
+            <p>→ Planimetria: ${dati.planimetria ? `<a href="${process.env.SUPABASE_URL}/storage/v1/object/documenti-venditori/${dati.planimetria}">Scarica</a>` : "non caricata"}</p>
+            <p>→ APE: ${dati.ape ? `<a href="${process.env.SUPABASE_URL}/storage/v1/object/documenti-venditori/${dati.ape}">Scarica</a>` : "non caricata"}</p>
+          </div>
+        `,
+      }),
+    });
+
+    res.status(200).json({ ok: true });
+
+  } catch (e) {
+    console.error("vendi-submit error:", e);
+    res.status(500).json({ error: "Errore interno" });
+  }
+}
