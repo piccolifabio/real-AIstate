@@ -5,6 +5,7 @@ import ImmobileVenditore from "./ImmobileVenditore.jsx";
 import MetodologiaPage from "./Metodologia.jsx";
 import ReportFotoPage from "./ReportFoto.jsx";
 import AdminPage from "./Admin.jsx";
+import VendiForm from "./VendiForm.jsx";
 
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Serif+Display:ital@0;1&display=swap');
@@ -785,6 +786,7 @@ export default function App() {
         <Route path="/immobile/:id/report-foto" element={<ReportFotoPage />} />
         <Route path="/metodologia" element={<MetodologiaPage />} />
         <Route path="/admin" element={<AdminPage />} />
+        <Route path="/vendi" element={<VendiForm />} />
       </Routes>
     </>
   );
