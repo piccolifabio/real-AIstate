@@ -233,15 +233,18 @@ export default function VendiForm() {
     setLoading(true);
     setError("");
     try {
-      const payload = new FormData();
-      Object.entries(form).forEach(([k, v]) => {
-        if (k === "foto") v.forEach(f => payload.append("foto", f));
-        else if (k === "planimetria" && v) payload.append("planimetria", v);
-        else if (k === "ape" && v) payload.append("ape", v);
-        else if (k === "disponibilita") payload.append(k, v.join(", "));
-        else payload.append(k, v || "");
+      const payload = {
+        ...form,
+        foto: form.foto.map(f => f.name),
+        planimetria: form.planimetria ? form.planimetria.name : null,
+        ape: form.ape ? form.ape.name : null,
+        disponibilita: form.disponibilita.join(", "),
+      };
+      const res = await fetch("/api/vendi-submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
-      const res = await fetch("/api/vendi-submit", { method: "POST", body: payload });
       if (!res.ok) throw new Error();
       setSubmitted(true);
     } catch {
