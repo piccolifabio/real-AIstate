@@ -289,7 +289,7 @@ export default function VendiForm() {
         <div className="vendi-hero">
           <div className="vendi-eyebrow">Vendi il tuo immobile</div>
           <h1 className="vendi-h1">Pubblica il tuo<br />immobile. Gratis.</h1>
-          <p className="vendi-sub">Nessuna commissione. Nessuna agenzia. L'AI calcola il prezzo di mercato, analizziamo le tue foto e pubblichiamo il tuo annuncio sui principali portali.</p>
+          <p className="vendi-sub">Niente agenzia. Niente trattative al ribasso. L'AI calcola il prezzo giusto, analizziamo le tue foto e pubblichiamo il tuo annuncio sui principali portali.</p>
         </div>
 
         <div className="vendi-stepper">
