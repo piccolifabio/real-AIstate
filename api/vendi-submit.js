@@ -97,7 +97,7 @@ export default async function handler(req, res) {
           '<table width="100%" cellpadding="0" cellspacing="0">',
           '<tr><td style="font-family:Arial,sans-serif;font-size:13px;color:#999;padding:5px 0;width:40%;">Tipologia</td><td style="font-family:Arial,sans-serif;font-size:13px;color:#0a0a0a;font-weight:600;padding:5px 0;">' + dati.tipologia + '</td></tr>',
           '<tr><td style="font-family:Arial,sans-serif;font-size:13px;color:#999;padding:5px 0;">Indirizzo</td><td style="font-family:Arial,sans-serif;font-size:13px;color:#0a0a0a;font-weight:600;padding:5px 0;">' + dati.indirizzo + '</td></tr>',
-          '<tr><td style="font-family:Arial,sans-serif;font-size:13px;color:#999;padding:5px 0;">Metratura</td><td style="font-family:Arial,sans-serif;font-size:13px;color:#0a0a0a;font-weight:600;padding:5px 0;">' + dati.metratura_commerciale + ' mq commerciali</td></tr>',
+          '<tr><td style="font-family:Arial,sans-serif;font-size:13px;color:#999;padding:5px 0;">Superficie</td><td style="font-family:Arial,sans-serif;font-size:13px;color:#0a0a0a;font-weight:600;padding:5px 0;">' + dati.superficie_catastale + ' mq catastali</td></tr>',
           '<tr><td style="font-family:Arial,sans-serif;font-size:13px;color:#999;padding:5px 0;">Stato</td><td style="font-family:Arial,sans-serif;font-size:13px;color:#0a0a0a;font-weight:600;padding:5px 0;">' + dati.stato + '</td></tr>',
           '<tr><td style="font-family:Arial,sans-serif;font-size:13px;color:#999;padding:5px 0;">Prezzo desiderato</td><td style="font-family:Arial,sans-serif;font-size:13px;color:#0a0a0a;font-weight:600;padding:5px 0;">&#8364; ' + parseInt(dati.prezzo_desiderato).toLocaleString("it-IT") + '</td></tr>',
           '</table></td></tr></table></td></tr>',
