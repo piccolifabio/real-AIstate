@@ -182,6 +182,11 @@ const immobile = {
   indirizzo: "Via Alfonso Capecelatro, 51",
   prezzo: 400000,
   superficie: 67,
+  superficie_catastale: 69,
+  superficie_calpestabile: 65,
+  riscaldamento: "Autonomo",
+  acqua_calda: "Autonoma",
+  disponibilita_rogito: "Immediata",
   locali: 2,
   bagni: 1,
   piano: "2° su 5",
@@ -252,7 +257,7 @@ function VenditoreChat() {
       const res = await fetch("/api/chat-venditore", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ domanda: userMsg, immobile: { indirizzo: immobile.indirizzo, prezzo: immobile.prezzo, superficie: immobile.superficie, fair_price_score: immobile.scores.prezzo } })
+        body: JSON.stringify({ domanda: userMsg, immobile: { indirizzo: immobile.indirizzo, prezzo: immobile.prezzo, superficie: immobile.superficie_catastale, fair_price_score: immobile.scores.prezzo } })
       });
       const data = await res.json();
       setMessages(prev => [...prev, { role: "ai", text: data.risposta, note: null }]);
@@ -332,9 +337,9 @@ export default function ImmobileVenditore() {
             <h1 className="prop-title">{immobile.titolo}</h1>
             <div style={{ fontSize: "0.85rem", color: "var(--muted)", marginBottom: "1rem" }}>{immobile.indirizzo}</div>
             <div className="prop-price">€ {immobile.prezzo.toLocaleString("it-IT")}</div>
-            <div className="prop-price-sub">€ {Math.round(immobile.prezzo / immobile.superficie).toLocaleString("it-IT")} / m² · Pubblicato il 13 aprile 2025</div>
+            <div className="prop-price-sub">€ {Math.round(immobile.prezzo / immobile.superficie_catastale).toLocaleString("it-IT")} / m² · Pubblicato il 13 aprile 2025</div>
             <div className="prop-specs">
-              <div className="spec"><div className="spec-val">{immobile.superficie} m²</div><div className="spec-label">Superficie</div></div>
+              <div className="spec"><div className="spec-val">{immobile.superficie_catastale} m²</div><div className="spec-label">Superficie</div></div>
               <div className="spec-divider" />
               <div className="spec"><div className="spec-val">{immobile.locali}</div><div className="spec-label">Locali</div></div>
               <div className="spec-divider" />
