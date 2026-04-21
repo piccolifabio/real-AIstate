@@ -352,6 +352,7 @@ function Footer() {
       <div className="footer-links">
         <a href="/privacy">Privacy</a>
         <a href="/termini">Termini</a>
+        <a href="/faq">FAQ</a>
         <a href="/scuse">Le scuse</a>
         <a href="mailto:info@realaistate.ai">Contatti</a>
         <a href="https://www.instagram.com/realaistate.ai" target="_blank" rel="noopener noreferrer" className="footer-ig">
@@ -665,7 +666,7 @@ function PrivacyPage() {
       </div>
       <footer className="footer">
         <div className="footer-logo">Real<span>AI</span>state</div>
-        <div className="footer-links"><a href="/privacy">Privacy</a><a href="/termini">Termini</a><a href="/scuse">Le scuse</a><a href="mailto:info@realaistate.ai">Contatti</a></div>
+        <div className="footer-links"><a href="/privacy">Privacy</a><a href="/termini">Termini</a><a href="/faq">FAQ</a><a href="/scuse">Le scuse</a><a href="mailto:info@realaistate.ai">Contatti</a></div>
         <div>© 2025 RealAIstate</div>
       </footer>
     </>
@@ -768,7 +769,7 @@ function TerminiPage() {
       </div>
       <footer className="footer">
         <div className="footer-logo">Real<span>AI</span>state</div>
-        <div className="footer-links"><a href="/privacy">Privacy</a><a href="/termini">Termini</a><a href="/scuse">Le scuse</a><a href="mailto:info@realaistate.ai">Contatti</a></div>
+        <div className="footer-links"><a href="/privacy">Privacy</a><a href="/termini">Termini</a><a href="/faq">FAQ</a><a href="/scuse">Le scuse</a><a href="mailto:info@realaistate.ai">Contatti</a></div>
         <div>© 2025 RealAIstate</div>
       </footer>
     </>
