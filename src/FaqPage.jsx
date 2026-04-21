@@ -141,7 +141,7 @@ const faqs = [
       },
       {
         q: "RealAIstate è un'agenzia immobiliare?",
-        a: "<strong>No.</strong> RealAIstate non è un'agenzia immobiliare e non svolge attività di intermediazione ai sensi della Legge 39/1989. Siamo una piattaforma tecnologica che fornisce strumenti AI per supportare venditore e compratore in modo autonomo. Non prendiamo commissioni sul prezzo di vendita.",
+        a: "<strong>No.</strong> RealAIstate non è un'agenzia immobiliare e non svolge attività di intermediazione ai sensi della Legge 39/1989. Siamo una piattaforma tecnologica che utilizza l'AI per rendere la compravendita immobiliare più trasparente, veloce e sicura. Le nostre fee sono una frazione di quelle di un'agenzia tradizionale — perché usiamo la tecnologia per eliminare inefficienze e costi inutili, non per replicare un modello che non funziona.",
       },
       {
         q: "Quanto costa usare RealAIstate?",
