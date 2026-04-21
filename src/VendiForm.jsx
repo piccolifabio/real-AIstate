@@ -1,6 +1,9 @@
 import { useState, useRef } from "react";
 
 const vendiStyles = `
+  .vendi-nav-bar { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; padding: 1.2rem 3rem; border-bottom: 1px solid var(--border); background: rgba(10,10,10,0.9); backdrop-filter: blur(16px); }
+  .vendi-nav-logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; letter-spacing: 0.05em; color: var(--white); text-decoration: none; }
+  .vendi-nav-logo span { color: var(--red); }
   .vendi-page { min-height: 100vh; background: var(--black); padding: 7rem 3rem 5rem; }
   .vendi-hero { max-width: 760px; margin: 0 auto 4rem; }
   .vendi-eyebrow { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--red); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.8rem; }
@@ -251,14 +254,20 @@ export default function VendiForm() {
     setLoading(true);
     setError("");
     try {
+      // Upload planimetria e APE
       const [planimetriaUrl, apeUrl] = await Promise.all([
         form.planimetria ? uploadFile(form.planimetria, "planimetrie") : Promise.resolve(null),
         form.ape ? uploadFile(form.ape, "ape") : Promise.resolve(null),
       ]);
 
+      // Upload foto
+      const fotoUrls = await Promise.all(
+        form.foto.map(f => uploadFile(f, "foto"))
+      );
+
       const payload = {
         ...form,
-        foto: form.foto.map(f => f.name),
+        foto: fotoUrls,
         planimetria: planimetriaUrl,
         ape: apeUrl,
         disponibilita: form.disponibilita.join(", "),
@@ -280,6 +289,9 @@ export default function VendiForm() {
   if (submitted) return (
     <>
       <style>{vendiStyles}</style>
+      <nav className="vendi-nav-bar">
+        <a href="/" className="vendi-nav-logo">Real<span>AI</span>state</a>
+      </nav>
       <div className="vendi-page">
         <div className="vendi-success">
           <div className="vendi-success-icon">✓</div>
@@ -308,6 +320,9 @@ export default function VendiForm() {
   return (
     <>
       <style>{vendiStyles}</style>
+      <nav className="vendi-nav-bar">
+        <a href="/" className="vendi-nav-logo">Real<span>AI</span>state</a>
+      </nav>
       <div className="vendi-page">
 
         <div className="vendi-hero">
