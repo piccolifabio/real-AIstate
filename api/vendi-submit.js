@@ -145,6 +145,8 @@ export default async function handler(req, res) {
           "<p><strong>Documenti:</strong></p>",
           "<p>&rarr; Planimetria: " + (dati.planimetria ? '<a href="' + supabaseStorageBase + "/" + dati.planimetria + '">Scarica</a>' : "non caricata") + "</p>",
           "<p>&rarr; APE: " + (dati.ape ? '<a href="' + supabaseStorageBase + "/" + dati.ape + '">Scarica</a>' : "non caricata") + "</p>",
+          "<p><strong>Foto (" + (dati.foto ? dati.foto.length : 0) + "):</strong></p>",
+          (dati.foto && dati.foto.length > 0 ? dati.foto.map(function(f, i) { return "<p>&rarr; <a href='" + supabaseStorageBase + "/" + f + "'>Foto " + (i+1) + "</a></p>"; }).join("") : "<p>Nessuna foto caricata</p>"),
           "</div>",
         ].join(""),
       }),
