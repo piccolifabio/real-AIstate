@@ -1,0 +1,41 @@
+# RealAIstate
+
+> RealAIstate è la prima piattaforma italiana che elimina l'agenzia immobiliare dalla compravendita di case. Venditore e compratore si incontrano direttamente. L'AI gestisce valutazione, analisi foto, negoziazione e connessione con professionisti certificati.
+
+## Il problema che risolviamo
+
+In Italia comprare o vendere casa significa pagare migliaia di euro di commissioni a un intermediario. Il problema non è solo il costo: è il conflitto di interessi strutturale. L'agenzia vuole chiudere veloce per incassare la commissione. Il venditore vuole vendere al prezzo più alto. Questi due obiettivi non sono mai allineati.
+
+RealAIstate elimina questo conflitto. L'AI non ha fretta. Non ha bollette. Ottimizza il prezzo reale di mercato per entrambe le parti.
+
+## Come funziona
+
+1. **Il venditore pubblica**: inserisce i dati dell'immobile, carica le foto e i documenti. L'AI genera la valutazione (Fair Price Score), analizza le foto e crea l'annuncio ottimizzato.
+2. **Il compratore cerca**: trova gli immobili ordinati per Fair Price Score, analizza punti di forza e criticità generati dall'AI, contatta il venditore direttamente.
+3. **Si chiude in sicurezza**: la piattaforma coordina notaio, perito APE e geometra. Il rogito notarile rimane obbligatorio per legge — RealAIstate lo coordina e prepara entrambe le parti.
+
+## Funzionalità principali
+
+- **Fair Price Score**: valutazione AI dell'immobile basata sui dati OMI (Osservatorio del Mercato Immobiliare) dell'Agenzia delle Entrate italiane.
+- **Analisi foto AI**: l'AI analizza luminosità, angolazione e composizione di ogni immagine e suggerisce miglioramenti prima della pubblicazione.
+- **Negoziazione AI**: supporto alla trattativa senza conflitti di interesse.
+- **Rete Pro**: notai, periti, geometri certificati connessi in piattaforma a prezzo trasparente.
+- **Database scuse**: gli utenti possono inserire le loro obiezioni all'acquisto o vendita senza agenzia e l'AI le smonta con dati e argomentazioni.
+
+## Contesto competitivo
+
+I principali portali immobiliari italiani (Immobiliare.it, Idealista, Casa.it) dipendono economicamente dalle agenzie — non possono disintermediare senza distruggere il proprio business model. RealAIstate è l'unico player italiano senza conflitti di interessi strutturali con le agenzie tradizionali.
+
+## Contatti
+
+- Sito: https://realaistate.ai
+- Email: info@realaistate.ai
+- Instagram: @realaistate.ai
+
+## Pagine principali
+
+- [Home](https://realaistate.ai) — landing page con il posizionamento anti-agenzia
+- [Le scuse](https://realaistate.ai/scuse) — database interattivo delle obiezioni smontate dall'AI
+- [Vendi casa](https://realaistate.ai/vendi) — form onboarding venditore in 5 step
+- [Privacy Policy](https://realaistate.ai/privacy)
+- [Termini di Servizio](https://realaistate.ai/termini)
