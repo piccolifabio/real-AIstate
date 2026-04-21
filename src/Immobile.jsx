@@ -68,7 +68,7 @@ const styles = `
   @keyframes pulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.4; transform:scale(1.4); } }
   .ai-summary { font-size: 0.95rem; line-height: 1.7; color: rgba(247,245,240,0.7); margin-bottom: 1.5rem; font-family: 'DM Serif Display', serif; font-style: italic; }
 
-  .ai-scores { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+  .ai-scores { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
   .score-card { background: rgba(247,245,240,0.04); border: 1px solid var(--border); border-radius: 2px; padding: 1rem; text-align: center; }
   .score-num { font-family: 'Bebas Neue', sans-serif; font-size: 2.2rem; line-height: 1; margin-bottom: 0.2rem; }
   .score-num.green { color: var(--green-light); }
@@ -515,7 +515,6 @@ export default function ImmobilePage() {
               {[
                 { label: "Fair Price Score", val: immobile.scores.prezzo, cls: "green", color: "#4ade80" },
                 { label: "Investment Score", val: immobile.scores.investimento, cls: "gold", color: "#c9a84c" },
-                { label: "Qualità Annuncio", val: immobile.scores.qualita, cls: "green", color: "#4ade80" },
               ].map(s => (
                 <div className="score-card" key={s.label}>
                   <div className={`score-num ${s.cls}`}>{s.val}</div>
