@@ -131,8 +131,8 @@ const styles = `
   .sticky-tooltip-wrap { position: relative; display: inline-flex; }
   .sticky-tooltip-btn { width: 14px; height: 14px; border-radius: 50%; border: 1px solid rgba(247,245,240,0.2); background: transparent; color: rgba(247,245,240,0.4); font-size: 0.55rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; }
   .sticky-tooltip-btn:hover { border-color: var(--red); color: var(--red); }
-  .sticky-tooltip-box { position: absolute; bottom: 120%; left: 50%; transform: translateX(-50%); background: #2a2a2a; border: 1px solid rgba(247,245,240,0.1); border-radius: 3px; padding: 0.5rem 0.7rem; font-size: 0.72rem; color: rgba(247,245,240,0.7); white-space: nowrap; z-index: 10; pointer-events: none; line-height: 1.5; }
-  .sticky-tooltip-box::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 4px solid transparent; border-top-color: #2a2a2a; }
+  .sticky-tooltip-box { position: absolute; bottom: 120%; right: 0; left: auto; transform: none; background: #2a2a2a; border: 1px solid rgba(247,245,240,0.1); border-radius: 3px; padding: 0.6rem 0.8rem; font-size: 0.72rem; color: rgba(247,245,240,0.7); white-space: normal; width: 220px; z-index: 100; pointer-events: none; line-height: 1.6; }
+  .sticky-tooltip-box::after { content: ''; position: absolute; top: 100%; right: 6px; left: auto; transform: none; border: 4px solid transparent; border-top-color: #2a2a2a; }
   .sticky-cta { padding: 1.5rem; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 0.75rem; }
   .btn-primary { background: var(--red); color: white; border: none; padding: 0.9rem 1.5rem; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; border-radius: 2px; transition: background 0.2s; width: 100%; }
   .btn-primary:hover { background: var(--red-dark); }
@@ -671,8 +671,7 @@ export default function ImmobilePage() {
             </div>
             <div className="sticky-card-body">
               {[
-                ["Sup. commerciale", `${immobile.superficie} m²`, "La superficie commerciale include muri e pertinenze. Finalmente non devi cercare di scoprirlo da solo 😊"],
-                ["Sup. catastale", `${immobile.superficie_catastale} m²`, "La superficie catastale è quella registrata in visura. Finalmente non devi cercare di scoprirlo da solo 😊"],
+                ["Sup. catastale", `${immobile.superficie_catastale} m²`, "La superficie registrata al catasto. Finalmente non devi cercare di scoprirlo da solo 😊"],
                 ["Sup. calpestabile", `${immobile.superficie_calpestabile} m²`, "La superficie realmente calpestabile, senza muri. Finalmente non devi cercare di scoprirlo da solo 😊"],
                 ["Garage", "20 m² incluso", null],
                 ["Locali", immobile.locali, null],
