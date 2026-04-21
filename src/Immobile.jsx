@@ -270,8 +270,6 @@ const immobile = {
   ],
 };
 
-const deltaLabel = { higher: "▲ +5% vs questo", lower: "▼ -3% vs questo", similar: "≈ Allineato" };
-
 const initialMessages = [
   {
     role: "ai",
@@ -372,6 +370,11 @@ export default function ImmobilePage() {
   const [saved, setSaved] = useState(false);
   const [activeTab, setActiveTab] = useState("analisi");
   const [mapTab, setMapTab] = useState("streetview");
+  const chatRef = useRef(null);
+
+  const scrollToChat = () => {
+    chatRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
@@ -391,8 +394,11 @@ export default function ImmobilePage() {
           <button className="nav-btn" onClick={() => setSaved(!saved)}>
             {saved ? "♥ Salvato" : "♡ Salva"}
           </button>
-          <button className="nav-btn">⤢ Confronta</button>
-          <button className="nav-btn primary">Contatta venditore</button>
+          <div style={{ position: "relative", display: "inline-block" }}>
+            <button className="nav-btn" style={{ opacity: 0.5, cursor: "not-allowed" }} title="Prossimamente">⤢ Confronta</button>
+          </div>
+          <a href="/vendi" className="nav-btn" style={{ color: "var(--red)", borderColor: "var(--red)", textDecoration: "none", display: "inline-flex", alignItems: "center" }}>Vendi casa</a>
+          <button className="nav-btn primary" onClick={scrollToChat}>Contatta venditore</button>
         </div>
       </nav>
 
@@ -453,6 +459,20 @@ export default function ImmobilePage() {
               <div className="spec-divider" />
               <div className="spec"><div className="spec-val">{immobile.anno_ristrutturazione}</div><div className="spec-label">Rist.</div></div>
             </div>
+          </div>
+
+          {/* DESCRIZIONE */}
+          <div style={{ marginBottom: "2rem", paddingBottom: "2rem", borderBottom: "1px solid var(--border)" }}>
+            <h2 className="section-title" style={{ marginBottom: "1rem" }}>Descrizione</h2>
+            <p style={{ fontSize: "0.95rem", lineHeight: "1.8", color: "rgba(247,245,240,0.7)", marginBottom: "1rem" }}>
+              Appartamento ristrutturato nel 2023 al secondo piano di una palazzina con ascensore in Via Alfonso Capecelatro, nel quartiere San Siro. La ristrutturazione è stata eseguita con materiali di qualità: pavimento in legno chiaro, impianti a norma, finiture curate in ogni stanza.
+            </p>
+            <p style={{ fontSize: "0.95rem", lineHeight: "1.8", color: "rgba(247,245,240,0.7)", marginBottom: "1rem" }}>
+              L'appartamento si sviluppa su 67 mq commerciali con doppio bagno — asset raro a Milano — e uno studio indipendente che può essere facilmente convertito in camera ospiti. Il terrazzino privato con doppio accesso dal soggiorno aggiunge uno spazio esterno esclusivo.
+            </p>
+            <p style={{ fontSize: "0.95rem", lineHeight: "1.8", color: "rgba(247,245,240,0.7)" }}>
+              Incluso nel prezzo: garage di 20 mq in proprietà — il cui valore OMI è stimato in €48.000 — e accesso al giardino condominiale. Classe energetica C, spese condominiali €200/mese.
+            </p>
           </div>
 
           {/* AI PANEL */}
@@ -585,7 +605,7 @@ export default function ImmobilePage() {
           </div>
 
           {/* AI CHAT */}
-          <div className="chat-section">
+          <div className="chat-section" ref={chatRef}>
             <h2 className="section-title">Chatta con l&apos;AI — o col venditore</h2>
             <div style={{ fontSize: "0.82rem", color: "var(--muted)", marginBottom: "0.5rem" }}>
               L&apos;AI risponde subito alle domande che conosce. Per tutto il resto, media la conversazione con il venditore — filtrando i toni e proteggendo entrambe le parti.
@@ -661,11 +681,11 @@ export default function ImmobilePage() {
             </div>
 
             <div className="sticky-cta">
-              <button className="btn-primary">Contatta il venditore →</button>
+              <button className="btn-primary" onClick={scrollToChat}>Contatta il venditore →</button>
               <button className="btn-secondary" onClick={() => setSaved(!saved)}>
                 {saved ? "♥ Salvato nella shortlist" : "♡ Aggiungi alla shortlist"}
               </button>
-              <button className="btn-secondary">⤢ Confronta con altri</button>
+              <button className="btn-secondary" style={{ opacity: 0.5, cursor: "not-allowed" }} title="Prossimamente">⤢ Confronta con altri</button>
             </div>
           </div>
         </div>
