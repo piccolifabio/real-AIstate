@@ -126,8 +126,13 @@ const styles = `
   .sticky-card-body { padding: 1.5rem; }
   .sticky-row { display: flex; justify-content: space-between; align-items: center; padding: 0.7rem 0; border-bottom: 1px solid rgba(247,245,240,0.04); font-size: 0.85rem; }
   .sticky-row:last-of-type { border-bottom: none; }
-  .sticky-row-label { color: var(--muted); }
+  .sticky-row-label { color: var(--muted); display: flex; align-items: center; gap: 0.4rem; }
   .sticky-row-val { color: var(--white); font-weight: 500; }
+  .sticky-tooltip-wrap { position: relative; display: inline-flex; }
+  .sticky-tooltip-btn { width: 14px; height: 14px; border-radius: 50%; border: 1px solid rgba(247,245,240,0.2); background: transparent; color: rgba(247,245,240,0.4); font-size: 0.55rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; }
+  .sticky-tooltip-btn:hover { border-color: var(--red); color: var(--red); }
+  .sticky-tooltip-box { position: absolute; bottom: 120%; left: 50%; transform: translateX(-50%); background: #2a2a2a; border: 1px solid rgba(247,245,240,0.1); border-radius: 3px; padding: 0.5rem 0.7rem; font-size: 0.72rem; color: rgba(247,245,240,0.7); white-space: nowrap; z-index: 10; pointer-events: none; line-height: 1.5; }
+  .sticky-tooltip-box::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 4px solid transparent; border-top-color: #2a2a2a; }
   .sticky-cta { padding: 1.5rem; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 0.75rem; }
   .btn-primary { background: var(--red); color: white; border: none; padding: 0.9rem 1.5rem; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; border-radius: 2px; transition: background 0.2s; width: 100%; }
   .btn-primary:hover { background: var(--red-dark); }
@@ -210,6 +215,8 @@ const immobile = {
   indirizzo: "Via Alfonso Capecelatro, 51",
   prezzo: 400000,
   superficie: 67,
+  superficie_catastale: 69,
+  superficie_calpestabile: 65,
   locali: 2,
   bagni: 1,
   piano: "2° su 5",
@@ -221,6 +228,9 @@ const immobile = {
   spese_condominio: 200,
   anno_costruzione: 2010,
   anno_ristrutturazione: 2023,
+  riscaldamento: "Autonomo",
+  acqua_calda: "Autonoma",
+  disponibilita_rogito: "Immediata",
   scores: {
     prezzo: 88,
     investimento: 81,
@@ -279,6 +289,16 @@ const initialMessages = [
 ];
 
 const deltaLabel = { higher: "▲ +5% vs questo", lower: "▼ -3% vs questo", similar: "≈ Allineato" };
+
+function StickyTooltip({ text }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="sticky-tooltip-wrap">
+      <button className="sticky-tooltip-btn" onClick={() => setOpen(!open)} onBlur={() => setOpen(false)} type="button">?</button>
+      {open && <div className="sticky-tooltip-box">{text}</div>}
+    </div>
+  );
+}
 
 function AiChat() {
   const [messages, setMessages] = useState(initialMessages);
@@ -651,21 +671,29 @@ export default function ImmobilePage() {
             </div>
             <div className="sticky-card-body">
               {[
-                ["Superficie", `${immobile.superficie} m²`],
-                ["Garage", "20 m² incluso"],
-                ["Locali", immobile.locali],
-                ["Bagni", immobile.bagni],
-                ["Piano", immobile.piano],
-                ["Ascensore", immobile.ascensore ? "Sì" : "No"],
-                ["Terrazzino", "Privato"],
-                ["Giardino", "Condominiale"],
-                ["Classe energetica", `Cl. ${immobile.classe_energetica}`],
-                ["Anno costruzione", immobile.anno_costruzione],
-                ["Ristrutturazione", immobile.anno_ristrutturazione],
-                ["Spese condominiali", `€ ${immobile.spese_condominio}/mese`],
-              ].map(([k, v]) => (
+                ["Sup. commerciale", `${immobile.superficie} m²`, "La superficie commerciale include muri e pertinenze. Finalmente non devi cercare di scoprirlo da solo 😊"],
+                ["Sup. catastale", `${immobile.superficie_catastale} m²`, "La superficie catastale è quella registrata in visura. Finalmente non devi cercare di scoprirlo da solo 😊"],
+                ["Sup. calpestabile", `${immobile.superficie_calpestabile} m²`, "La superficie realmente calpestabile, senza muri. Finalmente non devi cercare di scoprirlo da solo 😊"],
+                ["Garage", "20 m² incluso", null],
+                ["Locali", immobile.locali, null],
+                ["Bagni", immobile.bagni, null],
+                ["Piano", immobile.piano, null],
+                ["Ascensore", immobile.ascensore ? "Sì" : "No", null],
+                ["Terrazzino", "Privato", null],
+                ["Giardino", "Condominiale", null],
+                ["Riscaldamento", immobile.riscaldamento, null],
+                ["Acqua calda", immobile.acqua_calda, null],
+                ["Classe energetica", `Cl. ${immobile.classe_energetica}`, null],
+                ["Anno costruzione", immobile.anno_costruzione, null],
+                ["Ristrutturazione", immobile.anno_ristrutturazione, null],
+                ["Spese condominiali", `€ ${immobile.spese_condominio}/mese`, null],
+                ["Disponibilità rogito", immobile.disponibilita_rogito, null],
+              ].map(([k, v, tooltip]) => (
                 <div className="sticky-row" key={k}>
-                  <span className="sticky-row-label">{k}</span>
+                  <span className="sticky-row-label">
+                    {k}
+                    {tooltip && <StickyTooltip text={tooltip} />}
+                  </span>
                   <span className="sticky-row-val">{v}</span>
                 </div>
               ))}
