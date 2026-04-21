@@ -131,7 +131,7 @@ const styles = `
   .sticky-tooltip-wrap { position: relative; display: inline-flex; }
   .sticky-tooltip-btn { width: 14px; height: 14px; border-radius: 50%; border: 1px solid rgba(247,245,240,0.2); background: transparent; color: rgba(247,245,240,0.4); font-size: 0.55rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; }
   .sticky-tooltip-btn:hover { border-color: var(--red); color: var(--red); }
-  .sticky-tooltip-box { position: absolute; bottom: 120%; right: 100%; left: auto; transform: translateX(20px); background: #2a2a2a; border: 1px solid rgba(247,245,240,0.1); border-radius: 3px; padding: 0.6rem 0.8rem; font-size: 0.72rem; color: rgba(247,245,240,0.7); white-space: nowrap; z-index: 100; pointer-events: none; line-height: 1.6; }
+  .sticky-tooltip-box { position: absolute; bottom: 130%; left: 50%; transform: translateX(-50%); background: #2a2a2a; border: 1px solid rgba(247,245,240,0.1); border-radius: 3px; padding: 0.5rem 0.8rem; font-size: 0.72rem; color: rgba(247,245,240,0.7); white-space: nowrap; z-index: 9999; pointer-events: none; line-height: 1.6; }
   .sticky-tooltip-box::after { content: ''; position: absolute; top: 100%; right: 6px; left: auto; transform: none; border: 4px solid transparent; border-top-color: #2a2a2a; }
   .sticky-cta { padding: 1.5rem; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 0.75rem; }
   .btn-primary { background: var(--red); color: white; border: none; padding: 0.9rem 1.5rem; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; border-radius: 2px; transition: background 0.2s; width: 100%; }
@@ -467,9 +467,9 @@ export default function ImmobilePage() {
             <h1 className="prop-title">{immobile.titolo}</h1>
             <div style={{ fontSize: "0.85rem", color: "var(--muted)", marginBottom: "1rem" }}>{immobile.indirizzo}</div>
             <div className="prop-price">€ {immobile.prezzo.toLocaleString("it-IT")}</div>
-            <div className="prop-price-sub">€ {Math.round(immobile.prezzo / immobile.superficie).toLocaleString("it-IT")} / m² · Spese cond. €{immobile.spese_condominio}/mese</div>
+            <div className="prop-price-sub">€ {Math.round(immobile.prezzo / immobile.superficie_catastale).toLocaleString("it-IT")} / m² · Spese cond. €{immobile.spese_condominio}/mese</div>
             <div className="prop-specs">
-              <div className="spec"><div className="spec-val">{immobile.superficie} m²</div><div className="spec-label">Superficie</div></div>
+              <div className="spec"><div className="spec-val">{immobile.superficie_catastale} m²</div><div className="spec-label">Superficie</div></div>
               <div className="spec-divider" />
               <div className="spec"><div className="spec-val">{immobile.locali}</div><div className="spec-label">Locali</div></div>
               <div className="spec-divider" />
@@ -490,7 +490,7 @@ export default function ImmobilePage() {
               Appartamento ristrutturato nel 2023 al secondo piano di una palazzina con ascensore in Via Alfonso Capecelatro, nel quartiere San Siro. La ristrutturazione è stata eseguita con materiali di qualità: pavimento in legno chiaro, impianti a norma, finiture curate in ogni stanza.
             </p>
             <p style={{ fontSize: "0.95rem", lineHeight: "1.8", color: "rgba(247,245,240,0.7)", marginBottom: "1rem" }}>
-              L'appartamento si sviluppa su 67 mq commerciali con doppio bagno — asset raro a Milano — e uno studio indipendente che può essere facilmente convertito in camera ospiti. Il terrazzino privato con doppio accesso dal soggiorno aggiunge uno spazio esterno esclusivo.
+              L'appartamento si sviluppa su 69 mq catastali (65 mq calpestabili) con doppio bagno — asset raro a Milano — e uno studio indipendente che può essere facilmente convertito in camera ospiti. Il terrazzino privato con doppio accesso dal soggiorno aggiunge uno spazio esterno esclusivo.
             </p>
             <p style={{ fontSize: "0.95rem", lineHeight: "1.8", color: "rgba(247,245,240,0.7)" }}>
               Incluso nel prezzo: garage di 20 mq in proprietà — il cui valore OMI è stimato in €48.000 — e accesso al giardino condominiale. Classe energetica C, spese condominiali €200/mese.
@@ -658,12 +658,12 @@ export default function ImmobilePage() {
           <div className="sticky-card">
             <div className="sticky-card-top">
               <div className="sticky-price">€ {immobile.prezzo.toLocaleString("it-IT")}</div>
-              <div className="sticky-price-sub">€ {Math.round(immobile.prezzo / immobile.superficie).toLocaleString("it-IT")} / m²</div>
+              <div className="sticky-price-sub">€ {Math.round(immobile.prezzo / immobile.superficie_catastale).toLocaleString("it-IT")} / m²</div>
             </div>
             <div className="sticky-card-body">
               {[
-                ["Sup. catastale", `${immobile.superficie_catastale} m²`, "La superficie registrata al catasto. Finalmente non devi cercare di scoprirlo da solo 😊"],
-                ["Sup. calpestabile", `${immobile.superficie_calpestabile} m²`, "La superficie realmente calpestabile, senza muri. Finalmente non devi cercare di scoprirlo da solo 😊"],
+                ["Sup. catastale", `${immobile.superficie_catastale} m²`, "Registrata al catasto — nessuna sorpresa 😊"],
+                ["Sup. calpestabile", `${immobile.superficie_calpestabile} m²`, "Quello che calpesti davvero, senza muri 😊"],
                 ["Garage", "20 m²", null],
                 ["Locali", immobile.locali, null],
                 ["Bagni", immobile.bagni, null],
