@@ -119,11 +119,11 @@ const styles = `
 
   /* RIGHT COLUMN — STICKY CARD */
   .right-col { position: relative; }
-  .sticky-card { position: sticky; top: 6rem; background: var(--warm); border: 1px solid var(--border); border-radius: 3px; overflow: hidden; }
-  .sticky-card-top { background: rgba(247,245,240,0.03); padding: 1.5rem; border-bottom: 1px solid var(--border); }
+  .sticky-card { position: sticky; top: 6rem; background: var(--warm); border: 1px solid var(--border); border-radius: 3px; overflow: visible; }
+  .sticky-card-top { background: rgba(247,245,240,0.03); padding: 1.5rem; border-bottom: 1px solid var(--border); border-radius: 3px 3px 0 0; }
   .sticky-price { font-family: 'Bebas Neue', sans-serif; font-size: 2.4rem; color: var(--white); line-height: 1; }
   .sticky-price-sub { font-size: 0.78rem; color: var(--muted); margin-top: 0.3rem; }
-  .sticky-card-body { padding: 1.5rem; }
+  .sticky-card-body { padding: 1.5rem; overflow: visible; }
   .sticky-row { display: flex; justify-content: space-between; align-items: center; padding: 0.7rem 0; border-bottom: 1px solid rgba(247,245,240,0.04); font-size: 0.85rem; }
   .sticky-row:last-of-type { border-bottom: none; }
   .sticky-row-label { color: var(--muted); display: flex; align-items: center; gap: 0.4rem; }
