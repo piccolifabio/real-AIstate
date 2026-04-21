@@ -37,14 +37,12 @@ const vendiStyles = `
   .vendi-input::placeholder { color: rgba(247,245,240,0.2); }
   .vendi-select option { background: #1a1a1a; }
 
-  /* TOOLTIP */
   .vendi-tooltip-wrap { position: relative; display: inline-flex; align-items: center; }
   .vendi-tooltip-btn { width: 16px; height: 16px; border-radius: 50%; border: 1px solid rgba(247,245,240,0.25); background: transparent; color: rgba(247,245,240,0.4); font-size: 0.6rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; flex-shrink: 0; }
   .vendi-tooltip-btn:hover { border-color: var(--red); color: var(--red); }
   .vendi-tooltip-box { position: absolute; bottom: 120%; left: 50%; transform: translateX(-50%); background: #2a2a2a; border: 1px solid rgba(247,245,240,0.1); border-radius: 3px; padding: 0.6rem 0.8rem; font-size: 0.75rem; color: rgba(247,245,240,0.7); white-space: nowrap; z-index: 10; pointer-events: none; line-height: 1.5; }
   .vendi-tooltip-box::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 5px solid transparent; border-top-color: #2a2a2a; }
 
-  /* PERTINENZE */
   .vendi-pertinenza { background: rgba(247,245,240,0.02); border: 1px solid var(--border); border-radius: 3px; padding: 1.2rem; margin-bottom: 1rem; }
   .vendi-pertinenza-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0; }
   .vendi-pertinenza-title { font-size: 0.78rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(247,245,240,0.5); }
@@ -55,7 +53,6 @@ const vendiStyles = `
   .vendi-toggle button.active { background: var(--red); border-color: var(--red); color: var(--white); }
   .vendi-pertinenza-body { margin-top: 1rem; }
 
-  /* DOCUMENTS */
   .vendi-doc-required { background: rgba(217,48,37,0.08); border: 1px solid rgba(217,48,37,0.3); border-radius: 3px; padding: 1.5rem; margin-bottom: 1.5rem; }
   .vendi-doc-required-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; color: var(--white); margin-bottom: 0.3rem; }
   .vendi-doc-warning { font-size: 0.82rem; font-weight: 600; color: var(--red); margin-bottom: 1.2rem; padding: 0.8rem 1rem; border-left: 3px solid var(--red); background: rgba(217,48,37,0.06); }
@@ -134,12 +131,7 @@ function Tooltip({ text }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="vendi-tooltip-wrap">
-      <button
-        className="vendi-tooltip-btn"
-        onClick={() => setOpen(!open)}
-        onBlur={() => setOpen(false)}
-        type="button"
-      >?</button>
+      <button className="vendi-tooltip-btn" onClick={() => setOpen(!open)} onBlur={() => setOpen(false)} type="button">?</button>
       {open && <div className="vendi-tooltip-box">{text}</div>}
     </div>
   );
@@ -158,17 +150,8 @@ function Pertinenza({ title, value, onToggle, metratura, onMetratura, tooltip })
       {value === "si" && (
         <div className="vendi-pertinenza-body">
           <div className="vendi-field">
-            <label className="vendi-label">
-              Metratura (mq)
-              {tooltip && <Tooltip text={tooltip} />}
-            </label>
-            <input
-              className="vendi-input"
-              type="number"
-              placeholder="es. 12"
-              value={metratura}
-              onChange={e => onMetratura(e.target.value)}
-            />
+            <label className="vendi-label">Metratura (mq) {tooltip && <Tooltip text={tooltip} />}</label>
+            <input className="vendi-input" type="number" placeholder="es. 12" value={metratura} onChange={e => onMetratura(e.target.value)} />
           </div>
         </div>
       )}
@@ -184,11 +167,17 @@ export default function VendiForm() {
 
   const [form, setForm] = useState({
     tipologia: "", indirizzo: "", piano: "", ascensore: "",
-    metratura_commerciale: "", metratura_netta: "",
+    superficie_catastale: "", superficie_calpestabile: "",
     vani: "", camere: "", bagni: "",
-    anno_costruzione: "", stato: "", classe_energetica: "",
+    anno_costruzione: "", anno_ristrutturazione: "",
+    stato: "", classe_energetica: "",
+    riscaldamento: "", acqua_calda: "",
+    spese_condominio: "",
+    terrazzo: "", terrazzo_mq: "",
+    giardino: "",
     cantina: "", cantina_mq: "",
     garage: "", garage_mq: "",
+    disponibilita_rogito: "",
     prezzo_desiderato: "", note_prezzo: "",
     foto: [],
     planimetria: null, ape: null,
@@ -224,7 +213,7 @@ export default function VendiForm() {
   };
 
   const canProceed = () => {
-    if (step === 0) return form.tipologia && form.indirizzo && form.metratura_commerciale && form.stato;
+    if (step === 0) return form.tipologia && form.indirizzo && form.superficie_catastale && form.stato;
     if (step === 1) return form.prezzo_desiderato;
     if (step === 2) return form.foto.length >= 3;
     if (step === 3) return form.planimetria && form.ape;
@@ -254,17 +243,11 @@ export default function VendiForm() {
     setLoading(true);
     setError("");
     try {
-      // Upload planimetria e APE
       const [planimetriaUrl, apeUrl] = await Promise.all([
         form.planimetria ? uploadFile(form.planimetria, "planimetrie") : Promise.resolve(null),
         form.ape ? uploadFile(form.ape, "ape") : Promise.resolve(null),
       ]);
-
-      // Upload foto
-      const fotoUrls = await Promise.all(
-        form.foto.map(f => uploadFile(f, "foto"))
-      );
-
+      const fotoUrls = await Promise.all(form.foto.map(f => uploadFile(f, "foto")));
       const payload = {
         ...form,
         foto: fotoUrls,
@@ -272,7 +255,6 @@ export default function VendiForm() {
         ape: apeUrl,
         disponibilita: form.disponibilita.join(", "),
       };
-
       const res = await fetch("/api/vendi-submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -298,18 +280,9 @@ export default function VendiForm() {
           <h1 className="vendi-success-title">Ci siamo.<br /><span>Quasi.</span></h1>
           <p className="vendi-success-sub">Abbiamo ricevuto tutto. Ti abbiamo inviato una email di conferma con il riepilogo e i prossimi passi.</p>
           <div className="vendi-success-steps">
-            <div className="vendi-success-step">
-              <div className="vendi-success-step-num">01</div>
-              <div className="vendi-success-step-text">Analizziamo i tuoi dati e calcoliamo il Fair Price Score del tuo immobile.</div>
-            </div>
-            <div className="vendi-success-step">
-              <div className="vendi-success-step-num">02</div>
-              <div className="vendi-success-step-text">Ti contatteremo entro 24 ore per confermare i dettagli e raccogliere i documenti mancanti.</div>
-            </div>
-            <div className="vendi-success-step">
-              <div className="vendi-success-step-num">03</div>
-              <div className="vendi-success-step-text">Il tuo annuncio viene pubblicato su RealAIstate e sui principali portali immobiliari.</div>
-            </div>
+            <div className="vendi-success-step"><div className="vendi-success-step-num">01</div><div className="vendi-success-step-text">Analizziamo i tuoi dati e calcoliamo il Fair Price Score del tuo immobile.</div></div>
+            <div className="vendi-success-step"><div className="vendi-success-step-num">02</div><div className="vendi-success-step-text">Ti contatteremo entro 24 ore per confermare i dettagli e raccogliere i documenti mancanti.</div></div>
+            <div className="vendi-success-step"><div className="vendi-success-step-num">03</div><div className="vendi-success-step-text">Il tuo annuncio viene pubblicato su RealAIstate e sui principali portali immobiliari.</div></div>
           </div>
           <a href="/" className="btn-red">Torna alla home</a>
         </div>
@@ -338,9 +311,7 @@ export default function VendiForm() {
                 <div className="vendi-step-num">{i < step ? "✓" : i + 1}</div>
                 <div className="vendi-step-label">{s.label}</div>
               </div>
-              {i < STEPS.length - 1 && (
-                <div key={`line-${i}`} className={`vendi-step-line ${i < step ? "done" : ""}`} />
-              )}
+              {i < STEPS.length - 1 && <div key={`line-${i}`} className={`vendi-step-line ${i < step ? "done" : ""}`} />}
             </>
           ))}
         </div>
@@ -389,17 +360,17 @@ export default function VendiForm() {
             <div className="vendi-grid">
               <div className="vendi-field">
                 <label className="vendi-label">
-                  Metratura commerciale (mq) <span className="req">*</span>
-                  <Tooltip text="La metratura commerciale include muri e pertinenze. La trovi nel rogito o in visura. Non sei sicuro? Puoi verificare e modificare dopo." />
+                  Superficie catastale (mq) <span className="req">*</span>
+                  <Tooltip text="Registrata al catasto — la trovi nella visura o nel rogito. Puoi modificarla dopo." />
                 </label>
-                <input className="vendi-input" placeholder="es. 95" type="number" value={form.metratura_commerciale} onChange={e => update("metratura_commerciale", e.target.value)} />
+                <input className="vendi-input" placeholder="es. 90" type="number" value={form.superficie_catastale} onChange={e => update("superficie_catastale", e.target.value)} />
               </div>
               <div className="vendi-field">
                 <label className="vendi-label">
-                  Metratura netta (mq)
-                  <Tooltip text="La superficie calpestabile, senza muri. Di solito è il 75-80% della commerciale. Puoi verificare e modificare dopo." />
+                  Superficie calpestabile (mq)
+                  <Tooltip text="Quello che calpesti davvero, senza muri. Di solito è il 75-80% della catastale. Puoi modificarla dopo." />
                 </label>
-                <input className="vendi-input" placeholder="es. 80" type="number" value={form.metratura_netta} onChange={e => update("metratura_netta", e.target.value)} />
+                <input className="vendi-input" placeholder="es. 75" type="number" value={form.superficie_calpestabile} onChange={e => update("superficie_calpestabile", e.target.value)} />
               </div>
             </div>
 
@@ -424,15 +395,19 @@ export default function VendiForm() {
                 <input className="vendi-input" placeholder="es. 1985" type="number" value={form.anno_costruzione} onChange={e => update("anno_costruzione", e.target.value)} />
               </div>
               <div className="vendi-field">
+                <label className="vendi-label">Anno di ristrutturazione</label>
+                <input className="vendi-input" placeholder="es. 2020 (se applicabile)" type="number" value={form.anno_ristrutturazione} onChange={e => update("anno_ristrutturazione", e.target.value)} />
+              </div>
+            </div>
+
+            <div className="vendi-grid">
+              <div className="vendi-field">
                 <label className="vendi-label">Classe energetica</label>
                 <select className="vendi-select" value={form.classe_energetica} onChange={e => update("classe_energetica", e.target.value)}>
                   <option value="">Seleziona...</option>
                   {["A4","A3","A2","A1","B","C","D","E","F","G"].map(c => <option key={c}>{c}</option>)}
                 </select>
               </div>
-            </div>
-
-            <div className="vendi-grid single">
               <div className="vendi-field">
                 <label className="vendi-label">Stato dell'immobile <span className="req">*</span></label>
                 <select className="vendi-select" value={form.stato} onChange={e => update("stato", e.target.value)}>
@@ -445,16 +420,65 @@ export default function VendiForm() {
               </div>
             </div>
 
+            <div className="vendi-grid">
+              <div className="vendi-field">
+                <label className="vendi-label">Riscaldamento</label>
+                <select className="vendi-select" value={form.riscaldamento} onChange={e => update("riscaldamento", e.target.value)}>
+                  <option value="">Seleziona...</option>
+                  <option>Autonomo</option>
+                  <option>Centralizzato</option>
+                  <option>Teleriscaldamento</option>
+                  <option>Pompa di calore</option>
+                  <option>Assente</option>
+                </select>
+              </div>
+              <div className="vendi-field">
+                <label className="vendi-label">Acqua calda</label>
+                <select className="vendi-select" value={form.acqua_calda} onChange={e => update("acqua_calda", e.target.value)}>
+                  <option value="">Seleziona...</option>
+                  <option>Autonoma</option>
+                  <option>Centralizzata</option>
+                  <option>Boiler elettrico</option>
+                  <option>Solare termico</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="vendi-grid">
+              <div className="vendi-field">
+                <label className="vendi-label">Spese condominiali (€/mese)</label>
+                <input className="vendi-input" placeholder="es. 150" type="number" value={form.spese_condominio} onChange={e => update("spese_condominio", e.target.value)} />
+              </div>
+              <div className="vendi-field">
+                <label className="vendi-label">Disponibilità al rogito</label>
+                <select className="vendi-select" value={form.disponibilita_rogito} onChange={e => update("disponibilita_rogito", e.target.value)}>
+                  <option value="">Seleziona...</option>
+                  <option>Immediata</option>
+                  <option>Entro 3 mesi</option>
+                  <option>Entro 6 mesi</option>
+                  <option>Da concordare</option>
+                </select>
+              </div>
+            </div>
+
             {/* PERTINENZE */}
             <div style={{ marginTop: "1.5rem", marginBottom: "0.5rem" }}>
               <div style={{ fontSize: "0.7rem", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(247,245,240,0.5)", marginBottom: "0.8rem" }}>Pertinenze</div>
+              <Pertinenza
+                title="Terrazzo / Balcone"
+                value={form.terrazzo}
+                onToggle={v => update("terrazzo", v)}
+                metratura={form.terrazzo_mq}
+                onMetratura={v => update("terrazzo_mq", v)}
+                tooltip="La metratura del terrazzo o balcone. Puoi modificarla dopo."
+              />
               <Pertinenza
                 title="Cantina"
                 value={form.cantina}
                 onToggle={v => update("cantina", v)}
                 metratura={form.cantina_mq}
                 onMetratura={v => update("cantina_mq", v)}
-                tooltip="La metratura della cantina. Puoi verificare sulla planimetria catastale e modificare dopo."
+                tooltip="La metratura della cantina. Puoi modificarla dopo."
               />
               <Pertinenza
                 title="Garage / Box auto"
@@ -462,8 +486,18 @@ export default function VendiForm() {
                 onToggle={v => update("garage", v)}
                 metratura={form.garage_mq}
                 onMetratura={v => update("garage_mq", v)}
-                tooltip="La metratura del garage o box auto. Puoi verificare sulla planimetria catastale e modificare dopo."
+                tooltip="La metratura del garage. Incluso nel prezzo dell'immobile."
               />
+              <div className="vendi-pertinenza">
+                <div className="vendi-pertinenza-header">
+                  <div className="vendi-pertinenza-title">Giardino</div>
+                  <div className="vendi-toggle">
+                    <button type="button" className={form.giardino === "privato" ? "active" : ""} onClick={() => update("giardino", "privato")}>Privato</button>
+                    <button type="button" className={form.giardino === "condominiale" ? "active" : ""} onClick={() => update("giardino", "condominiale")}>Condominiale</button>
+                    <button type="button" className={form.giardino === "no" ? "active" : ""} onClick={() => update("giardino", "no")}>No</button>
+                  </div>
+                </div>
+              </div>
             </div>
           </>}
 
@@ -489,7 +523,7 @@ export default function VendiForm() {
             <div className="vendi-grid single">
               <div className="vendi-field">
                 <label className="vendi-label">Note sul prezzo</label>
-                <input className="vendi-input" placeholder="es. Prezzo trattabile, incluso box auto..." value={form.note_prezzo} onChange={e => update("note_prezzo", e.target.value)} />
+                <input className="vendi-input" placeholder="es. Prezzo trattabile..." value={form.note_prezzo} onChange={e => update("note_prezzo", e.target.value)} />
               </div>
             </div>
           </>}
@@ -571,33 +605,11 @@ export default function VendiForm() {
               <div className="vendi-doc-soon-title">Tienili pronti — ti serviranno a breve</div>
               <div className="vendi-doc-soon-sub">Non bloccano la pubblicazione oggi, ma sono obbligatori per arrivare al rogito. Ecco dove trovarli.</div>
               <ul className="vendi-doc-list">
-                <li>
-                  <span>
-                    <strong style={{color:"var(--white)"}}>Visura catastale</strong> — richiedila gratis online sul sito dell'Agenzia delle Entrate.{" "}
-                    <a href="https://sister.agenziaentrate.gov.it" target="_blank" rel="noopener noreferrer" style={{color:"var(--red)"}}>Vai al sito →</a>
-                  </span>
-                </li>
-                <li>
-                  <span>
-                    <strong style={{color:"var(--white)"}}>Atto di provenienza</strong> — è l'atto notarile con cui hai acquistato l'immobile. Se non lo trovi, puoi richiederlo al notaio che ha rogitato o all'Agenzia delle Entrate tramite ispezione ipotecaria.{" "}
-                    <a href="https://www.agenziaentrate.gov.it/portale/web/guest/schede/istanze/ispezione-ipotecaria" target="_blank" rel="noopener noreferrer" style={{color:"var(--red)"}}>Come richiederla →</a>
-                  </span>
-                </li>
-                <li>
-                  <span>
-                    <strong style={{color:"var(--white)"}}>Delibere condominiali</strong> — chiedi all'amministratore di condominio i verbali delle ultime 3 assemblee e l'estratto del registro delle spese.
-                  </span>
-                </li>
-                <li>
-                  <span>
-                    <strong style={{color:"var(--white)"}}>Certificato di agibilità</strong> — rilasciato dal Comune. Se l'immobile è stato costruito prima del 1967 potrebbe non essere necessario. In caso di dubbio, contatta il tuo Comune o un geometra.
-                  </span>
-                </li>
-                <li>
-                  <span>
-                    <strong style={{color:"var(--white)"}}>Concessioni edilizie / permessi di costruire</strong> — se hai fatto lavori, recupera i titoli abilitativi (SCIA, DIA, permesso di costruire) dal Comune o dall'impresa che ha eseguito i lavori.
-                  </span>
-                </li>
+                <li><span><strong style={{color:"var(--white)"}}>Visura catastale</strong> — richiedila gratis online. <a href="https://sister.agenziaentrate.gov.it" target="_blank" rel="noopener noreferrer" style={{color:"var(--red)"}}>Vai al sito →</a></span></li>
+                <li><span><strong style={{color:"var(--white)"}}>Atto di provenienza</strong> — l'atto notarile di acquisto. Se non lo trovi, richiedilo al notaio o tramite ispezione ipotecaria. <a href="https://www.agenziaentrate.gov.it/portale/web/guest/schede/istanze/ispezione-ipotecaria" target="_blank" rel="noopener noreferrer" style={{color:"var(--red)"}}>Come richiederla →</a></span></li>
+                <li><span><strong style={{color:"var(--white)"}}>Delibere condominiali</strong> — chiedi all'amministratore i verbali delle ultime 3 assemblee.</span></li>
+                <li><span><strong style={{color:"var(--white)"}}>Certificato di agibilità</strong> — rilasciato dal Comune. Non necessario per immobili pre-1967.</span></li>
+                <li><span><strong style={{color:"var(--white)"}}>Concessioni edilizie</strong> — se hai fatto lavori, recupera i titoli abilitativi (SCIA, DIA, permesso di costruire).</span></li>
               </ul>
               <div className="vendi-bold-note" style={{marginTop:"1rem"}}>
                 Hai dubbi su un documento? <a href="mailto:info@realaistate.ai" style={{color:"var(--red)"}}>Scrivici</a> — ti aiutiamo a capire cosa ti serve.
