@@ -278,6 +278,8 @@ const initialMessages = [
   }
 ];
 
+const deltaLabel = { higher: "▲ +5% vs questo", lower: "▼ -3% vs questo", similar: "≈ Allineato" };
+
 function AiChat() {
   const [messages, setMessages] = useState(initialMessages);
   const [input, setInput] = useState("");
