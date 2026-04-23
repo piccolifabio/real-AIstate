@@ -186,8 +186,17 @@ const STEPS_COMPRATORE = [
     agency_desc: "Le criticità non vengono mai citate. Le domande scomode vengono eluse. L'agente è lì per chiudere, non per aiutarti a decidere bene.",
     agency_cost: "Informazione di parte, filtrata dall'interesse dell'agente",
   },
-  {
+    {
     num: "03",
+    title: "Verifica la tua affordability",
+    desc: "Prima di innamorarti di una casa, scopri se puoi davvero permettertela. La chat AI di RealAIstate ti fa le domande giuste — reddito, risparmi, rate esistenti, situazione lavorativa — e ti dice in pochi minuti se sei in linea per un mutuo e quanto puoi spendere. Zero giudizi, zero impegni.",
+    highlight: "Arrivi alla trattativa già sapendo cosa puoi offrire. Nessuna sorpresa a ridosso del rogito.",
+    agency_title: "L'agente ti porta a vedere case e ti fa fare offerte — senza mai verificare se puoi permettertele",
+    agency_desc: "La verifica del mutuo arriva tardi, spesso dopo il compromesso. Se la banca dice no, hai già versato la caparra e sei in una situazione complicata.",
+    agency_cost: "Caparra a rischio se il mutuo viene negato dopo l'offerta",
+  },
+  {
+    num: "04",
     title: "Contatta il venditore",
     desc: "Parli direttamente con il venditore attraverso la chat mediata di RealAIstate. L'AI facilita la conversazione, filtra i toni e protegge entrambe le parti. Nessun intermediario che gestisce le informazioni nel proprio interesse.",
     highlight: "Comunicazione diretta, trasparente, mediata dall'AI — non da chi prende commissione.",
@@ -196,7 +205,7 @@ const STEPS_COMPRATORE = [
     agency_cost: "Zero accesso diretto al venditore",
   },
   {
-    num: "04",
+    num: "05",
     title: "Fai la tua offerta",
     desc: "Compila e firma digitalmente la proposta d'acquisto direttamente in piattaforma. Il prezzo è supportato dall'AI con dati di mercato reali. La proposta è legalmente valida ai sensi dell'art. 1341-1342 c.c. — nessuna carta, nessun assegno all'agenzia.",
     highlight: "La tua offerta è documentata, tracciabile e firmata digitalmente. Nessun agente che gestisce i tuoi soldi.",
@@ -205,7 +214,7 @@ const STEPS_COMPRATORE = [
     agency_cost: "Assegno consegnato all'agente prima dell'accettazione",
   },
   {
-    num: "05",
+    num: "06",
     title: "La caparra in sicurezza",
     desc: "Scegli tu come gestire la caparra: escrow digitale (conto di terze parti regolamentato) o notaio come depositario fiduciario. I fondi sono bloccati e protetti fino al rogito. Se la trattativa salta per colpa del venditore, ricevi il doppio della caparra — per legge.",
     highlight: "Fondi protetti, tracciabili, in un conto regolamentato. Nessun agente coinvolto.",
@@ -214,7 +223,7 @@ const STEPS_COMPRATORE = [
     agency_cost: "Fondi non in conto regolamentato",
   },
   {
-    num: "06",
+    num: "07",
     title: "Il rogito — l'unica firma fisica",
     desc: "Il notaio è obbligatorio per legge ed è lui che garantisce la validità del trasferimento di proprietà. RealAIstate coordina tutto: prenota il notaio, verifica i documenti, ti prepara all'appuntamento. È l'unica ora che passi fisicamente in uno studio notarile.",
     highlight: "Stessa garanzia legale dell'agenzia. Ma risparmi €4.500–9.000 di commissione dal tuo lato.",
