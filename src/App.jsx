@@ -324,7 +324,7 @@ function Nav() {
         <div style={{width: "1.5rem"}}></div>
         <ul className="nav-links">
           <li><a href="/come-funziona">Come funziona</a></li>
-          <li></li>
+          <li><a href="/scuse">Le scuse</a></li>
           <li style={{flex: 1}}></li>
           <li><a href="/immobile/1">Compra casa</a></li>
           <li><a href="/vendi">Vendi casa</a></li>
