@@ -341,6 +341,10 @@ function AiChat() {
   const [messages, setMessages] = useState(initialMessages);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [nome, setNome] = useState("");
+  const [email, setEmail] = useState("");
+  const [identified, setIdentified] = useState(false);
+  const [sessioneId] = useState(() => `sess_${Date.now()}_${Math.random().toString(36).slice(2)}`);
   const bottomRef = useRef(null);
 
   useEffect(() => {
@@ -360,11 +364,15 @@ function AiChat() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           domanda: userMsg,
+          sessione_id: sessioneId,
+          compratore_nome: nome || null,
+          compratore_email: email || null,
           immobile: {
+            id: immobile.id,
             indirizzo: immobile.indirizzo,
             zona: immobile.zona,
             prezzo: immobile.prezzo,
-            superficie: immobile.superficie,
+            superficie: immobile.superficie_catastale,
             locali: immobile.locali,
             piano: immobile.piano,
             classe_energetica: immobile.classe_energetica,
@@ -390,6 +398,35 @@ function AiChat() {
 
   return (
     <div className="chat-box">
+      {!identified && (
+        <div style={{ padding: "1.2rem 1.5rem", borderBottom: "1px solid var(--border)", background: "rgba(247,245,240,0.02)" }}>
+          <div style={{ fontSize: "0.72rem", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--muted)", marginBottom: "0.8rem" }}>
+            Lascia i tuoi dati per ricevere eventuali risposte del venditore
+          </div>
+          <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+            <input
+              style={{ flex: 1, minWidth: "120px", background: "rgba(247,245,240,0.04)", border: "1px solid var(--border)", color: "var(--white)", fontFamily: "DM Sans, sans-serif", fontSize: "0.85rem", padding: "0.6rem 0.8rem", borderRadius: "2px", outline: "none" }}
+              placeholder="Nome (opzionale)"
+              value={nome}
+              onChange={e => setNome(e.target.value)}
+            />
+            <input
+              style={{ flex: 2, minWidth: "180px", background: "rgba(247,245,240,0.04)", border: "1px solid var(--border)", color: "var(--white)", fontFamily: "DM Sans, sans-serif", fontSize: "0.85rem", padding: "0.6rem 0.8rem", borderRadius: "2px", outline: "none" }}
+              placeholder="Email (per ricevere le risposte)"
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+            />
+            <button
+              type="button"
+              onClick={() => setIdentified(true)}
+              style={{ background: "var(--red)", border: "none", color: "white", padding: "0.6rem 1.2rem", fontFamily: "DM Sans, sans-serif", fontSize: "0.8rem", fontWeight: 600, cursor: "pointer", borderRadius: "2px" }}
+            >
+              Continua →
+            </button>
+          </div>
+        </div>
+      )}
       <div className="chat-messages">
         {messages.map((m, i) => (
           <div className={`chat-msg ${m.role}`} key={i}>
