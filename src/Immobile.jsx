@@ -37,7 +37,7 @@ const styles = `
   .gallery-badge { position: absolute; bottom: 1.5rem; left: 1.5rem; z-index: 2; display: flex; gap: 0.5rem; flex-wrap: wrap; }
   .badge { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.8rem; border-radius: 2px; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
   .badge-verified { background: var(--green); color: white; }
-  .badge-score { background: var(--gold); color: var(--black); }
+  .badge-score { background: var(--green); color: white; }
   .badge-new { background: var(--red); color: white; }
   .gallery-count { position: absolute; bottom: 1.5rem; right: 1.5rem; z-index: 2; background: rgba(10,10,10,0.8); color: white; padding: 0.4rem 0.8rem; border-radius: 2px; font-size: 0.75rem; font-weight: 500; }
 
