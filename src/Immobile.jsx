@@ -180,6 +180,31 @@ const styles = `
   .chat-dot:nth-child(3) { animation-delay: 0.4s; }
   @keyframes bounce { 0%,80%,100% { transform: scale(0.6); opacity: 0.3; } 40% { transform: scale(1); opacity: 1; } }
 
+  /* AFFORDABILITY */
+  .afford-section { margin-bottom: 2rem; }
+  .afford-box { background: var(--warm); border: 1px solid var(--border); border-radius: 3px; overflow: hidden; }
+  .afford-header { background: rgba(45,106,79,0.12); border-bottom: 1px solid rgba(45,106,79,0.2); padding: 1.2rem 1.5rem; display: flex; align-items: center; gap: 0.8rem; }
+  .afford-header-icon { font-size: 1.2rem; }
+  .afford-header-text { flex: 1; }
+  .afford-header-title { font-size: 0.82rem; font-weight: 600; color: var(--green-light); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 0.2rem; }
+  .afford-header-sub { font-size: 0.75rem; color: rgba(247,245,240,0.4); line-height: 1.4; }
+  .afford-messages { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; min-height: 220px; max-height: 380px; overflow-y: auto; }
+  .afford-msg { display: flex; flex-direction: column; gap: 0.3rem; max-width: 85%; }
+  .afford-msg.ai { align-self: flex-start; }
+  .afford-msg.user { align-self: flex-end; }
+  .afford-msg-sender { font-size: 0.65rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+  .afford-msg.ai .afford-msg-sender { color: var(--green-light); }
+  .afford-msg.user .afford-msg-sender { color: var(--muted); text-align: right; }
+  .afford-msg-bubble { padding: 0.8rem 1rem; border-radius: 2px; font-size: 0.88rem; line-height: 1.6; }
+  .afford-msg.ai .afford-msg-bubble { background: rgba(45,106,79,0.1); color: rgba(247,245,240,0.8); border-left: 2px solid var(--green-light); }
+  .afford-msg.user .afford-msg-bubble { background: rgba(247,245,240,0.06); color: rgba(247,245,240,0.8); border-right: 2px solid rgba(247,245,240,0.2); }
+  .afford-input-row { display: flex; gap: 0; border-top: 1px solid var(--border); }
+  .afford-input { flex: 1; background: transparent; border: none; padding: 1rem 1.2rem; color: var(--white); font-family: 'DM Sans', sans-serif; font-size: 0.88rem; outline: none; }
+  .afford-input::placeholder { color: rgba(247,245,240,0.2); }
+  .afford-send { background: var(--green); border: none; color: white; padding: 1rem 1.5rem; font-family: 'DM Sans', sans-serif; font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: background 0.2s; letter-spacing: 0.06em; }
+  .afford-send:hover:not(:disabled) { background: var(--green-dark, #1e4d38); }
+  .afford-send:disabled { opacity: 0.4; cursor: not-allowed; }
+
   /* FOOTER */
   .footer { background: var(--black); padding: 2rem 3rem; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--border); font-size: 0.75rem; color: rgba(247,245,240,0.2); margin-top: 4rem; }
   .footer-logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; color: rgba(247,245,240,0.4); }
@@ -395,6 +420,117 @@ function AiChat() {
         <button className="chat-send" onClick={send} disabled={loading || !input.trim()}>
           Invia →
         </button>
+      </div>
+    </div>
+  );
+}
+
+function AffordabilityChat({ immobile }) {
+  const [messages, setMessages] = useState([]);
+  const [apiMessages, setApiMessages] = useState([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [started, setStarted] = useState(false);
+  const bottomRef = useRef(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loading]);
+
+  const start = async () => {
+    setStarted(true);
+    setLoading(true);
+    try {
+      const res = await fetch("/api/chat-affordability", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: [], immobile: { indirizzo: immobile.indirizzo, prezzo: immobile.prezzo, zona: immobile.zona } }),
+      });
+      const data = await res.json();
+      setMessages([{ role: "ai", text: data.risposta }]);
+      setApiMessages([{ role: "assistant", content: data.risposta }]);
+    } catch {
+      setMessages([{ role: "ai", text: "Errore di connessione. Riprova." }]);
+    }
+    setLoading(false);
+  };
+
+  const send = async () => {
+    if (!input.trim() || loading) return;
+    const userText = input.trim();
+    setInput("");
+    const newUserMsg = { role: "user", content: userText };
+    const updatedApi = [...apiMessages, newUserMsg];
+    setMessages(prev => [...prev, { role: "user", text: userText }]);
+    setApiMessages(updatedApi);
+    setLoading(true);
+    try {
+      const res = await fetch("/api/chat-affordability", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: updatedApi, immobile: { indirizzo: immobile.indirizzo, prezzo: immobile.prezzo, zona: immobile.zona } }),
+      });
+      const data = await res.json();
+      setMessages(prev => [...prev, { role: "ai", text: data.risposta }]);
+      setApiMessages(prev => [...prev, { role: "assistant", content: data.risposta }]);
+    } catch {
+      setMessages(prev => [...prev, { role: "ai", text: "Errore di connessione. Riprova." }]);
+    }
+    setLoading(false);
+  };
+
+  if (!started) {
+    return (
+      <div className="afford-box">
+        <div className="afford-header">
+          <div className="afford-header-icon">◎</div>
+          <div className="afford-header-text">
+            <div className="afford-header-title">Verifica la tua capacità d'acquisto</div>
+            <div className="afford-header-sub">5 domande. Risposta immediata. Zero impegni.</div>
+          </div>
+        </div>
+        <div style={{ padding: "2rem 1.5rem", textAlign: "center" }}>
+          <p style={{ fontSize: "0.88rem", color: "rgba(247,245,240,0.5)", lineHeight: "1.7", marginBottom: "1.5rem", maxWidth: "420px", margin: "0 auto 1.5rem" }}>
+            L'AI ti fa 5 domande sulla tua situazione finanziaria e ti dice subito se puoi permetterti questo immobile — e a quali banche rivolgerti.
+          </p>
+          <button onClick={start} style={{ background: "var(--green)", color: "white", border: "none", padding: "0.85rem 2rem", borderRadius: "2px", fontFamily: "DM Sans, sans-serif", fontSize: "0.85rem", fontWeight: 600, cursor: "pointer", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+            Inizia la verifica →
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="afford-box">
+      <div className="afford-header">
+        <div className="afford-header-icon">◎</div>
+        <div className="afford-header-text">
+          <div className="afford-header-title">Verifica la tua capacità d'acquisto</div>
+          <div className="afford-header-sub">Rispondi alle domande — l'AI elabora la tua situazione in tempo reale.</div>
+        </div>
+      </div>
+      <div className="afford-messages">
+        {messages.map((m, i) => (
+          <div className={`afford-msg ${m.role}`} key={i}>
+            <div className="afford-msg-sender">{m.role === "ai" ? "✦ AI RealAIstate" : "Tu"}</div>
+            <div className="afford-msg-bubble">{m.text}</div>
+          </div>
+        ))}
+        {loading && (
+          <div className="afford-msg ai">
+            <div className="afford-msg-sender">✦ AI RealAIstate</div>
+            <div className="chat-typing">
+              <div className="chat-dot" /><div className="chat-dot" /><div className="chat-dot" />
+              <span style={{ fontSize: "0.75rem", color: "var(--muted)", fontStyle: "italic" }}>Elaboro...</span>
+            </div>
+          </div>
+        )}
+        <div ref={bottomRef} />
+      </div>
+      <div className="afford-input-row">
+        <input className="afford-input" placeholder="Rispondi qui..." value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === "Enter" && send()} />
+        <button className="afford-send" onClick={send} disabled={loading || !input.trim()}>Invia →</button>
       </div>
     </div>
   );
@@ -631,6 +767,15 @@ export default function ImmobilePage() {
               <span>Ogni messaggio è revisionato dall&apos;AI prima di essere consegnato. Nessuna sorpresa, nessuna tensione.</span>
             </div>
             <AiChat />
+          </div>
+
+          {/* AFFORDABILITY */}
+          <div className="afford-section">
+            <h2 className="section-title">Puoi permetterti questa casa?</h2>
+            <div style={{ fontSize: "0.82rem", color: "var(--muted)", marginBottom: "1.2rem" }}>
+              Verifica subito la tua capacità d'acquisto con l'AI. 5 domande, risposta immediata. RealAIstate ti mette poi in contatto con le banche più adeguate alla tua situazione.
+            </div>
+            <AffordabilityChat immobile={immobile} />
           </div>
 
           {/* COMPARABLES */}
