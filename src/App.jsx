@@ -418,7 +418,6 @@ function Home() {
         <p className="hero-sub">La piattaforma AI per comprare e vendere casa senza agenzia. Valutazione, documenti, professionisti e mediazione — tutto incluso. Anche il risparmio. In trasparenza.</p>
         <div className="hero-actions">
           <a href="/scuse" className="btn-red">Smonta la tua scusa →</a>
-          <a href="/immobile/1" className="btn-outline"><span>→</span> Vedi una scheda immobile</a>
         </div>
         <div className="hero-cost">
           <div style={{ width: "100%" }}>
