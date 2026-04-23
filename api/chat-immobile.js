@@ -47,7 +47,7 @@ Fair Price Score: ${immobile.fair_price_score}/100
   };
 
   // Send email notification when forwarding
-  const sendForwardEmail = async (domandaOriginale, rispostaAI) => {
+  const sendForwardEmail = async (domandaOriginale, rispostaAI, nomeComp, emailComp) => {
     try {
       await fetch("https://api.brevo.com/v3/smtp/email", {
         method: "POST",
@@ -58,6 +58,7 @@ Fair Price Score: ${immobile.fair_price_score}/100
         body: JSON.stringify({
           sender: { name: "RealAIstate Chat", email: "info@realaistate.ai" },
           to: [{ email: "info@realaistate.ai", name: "RealAIstate" }],
+          replyTo: emailComp ? { email: emailComp, name: nomeComp || "Compratore" } : undefined,
           subject: `💬 Domanda da inoltrare al venditore — Immobile ${immobile.indirizzo}`,
           htmlContent: `
             <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
@@ -69,7 +70,7 @@ Fair Price Score: ${immobile.fair_price_score}/100
               <div style="padding:30px;background:#f9f9f9;">
                 <h2 style="color:#0a0a0a;">Domanda da inoltrare al venditore</h2>
                 <p><strong>Immobile:</strong> ${immobile.indirizzo}</p>
-                <p><strong>Compratore:</strong> ${compratore_nome || "Anonimo"} — ${compratore_email || "email non fornita"}</p>
+                <p><strong>Compratore:</strong> ${nomeComp || "Anonimo"} — ${emailComp || "email non fornita"}</p>
                 <p><strong>Sessione:</strong> ${sessione_id}</p>
                 <hr/>
                 <p><strong>Domanda del compratore:</strong></p>
@@ -77,7 +78,7 @@ Fair Price Score: ${immobile.fair_price_score}/100
                 <p><strong>Risposta AI inviata:</strong></p>
                 <blockquote style="border-left:3px solid #6b6b6b;padding-left:15px;color:#555;">${rispostaAI}</blockquote>
                 <hr/>
-                <p style="color:#666;font-size:13px;">Rispondi a <a href="mailto:${compratore_email}">${compratore_email || "compratore"}</a> entro 24 ore.</p>
+                <p style="color:#666;font-size:13px;">Rispondi a <a href="mailto:${emailComp || ""}">${emailComp || "email non fornita"}</a> entro 24 ore.</p>
               </div>
             </div>
           `,
@@ -113,8 +114,10 @@ ${immobileCtx}
 
 Tono: professionale, diretto, rassicurante. Mai più di 3 frasi.
 Se la domanda riguarda il prezzo, usa il Fair Price Score per contestualizzare.
-Se la domanda va inoltrata al venditore, NON inoltrarla automaticamente. Chiedi prima: "Vuoi che inoltri questa domanda al venditore? Risponderà entro 24 ore."
-Se l'utente risponde sì/confermo/inoltro/procedi o simili → rispondi ESATTAMENTE con: "Perfetto. Ho inoltrato la tua domanda al venditore — ti risponderà via email entro 24 ore." e nient'altro.
+Se la domanda va inoltrata al venditore, NON inoltrarla automaticamente. Segui questo flusso in ordine:
+1. Prima chiedi: "Vuoi che inoltri questa domanda al venditore? Risponderà entro 24 ore."
+2. Se l'utente risponde sì/confermo/inoltro/procedi o simili → chiedi ESATTAMENTE: "Perfetto. Per ricevere la risposta del venditore, lasciami il tuo nome e la tua email."
+3. Quando l'utente fornisce nome ed email → rispondi ESATTAMENTE con: "Grazie. Ho inoltrato la tua domanda al venditore — ti risponderà via email entro 24 ore." e nient'altro.
 Rispondi SEMPRE in italiano.`,
         messages: [{ role: "user", content: domanda }]
       })
@@ -131,17 +134,26 @@ Rispondi SEMPRE in italiano.`,
 
     // Send email if forwarding
     if (forwarded) {
-      // Find the original question — go back through previous messages to find
-      // the last user message before the confirmation "sì"
+      // Extract name and email from current message if provided
+      let nomeFinale = compratore_nome;
+      let emailFinale = compratore_email;
+
+      // Try to extract email from current message
+      const emailMatch = domanda.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+      if (emailMatch && !emailFinale) emailFinale = emailMatch[0];
+
+      // Find the original question — search back through messages for the first user question
       let domandaOriginale = domanda;
-      if (messaggi_precedenti && messaggi_precedenti.length >= 2) {
-        // The original question is the user message before the last AI "vuoi che inoltri?" message
+      if (messaggi_precedenti && messaggi_precedenti.length >= 3) {
         const userMsgs = messaggi_precedenti.filter(m => m.role === "user");
-        if (userMsgs.length >= 2) {
+        if (userMsgs.length >= 3) {
+          domandaOriginale = userMsgs[userMsgs.length - 3].text || domanda;
+        } else if (userMsgs.length >= 2) {
           domandaOriginale = userMsgs[userMsgs.length - 2].text || domanda;
         }
       }
-      await sendForwardEmail(domandaOriginale, text);
+
+      await sendForwardEmail(domandaOriginale, text, nomeFinale, emailFinale);
     }
 
     return res.status(200).json({ risposta: text, forwarded });
