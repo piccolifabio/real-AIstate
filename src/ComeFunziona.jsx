@@ -80,6 +80,15 @@ const styles = `
   .cf-footer-links a { color: rgba(247,245,240,0.2); text-decoration: none; margin-left: 1.5rem; transition: color 0.2s; }
   .cf-footer-links a:hover { color: rgba(247,245,240,0.5); }
 
+  /* PILLOLE */
+  .cf-pillole { display: flex; gap: 1rem; margin-top: 2.5rem; flex-wrap: wrap; }
+  .cf-pillola { display: flex; align-items: center; gap: 0.7rem; background: rgba(247,245,240,0.04); border: 1px solid var(--border); border-radius: 2px; padding: 0.8rem 1.2rem; flex: 1; min-width: 200px; }
+  .cf-pillola-icon { font-size: 1.1rem; flex-shrink: 0; }
+  .cf-pillola-text strong { display: block; font-size: 0.78rem; font-weight: 600; color: var(--white); letter-spacing: 0.04em; margin-bottom: 0.15rem; }
+  .cf-pillola-text span { font-size: 0.72rem; color: var(--muted); line-height: 1.4; }
+  .cf-trasparenza { font-family: 'DM Serif Display', serif; font-style: italic; font-size: 1.1rem; color: rgba(247,245,240,0.5); margin-top: 2rem; line-height: 1.6; }
+  .cf-trasparenza em { color: var(--white); font-style: normal; }
+
   @media (max-width: 900px) {
     .cf-nav { padding: 1rem 1.5rem; }
     .cf-nav-links { display: none; }
@@ -240,6 +249,35 @@ export default function ComeFunziona() {
         <p className="cf-sub">
           Compravendita immobiliare senza intermediari. Step by step — con il confronto diretto su cosa fa RealAIstate e cosa farebbe al suo posto un'agenzia.
         </p>
+        <p className="cf-trasparenza">
+          "Trasparenza totale — su ogni step, su ogni documento, su ogni euro. <em>Per tutti.</em>"
+        </p>
+
+        <div className="cf-pillole">
+          <div className="cf-pillola">
+            <div className="cf-pillola-icon">✓</div>
+            <div className="cf-pillola-text">
+              <strong>Documenti verificati</strong>
+              <span>Tutto visibile prima dell'offerta</span>
+            </div>
+          </div>
+          <div className="cf-pillola">
+            <div className="cf-pillola-icon">◎</div>
+            <div className="cf-pillola-text">
+              <strong>Prezzi trasparenti</strong>
+              <span>Fair Price Score su dati pubblici OMI</span>
+            </div>
+          </div>
+          <div className="cf-pillola">
+            <div className="cf-pillola-icon">⊘</div>
+            <div className="cf-pillola-text">
+              <strong>Zero conflitti di interessi</strong>
+              <span>Non guadagniamo di più se chiudi prima</span>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ marginTop: "2.5rem" }}>
         <div className="cf-toggle">
           <button className={`cf-toggle-btn ${audience === "venditore" ? "active" : ""}`} onClick={() => setAudience("venditore")}>
             Sto vendendo
