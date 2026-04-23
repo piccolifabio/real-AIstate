@@ -5,7 +5,7 @@ export default async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-  const { domanda, immobile, sessione_id, compratore_nome, compratore_email } = req.body;
+  const { domanda, immobile, sessione_id, compratore_nome, compratore_email, messaggi_precedenti } = req.body;
   if (!domanda || domanda.trim().length < 2) return res.status(400).json({ error: "Domanda non valida" });
 
   const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
@@ -131,7 +131,17 @@ Rispondi SEMPRE in italiano.`,
 
     // Send email if forwarding
     if (forwarded) {
-      await sendForwardEmail(domanda, text);
+      // Find the original question — go back through previous messages to find
+      // the last user message before the confirmation "sì"
+      let domandaOriginale = domanda;
+      if (messaggi_precedenti && messaggi_precedenti.length >= 2) {
+        // The original question is the user message before the last AI "vuoi che inoltri?" message
+        const userMsgs = messaggi_precedenti.filter(m => m.role === "user");
+        if (userMsgs.length >= 2) {
+          domandaOriginale = userMsgs[userMsgs.length - 2].text || domanda;
+        }
+      }
+      await sendForwardEmail(domandaOriginale, text);
     }
 
     return res.status(200).json({ risposta: text, forwarded });
