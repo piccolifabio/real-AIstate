@@ -367,6 +367,7 @@ function AiChat() {
           sessione_id: sessioneId,
           compratore_nome: nome || null,
           compratore_email: email || null,
+          messaggi_precedenti: messages,
           immobile: {
             id: immobile.id,
             indirizzo: immobile.indirizzo,
