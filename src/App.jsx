@@ -415,7 +415,7 @@ function Home() {
         </h1>
         <div className="hero-answer">No.</div>
         <p className="hero-challenge">Che scusa hai per non usare <strong>RealAIstate</strong>?</p>
-        <p className="hero-sub">Venditore e compratore si incontrano direttamente. RealAIstate fa la valutazione, analizza le foto, trova i professionisti. Le commissioni rimangono nelle vostre tasche. In totale trasparenza.</p>
+        <p className="hero-sub">La piattaforma AI per comprare e vendere casa senza agenzia. Valutazione, documenti, professionisti e mediazione — tutto incluso. Anche il risparmio. In trasparenza.</p>
         <div className="hero-actions">
           <a href="/scuse" className="btn-red">Smonta la tua scusa →</a>
           <a href="/immobile/1" className="btn-outline"><span>→</span> Vedi una scheda immobile</a>
