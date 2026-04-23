@@ -188,9 +188,9 @@ const STEPS_COMPRATORE = [
   },
     {
     num: "03",
-    title: "Verifica la tua affordability",
-    desc: "Prima di innamorarti di una casa, scopri se puoi davvero permettertela. La chat AI di RealAIstate ti fa le domande giuste — reddito, risparmi, rate esistenti, situazione lavorativa — e ti dice in pochi minuti se sei in linea per un mutuo e quanto puoi spendere. Zero giudizi, zero impegni.",
-    highlight: "Arrivi alla trattativa già sapendo cosa puoi offrire. Nessuna sorpresa a ridosso del rogito.",
+    title: "Verifica la tua capacità d'acquisto",
+    desc: "Prima di innamorarti di una casa, scopri se puoi davvero permettertela. La chat AI di RealAIstate ti fa le domande giuste — reddito, risparmi, rate esistenti, situazione lavorativa — e ti dice in pochi minuti se sei in linea per un mutuo e quanto puoi spendere. Zero giudizi, zero impegni. Una volta completata la verifica, RealAIstate ti mette in contatto con le banche e i broker più adeguati alla tua situazione — selezionati in base al tuo profilo, non in base a chi paga più commissioni.",
+    highlight: "Arrivi alla trattativa già sapendo cosa puoi offrire — e con le banche giuste già al tuo fianco. Meglio per te, che eviti brutte sorprese. Meglio per il venditore, che tratta con un acquirente già qualificato.",
     agency_title: "L'agente ti porta a vedere case e ti fa fare offerte — senza mai verificare se puoi permettertele",
     agency_desc: "La verifica del mutuo arriva tardi, spesso dopo il compromesso. Se la banca dice no, hai già versato la caparra e sei in una situazione complicata.",
     agency_cost: "Caparra a rischio se il mutuo viene negato dopo l'offerta",
