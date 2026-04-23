@@ -321,6 +321,7 @@ function Nav() {
     <>
       <nav className="nav">
         <a href="/" className="nav-logo">Real<span>AI</span>state</a>
+        <div style={{width: "1.5rem"}}></div>
         <ul className="nav-links">
           <li><a href="/come-funziona">Come funziona</a></li>
           <li><a href="/scuse">Le scuse</a></li>
