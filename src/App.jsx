@@ -7,6 +7,7 @@ import ReportFotoPage from "./ReportFoto.jsx";
 import AdminPage from "./Admin.jsx";
 import VendiForm from "./VendiForm.jsx";
 import FaqPage from "./FaqPage.jsx";
+import ComeFunziona from "./ComeFunziona.jsx";
 
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Serif+Display:ital@0;1&display=swap');
@@ -352,6 +353,7 @@ function Footer() {
       <div className="footer-links">
         <a href="/privacy">Privacy</a>
         <a href="/termini">Termini</a>
+        <a href="/come-funziona">Come funziona</a>
         <a href="/faq">FAQ</a>
         <a href="/scuse">Le scuse</a>
         <a href="mailto:info@realaistate.ai">Contatti</a>
@@ -666,7 +668,8 @@ function PrivacyPage() {
       </div>
       <footer className="footer">
         <div className="footer-logo">Real<span>AI</span>state</div>
-        <div className="footer-links"><a href="/privacy">Privacy</a><a href="/termini">Termini</a><a href="/faq">FAQ</a><a href="/scuse">Le scuse</a><a href="mailto:info@realaistate.ai">Contatti</a></div>
+        <div className="footer-links"><a href="/privacy">Privacy</a><a href="/termini">Termini</a><a href="/come-funziona">Come funziona</a>
+        <a href="/faq">FAQ</a><a href="/scuse">Le scuse</a><a href="mailto:info@realaistate.ai">Contatti</a></div>
         <div>© 2025 RealAIstate</div>
       </footer>
     </>
@@ -769,7 +772,8 @@ function TerminiPage() {
       </div>
       <footer className="footer">
         <div className="footer-logo">Real<span>AI</span>state</div>
-        <div className="footer-links"><a href="/privacy">Privacy</a><a href="/termini">Termini</a><a href="/faq">FAQ</a><a href="/scuse">Le scuse</a><a href="mailto:info@realaistate.ai">Contatti</a></div>
+        <div className="footer-links"><a href="/privacy">Privacy</a><a href="/termini">Termini</a><a href="/come-funziona">Come funziona</a>
+        <a href="/faq">FAQ</a><a href="/scuse">Le scuse</a><a href="mailto:info@realaistate.ai">Contatti</a></div>
         <div>© 2025 RealAIstate</div>
       </footer>
     </>
@@ -792,6 +796,7 @@ export default function App() {
         <Route path="/admin" element={<AdminPage />} />
         <Route path="/vendi" element={<VendiForm />} />
         <Route path="/faq" element={<FaqPage />} />
+        <Route path="/come-funziona" element={<ComeFunziona />} />
       </Routes>
     </>
   );
