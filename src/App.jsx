@@ -25,7 +25,7 @@ const styles = `
   .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 1.2rem 3rem; border-bottom: 1px solid var(--border); background: rgba(10,10,10,0.9); backdrop-filter: blur(16px); }
   .nav-logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; letter-spacing: 0.05em; color: var(--white); text-decoration: none; }
   .nav-logo span { color: var(--red); }
-  .nav-links { display: flex; gap: 2.5rem; list-style: none; align-items: center; margin: 0; padding: 0; }
+  .nav-links { display: flex; gap: 2.5rem; list-style: none; align-items: center; margin: 0; padding: 0; flex: 1; }
   .nav-links a { font-size: 0.78rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(247,245,240,0.4); text-decoration: none; transition: color 0.2s; }
   .nav-links a:hover { color: var(--white); }
   .nav-cta { background: var(--red) !important; color: var(--white) !important; padding: 0.55rem 1.4rem; border-radius: 2px; font-size: 0.75rem !important; letter-spacing: 0.12em !important; }
@@ -219,9 +219,7 @@ const styles = `
 
   @media (max-width: 900px) {
     .nav-hamburger { display: flex; }
-    .nav-left { gap: 0; }
     .nav-links { display: none; }
-    .nav-links-right { display: none; }
     .nav { padding: 1rem 1.5rem; }
     .legal-nav { padding: 1rem 1.5rem; }
     .hero { padding: 6rem 1.5rem 4rem; }
@@ -322,16 +320,13 @@ function Nav() {
   return (
     <>
       <nav className="nav">
-        <div className="nav-left">
-          <a href="/" className="nav-logo">Real<span>AI</span>state</a>
-          <ul className="nav-links">
-            <li><a href="/come-funziona">Come funziona</a></li>
-            <li><a href="/scuse">Le scuse</a></li>
-          </ul>
-        </div>
-        <ul className="nav-links-right">
+        <a href="/" className="nav-logo">Real<span>AI</span>state</a>
+        <ul className="nav-links">
+          <li><a href="/come-funziona">Come funziona</a></li>
+          <li><a href="/scuse">Le scuse</a></li>
+          <li style={{flex: 1}}></li>
           <li><a href="/immobile/1">Compra casa</a></li>
-          <li><a href="/vendi" style={{color:"var(--red)"}}>Vendi casa</a></li>
+          <li><a href="/vendi">Vendi casa</a></li>
           <li><a href="/#early" className="nav-cta">Accesso</a></li>
         </ul>
         <button className="nav-hamburger" onClick={() => setOpen(!open)} aria-label="Menu">
