@@ -226,10 +226,10 @@ const STEPS_COMPRATORE = [
     num: "07",
     title: "Il rogito — l'unica firma fisica",
     desc: "Il notaio è obbligatorio per legge ed è lui che garantisce la validità del trasferimento di proprietà. RealAIstate coordina tutto: prenota il notaio, verifica i documenti, ti prepara all'appuntamento. È l'unica ora che passi fisicamente in uno studio notarile.",
-    highlight: "Stessa garanzia legale dell'agenzia. Ma risparmi €4.500–9.000 di commissione dal tuo lato.",
+    highlight: "Stessa garanzia legale dell'agenzia. Ma senza pagare il 3–6% di commissioni d'agenzia.",
     agency_title: "L'agenzia 'accompagna al rogito' — per cui hai già pagato migliaia di euro",
     agency_desc: "Il notaio tutela entrambe le parti indipendentemente dalla presenza dell'agente. Stai pagando per un servizio che non aggiunge nulla in questa fase.",
-    agency_cost: "Commissione compratore: €4.500–9.000 su €300.000",
+    agency_cost: "Commissione compratore: 3–6% sul prezzo di acquisto",
   },
 ];
 
