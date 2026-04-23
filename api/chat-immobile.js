@@ -22,8 +22,6 @@ Fair Price Score: ${immobile.fair_price_score}/100
 
   // Save user message to Supabase
   const saveMessage = async (mittente, testo, da_inoltrare = false) => {
-    console.log("SUPABASE_URL:", SUPABASE_URL ? "OK" : "MISSING");
-    console.log("SUPABASE_KEY:", SUPABASE_KEY ? "OK" : "MISSING");
     if (!SUPABASE_URL || !SUPABASE_KEY) return;
     try {
       await fetch(`${SUPABASE_URL}/rest/v1/chat_messages`, {
