@@ -427,10 +427,10 @@ function AiChat() {
 
 function AffordabilityChat({ immobile }) {
   const [messages, setMessages] = useState([
-    { role: "ai", text: "Ciao! Sono l'AI di RealAIstate. Ti faccio 5 domande per capire se puoi permetterti questo immobile. Inizia pure quando vuoi — tutto quello che scrivi è riservato. Prima domanda: qual è il tuo reddito netto mensile? (se acquistate in due, indica il totale)" }
+    { role: "ai", text: "Ciao! Sono l'AI di RealAIstate. Ti faccio qualche domanda per capire se puoi permetterti questo immobile — incluse eventuali agevolazioni under 36. Inizia pure quando vuoi, è riservato. Prima domanda: qual è il tuo reddito netto mensile? (se acquistate in due, indica il totale)" }
   ]);
   const [apiMessages, setApiMessages] = useState([
-    { role: "assistant", content: "Ciao! Sono l'AI di RealAIstate. Ti faccio 5 domande per capire se puoi permetterti questo immobile. Inizia pure quando vuoi — tutto quello che scrivi è riservato. Prima domanda: qual è il tuo reddito netto mensile? (se acquistate in due, indica il totale)" }
+    { role: "assistant", content: "Ciao! Sono l'AI di RealAIstate. Ti faccio qualche domanda per capire se puoi permetterti questo immobile — incluse eventuali agevolazioni under 36. Inizia pure quando vuoi, è riservato. Prima domanda: qual è il tuo reddito netto mensile? (se acquistate in due, indica il totale)" }
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -736,7 +736,7 @@ export default function ImmobilePage() {
           <div className="afford-section">
             <h2 className="section-title">Puoi permetterti questa casa?</h2>
             <div style={{ fontSize: "0.82rem", color: "var(--muted)", marginBottom: "1.2rem" }}>
-              Verifica subito la tua capacità d'acquisto con l'AI. 5 domande, risposta immediata. RealAIstate ti mette poi in contatto con le banche più adeguate alla tua situazione.
+              Verifica subito la tua capacità d'acquisto con l'AI. Poche domande, risposta immediata. RealAIstate ti mette poi in contatto con le banche più adeguate alla tua situazione.
             </div>
             <AffordabilityChat immobile={immobile} />
           </div>
