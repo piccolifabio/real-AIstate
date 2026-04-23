@@ -324,8 +324,9 @@ function Nav() {
         <ul className="nav-links">
           <li><a href="/come-funziona">Come funziona</a></li>
           <li><a href="/scuse">Le scuse</a></li>
+          <li><a href="/immobile/1">Scheda immobile</a></li>
           <li><a href="/vendi" style={{color:"var(--red)"}}>Vendi casa</a></li>
-          <li><a href="/#early" className="nav-cta">Accesso anticipato</a></li>
+          <li><a href="/#early" className="nav-cta">Accesso</a></li>
         </ul>
         <button className="nav-hamburger" onClick={() => setOpen(!open)} aria-label="Menu">
           <span /><span /><span />
@@ -337,7 +338,7 @@ function Nav() {
           <a href="/come-funziona" onClick={() => setOpen(false)}>Come funziona</a>
           <a href="/scuse" onClick={() => setOpen(false)}>Le scuse</a>
           <a href="/vendi" style={{color:"var(--red)"}} onClick={() => setOpen(false)}>Vendi casa</a>
-          <a href="/#early" className="nav-mobile-cta" onClick={() => setOpen(false)}>Accesso anticipato →</a>
+          <a href="/#early" className="nav-mobile-cta" onClick={() => setOpen(false)}>Accesso →</a>
         </div>
       )}
     </>
@@ -416,7 +417,7 @@ function Home() {
         <p className="hero-challenge">Che scusa hai per non usare <strong>RealAIstate</strong>?</p>
         <p className="hero-sub">Venditore e compratore si incontrano direttamente. RealAIstate fa la valutazione, analizza le foto, trova i professionisti. Le commissioni rimangono nelle vostre tasche. In totale trasparenza.</p>
         <div className="hero-actions">
-          <a href="#early" className="btn-red">Entra in lista d&apos;attesa</a>
+          <a href="/scuse" className="btn-red">Smonta la tua scusa →</a>
           <a href="/immobile/1" className="btn-outline"><span>→</span> Vedi una scheda immobile</a>
         </div>
         <div className="hero-cost">
