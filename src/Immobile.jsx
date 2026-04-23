@@ -426,34 +426,19 @@ function AiChat() {
 }
 
 function AffordabilityChat({ immobile }) {
-  const [messages, setMessages] = useState([]);
-  const [apiMessages, setApiMessages] = useState([]);
+  const [messages, setMessages] = useState([
+    { role: "ai", text: "Ciao! Sono l'AI di RealAIstate. Ti faccio 5 domande per capire se puoi permetterti questo immobile. Inizia pure quando vuoi — tutto quello che scrivi è riservato. Prima domanda: qual è il tuo reddito netto mensile? (se acquistate in due, indica il totale)" }
+  ]);
+  const [apiMessages, setApiMessages] = useState([
+    { role: "assistant", content: "Ciao! Sono l'AI di RealAIstate. Ti faccio 5 domande per capire se puoi permetterti questo immobile. Inizia pure quando vuoi — tutto quello che scrivi è riservato. Prima domanda: qual è il tuo reddito netto mensile? (se acquistate in due, indica il totale)" }
+  ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [started, setStarted] = useState(false);
   const bottomRef = useRef(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
-
-  const start = async () => {
-    setStarted(true);
-    setLoading(true);
-    try {
-      const res = await fetch("/api/chat-affordability", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: [], immobile: { indirizzo: immobile.indirizzo, prezzo: immobile.prezzo, zona: immobile.zona } }),
-      });
-      const data = await res.json();
-      setMessages([{ role: "ai", text: data.risposta }]);
-      setApiMessages([{ role: "assistant", content: data.risposta }]);
-    } catch {
-      setMessages([{ role: "ai", text: "Errore di connessione. Riprova." }]);
-    }
-    setLoading(false);
-  };
 
   const send = async () => {
     if (!input.trim() || loading) return;
@@ -478,28 +463,6 @@ function AffordabilityChat({ immobile }) {
     }
     setLoading(false);
   };
-
-  if (!started) {
-    return (
-      <div className="afford-box">
-        <div className="afford-header">
-          <div className="afford-header-icon">◎</div>
-          <div className="afford-header-text">
-            <div className="afford-header-title">Verifica la tua capacità d'acquisto</div>
-            <div className="afford-header-sub">5 domande. Risposta immediata. Zero impegni.</div>
-          </div>
-        </div>
-        <div style={{ padding: "2rem 1.5rem", textAlign: "center" }}>
-          <p style={{ fontSize: "0.88rem", color: "rgba(247,245,240,0.5)", lineHeight: "1.7", marginBottom: "1.5rem", maxWidth: "420px", margin: "0 auto 1.5rem" }}>
-            L'AI ti fa 5 domande sulla tua situazione finanziaria e ti dice subito se puoi permetterti questo immobile — e a quali banche rivolgerti.
-          </p>
-          <button type="button" onClick={start} style={{ background: "var(--green)", color: "white", border: "none", padding: "0.85rem 2rem", borderRadius: "2px", fontFamily: "DM Sans, sans-serif", fontSize: "0.85rem", fontWeight: 600, cursor: "pointer", letterSpacing: "0.08em", textTransform: "uppercase" }}>
-            Inizia la verifica →
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="afford-box">
