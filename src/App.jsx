@@ -322,9 +322,8 @@ function Nav() {
       <nav className="nav">
         <a href="/" className="nav-logo">Real<span>AI</span>state</a>
         <ul className="nav-links">
-          <li><a href="/#perche">Perché</a></li>
+          <li><a href="/come-funziona">Come funziona</a></li>
           <li><a href="/scuse">Le scuse</a></li>
-          <li><a href="/#per-chi">Per chi</a></li>
           <li><a href="/vendi" style={{color:"var(--red)"}}>Vendi casa</a></li>
           <li><a href="/#early" className="nav-cta">Accesso anticipato</a></li>
         </ul>
@@ -335,9 +334,8 @@ function Nav() {
       {open && (
         <div className="nav-mobile-menu" style={{ display: "flex" }}>
           <a href="/" onClick={() => setOpen(false)}>Home</a>
-          <a href="/#perche" onClick={() => setOpen(false)}>Perché</a>
+          <a href="/come-funziona" onClick={() => setOpen(false)}>Come funziona</a>
           <a href="/scuse" onClick={() => setOpen(false)}>Le scuse</a>
-          <a href="/#per-chi" onClick={() => setOpen(false)}>Per chi è</a>
           <a href="/vendi" style={{color:"var(--red)"}} onClick={() => setOpen(false)}>Vendi casa</a>
           <a href="/#early" className="nav-mobile-cta" onClick={() => setOpen(false)}>Accesso anticipato →</a>
         </div>
