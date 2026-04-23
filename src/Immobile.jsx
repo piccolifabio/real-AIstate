@@ -240,7 +240,7 @@ const immobile = {
   punti_forza: [
     "Prezzo al centro del range OMI — €5.254/mq su range €4.300–€6.300 (zona D24, 2025)",
     "Garage scorporato: valore OMI €48.000 — incluso nel prezzo totale",
-    "Doppio bagno — asset raro, vale 5–8% di premium a Milano",
+    
     "Standing desk + libreria curata nello studio — carattere",
     "Terrazzo con accesso doppio dal soggiorno — oltre 8 mq stimati",
     "Ristrutturazione 2023 — materiali di qualità, pavimento legno chiaro",
@@ -270,8 +270,8 @@ const immobile = {
     { nome: "Planimetria Catastale", verificato: true },
     { nome: "APE — Classe Energetica C", verificato: true },
     { nome: "Atto di Provenienza", verificato: true },
-    { nome: "Regolamento Condominiale", verificato: false },
-    { nome: "Dichiarazione Ipoteche", verificato: false },
+    { nome: "Regolamento Condominiale", verificato: true },
+    { nome: "Dichiarazione Ipoteche", verificato: true },
   ],
   comparabili: [
     { indirizzo: "Via Giambellino, 34", mq: 70, prezzo: 420000, locali: 2, delta: "higher" },
@@ -483,7 +483,7 @@ export default function ImmobilePage() {
               <div className="spec-divider" />
               <div className="spec"><div className="spec-val">Cl. {immobile.classe_energetica}</div><div className="spec-label">Energia</div></div>
               <div className="spec-divider" />
-              <div className="spec"><div className="spec-val">{immobile.anno_ristrutturazione}</div><div className="spec-label">Rist.</div></div>
+              <div className="spec"><div className="spec-val">{immobile.anno_ristrutturazione}</div><div className="spec-label">Ristrutturazione</div></div>
             </div>
           </div>
 
@@ -494,7 +494,7 @@ export default function ImmobilePage() {
               Appartamento ristrutturato nel 2023 al secondo piano di una palazzina con ascensore in Via Alfonso Capecelatro, nel quartiere San Siro. La ristrutturazione è stata eseguita con materiali di qualità: pavimento in legno chiaro, impianti a norma, finiture curate in ogni stanza.
             </p>
             <p style={{ fontSize: "0.95rem", lineHeight: "1.8", color: "rgba(247,245,240,0.7)", marginBottom: "1rem" }}>
-              L'appartamento si sviluppa su 69 mq catastali (65 mq calpestabili) con doppio bagno — asset raro a Milano — e uno studio indipendente che può essere facilmente convertito in camera ospiti. Il terrazzino privato con doppio accesso dal soggiorno aggiunge uno spazio esterno esclusivo.
+              L'appartamento si sviluppa su 69 mq catastali (65 mq calpestabili) con uno studio indipendente che può essere facilmente convertito in camera ospiti. Il terrazzino privato con doppio accesso dal soggiorno aggiunge uno spazio esterno esclusivo.
             </p>
             <p style={{ fontSize: "0.95rem", lineHeight: "1.8", color: "rgba(247,245,240,0.7)" }}>
               Incluso nel prezzo: garage di 20 mq in proprietà — il cui valore OMI è stimato in €48.000 — e accesso al giardino condominiale. Classe energetica C, spese condominiali €200/mese.
