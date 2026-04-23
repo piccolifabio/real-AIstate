@@ -119,7 +119,13 @@ Se la domanda va inoltrata al venditore, NON inoltrarla automaticamente. Segui q
 2. Se l'utente risponde sì/confermo/inoltro/procedi o simili → chiedi ESATTAMENTE: "Perfetto. Per ricevere la risposta del venditore, lasciami il tuo nome e la tua email."
 3. Quando l'utente fornisce nome ed email → rispondi ESATTAMENTE con: "Grazie. Ho inoltrato la tua domanda al venditore — ti risponderà via email entro 24 ore." e nient'altro.
 Rispondi SEMPRE in italiano.`,
-        messages: [{ role: "user", content: domanda }]
+        messages: [
+          ...(messaggi_precedenti || []).map(m => ({
+            role: m.role === "ai" ? "assistant" : "user",
+            content: m.text
+          })),
+          { role: "user", content: domanda }
+        ]
       })
     });
 
