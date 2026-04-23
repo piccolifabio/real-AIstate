@@ -111,8 +111,17 @@ const STEPS_VENDITORE = [
     agency_desc: "Il suo guadagno non dipende dal prezzo finale ma dalla velocità di chiusura. Spingere al ribasso gli conviene. A te no.",
     agency_cost: "Ogni €10.000 in meno = tu perdi, l'agente quasi niente",
   },
-  {
+    {
     num: "03",
+    title: "Documenti verificati",
+    desc: "RealAIstate ti guida nella raccolta di tutti i documenti necessari: planimetria catastale, APE, visura catastale, atto di provenienza, delibere condominiali. Ogni documento caricato viene verificato e reso disponibile ai potenziali acquirenti direttamente sulla scheda immobile.",
+    highlight: "Un annuncio con documenti completi vende più velocemente — l'acquirente non deve aspettare e non ha motivo di dubitare.",
+    agency_title: "L'agenzia raccoglie i documenti quando serve — spesso all'ultimo momento",
+    agency_desc: "I documenti arrivano a pezzi, spesso solo dopo che l'acquirente ha già fatto un'offerta. Rallenta tutto e crea incertezza inutile.",
+    agency_cost: "Ritardi di settimane per documenti mancanti a ridosso del rogito",
+  },
+  {
+    num: "04",
     title: "Gestisci le visite",
     desc: "I compratori ti contattano direttamente attraverso la chat mediata di RealAIstate. L'AI filtra i messaggi, protegge la tua privacy e prepara sia te che il compratore con le domande giuste prima della visita. Nessuna sorpresa, nessuna tensione.",
     highlight: "Parli solo con compratori seri, già informati sul prezzo e le caratteristiche dell'immobile.",
@@ -121,7 +130,7 @@ const STEPS_VENDITORE = [
     agency_cost: "Zero trasparenza sul processo di visita",
   },
   {
-    num: "04",
+    num: "05",
     title: "La proposta d'acquisto digitale",
     desc: "Il compratore compila e firma digitalmente la proposta d'acquisto direttamente in piattaforma. Niente carta, niente assegni consegnati all'agenzia. Il documento è valido legalmente ai sensi dell'art. 1341-1342 c.c. L'unica firma fisica rimane quella del rogito notarile.",
     highlight: "Firma digitale certificata. Nessun agente che detiene documenti o assegni a tuo nome.",
@@ -130,7 +139,7 @@ const STEPS_VENDITORE = [
     agency_cost: "L'assegno di caparra passa per le mani dell'agente",
   },
   {
-    num: "05",
+    num: "06",
     title: "La caparra confirmatoria",
     desc: "La caparra viene gestita tramite escrow digitale — un conto di terze parti che blocca i fondi in modo sicuro fino al rogito, senza che né il venditore né il compratore possano accedervi unilateralmente. In alternativa, il notaio può fungere da depositario fiduciario.",
     highlight: "I soldi sono al sicuro, tracciabili e protetti. Nessun agente coinvolto, zero rischi.",
@@ -139,10 +148,10 @@ const STEPS_VENDITORE = [
     agency_cost: "Rischio: fondi non in un conto regolamentato",
   },
   {
-    num: "06",
+    num: "07",
     title: "Il rogito notarile",
     desc: "Il notaio rimane obbligatorio per legge — con o senza agenzia. RealAIstate ti connette con notai certificati, coordina la prenotazione e ti presenta all'appuntamento con tutti i documenti in ordine. È l'unica ora della tua vita che passi in uno studio notarile.",
-    highlight: "Stesso notaio, stessa garanzia legale. Ma senza pagare €9.000–18.000 di commissione all'agenzia.",
+    highlight: "Stesso notaio, stessa garanzia legale. Ma senza pagare il 3–6% di commissioni d'agenzia.",
     agency_title: "L'agenzia 'coordina' il notaio — ma il notaio lavorava già direttamente con le parti",
     agency_desc: "Il ruolo dell'agenzia nel rogito è marginale. Il notaio tutela entrambe le parti indipendentemente. Stai pagando migliaia di euro per un servizio che non aggiunge valore in questa fase.",
     agency_cost: "Commissione agenzia: €9.000–18.000 su €300.000",
