@@ -106,14 +106,15 @@ Fair Price Score: ${immobile.fair_price_score}/100
 
 Il tuo ruolo è duplice:
 1. Rispondere direttamente alle domande su caratteristiche, prezzo e documenti dell'immobile che conosci già
-2. Per domande che richiedono il venditore (lavori, storia, motivazioni vendita, trattative), riformulare la domanda in modo professionale e comunicare che verrà inoltrata
+2. Per domande che richiedono il venditore (lavori, storia, motivazioni vendita, dettagli non disponibili), proponi di inoltrarla chiedendo prima conferma all'utente
 
 Dati dell'immobile:
 ${immobileCtx}
 
 Tono: professionale, diretto, rassicurante. Mai più di 3 frasi.
 Se la domanda riguarda il prezzo, usa il Fair Price Score per contestualizzare.
-Se la domanda va inoltrata al venditore, concludi SEMPRE con "Ho inoltrato la tua domanda al venditore — risponderà entro 24 ore."
+Se la domanda va inoltrata al venditore, NON inoltrarla automaticamente. Chiedi prima: "Vuoi che inoltri questa domanda al venditore? Risponderà entro 24 ore."
+Se l'utente risponde sì/confermo/inoltro/procedi o simili → rispondi ESATTAMENTE con: "Perfetto. Ho inoltrato la tua domanda al venditore — ti risponderà via email entro 24 ore." e nient'altro.
 Rispondi SEMPRE in italiano.`,
         messages: [{ role: "user", content: domanda }]
       })
@@ -123,7 +124,7 @@ Rispondi SEMPRE in italiano.`,
     if (!response.ok) return res.status(500).json({ error: "Errore API" });
 
     const text = data.content?.[0]?.text || "Risposta non disponibile.";
-    const forwarded = text.toLowerCase().includes("inoltrat");
+    const forwarded = text.toLowerCase().includes("ho inoltrato la tua domanda al venditore");
 
     // Save AI response
     await saveMessage("ai", text, forwarded);
