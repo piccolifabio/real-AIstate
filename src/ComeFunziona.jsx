@@ -277,8 +277,7 @@ export default function ComeFunziona() {
           </div>
         </div>
 
-        <div style={{ marginTop: "2.5rem" }}>
-        <div className="cf-toggle">
+        <div className="cf-toggle" style={{ marginTop: "2.5rem" }}>
           <button className={`cf-toggle-btn ${audience === "venditore" ? "active" : ""}`} onClick={() => setAudience("venditore")}>
             Sto vendendo
           </button>
