@@ -8,8 +8,8 @@ export default async function handler(req, res) {
   const { domanda, immobile, sessione_id, compratore_nome, compratore_email, messaggi_precedenti } = req.body;
   if (!domanda || domanda.trim().length < 2) return res.status(400).json({ error: "Domanda non valida" });
 
-  const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
-  const SUPABASE_KEY = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+  const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
 
   const immobileCtx = `
 Immobile: ${immobile.indirizzo}, ${immobile.zona}
@@ -22,6 +22,8 @@ Fair Price Score: ${immobile.fair_price_score}/100
 
   // Save user message to Supabase
   const saveMessage = async (mittente, testo, da_inoltrare = false) => {
+    console.log("SUPABASE_URL:", SUPABASE_URL ? "OK" : "MISSING");
+    console.log("SUPABASE_KEY:", SUPABASE_KEY ? "OK" : "MISSING");
     if (!SUPABASE_URL || !SUPABASE_KEY) return;
     try {
       await fetch(`${SUPABASE_URL}/rest/v1/chat_messages`, {
@@ -42,7 +44,7 @@ Fair Price Score: ${immobile.fair_price_score}/100
         }),
       });
     } catch (e) {
-      console.error("Supabase save error:", e);
+      console.error("Supabase save error:", e.message);
     }
   };
 
