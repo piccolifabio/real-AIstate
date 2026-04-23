@@ -414,7 +414,7 @@ function Home() {
         </h1>
         <div className="hero-answer">No.</div>
         <p className="hero-challenge">Che scusa hai per non usare <strong>RealAIstate</strong>?</p>
-        <p className="hero-sub">Venditore e compratore si incontrano direttamente. RealAIstate fa la valutazione, analizza le foto, trova i professionisti. Le commissioni rimangono nelle vostre tasche.</p>
+        <p className="hero-sub">Venditore e compratore si incontrano direttamente. RealAIstate fa la valutazione, analizza le foto, trova i professionisti. Le commissioni rimangono nelle vostre tasche. In totale trasparenza.</p>
         <div className="hero-actions">
           <a href="#early" className="btn-red">Entra in lista d&apos;attesa</a>
           <a href="/scuse" className="btn-outline"><span>→</span> Smonta la tua scusa</a>
