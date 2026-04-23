@@ -288,6 +288,18 @@ const initialMessages = [
   }
 ];
 
+const FOTO_BASE = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/immobili/1/pub`;
+const FOTO = [
+  "soggiorno1.jpg",
+  "soggiorno2.jpg",
+  "soggiornoecucina1.jpg",
+  "stanzaletto.jpg",
+  "studio.jpg",
+  "terrazzo.jpg",
+  "bagno.jpg",
+  "corridoio.jpg",
+];
+
 const deltaLabel = { higher: "▲ +5% vs questo", lower: "▼ -3% vs questo", similar: "≈ Allineato" };
 
 function StickyTooltip({ text }) {
@@ -393,6 +405,7 @@ export default function ImmobilePage() {
   const [activeTab, setActiveTab] = useState("analisi");
   const [mapTab, setMapTab] = useState("streetview");
   const chatRef = useRef(null);
+  const [activePhoto, setActivePhoto] = useState(0);
 
   const scrollToChat = () => {
     chatRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -426,13 +439,8 @@ export default function ImmobilePage() {
 
       {/* GALLERY */}
       <div className="gallery">
-        <div className="gallery-main">
-          <div className="gallery-placeholder">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
-              <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
-              <path d="M21 15l-5-5L5 21"/>
-            </svg>
-          </div>
+        <div className="gallery-main" onClick={() => setActivePhoto((activePhoto + 1) % FOTO.length)}>
+          <img src={`${FOTO_BASE}/${FOTO[activePhoto]}`} alt={FOTO[activePhoto]} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
           <div className="gallery-badge">
             {allVerified
               ? <span className="badge badge-verified">✓ Immobile Verificato</span>
@@ -441,17 +449,13 @@ export default function ImmobilePage() {
             <span className="badge badge-score">Fair Price {immobile.scores.prezzo}/100</span>
             <span className="badge badge-new">Nuovo</span>
           </div>
-          <div className="gallery-count">1 / 8 foto</div>
+          <div className="gallery-count">{activePhoto + 1} / {FOTO.length} foto</div>
         </div>
-        <div className="gallery-thumb">
-          <div className="gallery-placeholder">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
-          </div>
+        <div className="gallery-thumb" onClick={() => setActivePhoto(1)}>
+          <img src={`${FOTO_BASE}/${FOTO[1]}`} alt={FOTO[1]} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
         </div>
-        <div className="gallery-thumb">
-          <div className="gallery-placeholder">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
-          </div>
+        <div className="gallery-thumb" onClick={() => setActivePhoto(2)}>
+          <img src={`${FOTO_BASE}/${FOTO[2]}`} alt={FOTO[2]} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
         </div>
       </div>
 
