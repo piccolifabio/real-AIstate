@@ -496,7 +496,7 @@ function AffordabilityChat({ immobile }) {
           <p style={{ fontSize: "0.88rem", color: "rgba(247,245,240,0.5)", lineHeight: "1.7", marginBottom: "1.5rem", maxWidth: "420px", margin: "0 auto 1.5rem" }}>
             L'AI ti fa 5 domande sulla tua situazione finanziaria e ti dice subito se puoi permetterti questo immobile — e a quali banche rivolgerti.
           </p>
-          <button onClick={start} style={{ background: "var(--green)", color: "white", border: "none", padding: "0.85rem 2rem", borderRadius: "2px", fontFamily: "DM Sans, sans-serif", fontSize: "0.85rem", fontWeight: 600, cursor: "pointer", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+          <button type="button" onClick={start} style={{ background: "var(--green)", color: "white", border: "none", padding: "0.85rem 2rem", borderRadius: "2px", fontFamily: "DM Sans, sans-serif", fontSize: "0.85rem", fontWeight: 600, cursor: "pointer", letterSpacing: "0.08em", textTransform: "uppercase" }}>
             Inizia la verifica →
           </button>
         </div>
