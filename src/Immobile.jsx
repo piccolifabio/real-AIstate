@@ -342,12 +342,9 @@ function AiChat() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef(null);
-  const messagesRef = useRef(null);
 
   useEffect(() => {
-    if (messagesRef.current) {
-      messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
-    }
+    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [messages, loading]);
 
   const send = async () => {
@@ -513,7 +510,7 @@ function AffordabilityChat({ immobile }) {
           <div className="afford-header-sub">Rispondi alle domande — l'AI elabora la tua situazione in tempo reale.</div>
         </div>
       </div>
-      <div className="afford-messages" ref={messagesRef}>
+      <div className="afford-messages">
         {messages.map((m, i) => (
           <div className={`afford-msg ${m.role}`} key={i}>
             <div className="afford-msg-sender">{m.role === "ai" ? "✦ AI RealAIstate" : "Tu"}</div>
@@ -529,6 +526,7 @@ function AffordabilityChat({ immobile }) {
             </div>
           </div>
         )}
+        <div ref={bottomRef} />
       </div>
       <div className="afford-input-row">
         <input className="afford-input" placeholder="Rispondi qui..." value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === "Enter" && send()} />
