@@ -327,6 +327,7 @@ function Nav() {
           <li><a href="/come-funziona">Come funziona</a></li>
           <li><a href="/scuse">Le scuse</a></li>
           <li style={{flex: 1}}></li>
+          <li><a href="/affitti">Affitti</a></li>
           <li><a href="/immobile/1">Compra casa</a></li>
           <li><a href="/vendi">Vendi casa</a></li>
           <li><a href="/#early" className="nav-cta">Accesso</a></li>
@@ -340,6 +341,7 @@ function Nav() {
           <a href="/" onClick={() => setOpen(false)}>Home</a>
           <a href="/come-funziona" onClick={() => setOpen(false)}>Come funziona</a>
           <a href="/scuse" onClick={() => setOpen(false)}>Le scuse</a>
+          <a href="/affitti" onClick={() => setOpen(false)}>Affitti</a>
           <a href="/immobile/1" onClick={() => setOpen(false)}>Compra casa</a>
           <a href="/vendi" onClick={() => setOpen(false)}>Vendi casa</a>
           <a href="/#early" className="nav-mobile-cta" onClick={() => setOpen(false)}>Accesso →</a>
@@ -356,7 +358,6 @@ function Footer() {
       <div className="footer-links">
         <a href="/privacy">Privacy</a>
         <a href="/termini">Termini</a>
-        <a href="/affitti">Affitti</a>
         <a href="/faq">FAQ</a>
         
         <a href="mailto:info@realaistate.ai">Contatti</a>
@@ -670,8 +671,7 @@ function PrivacyPage() {
       </div>
       <footer className="footer">
         <div className="footer-logo">Real<span>AI</span>state</div>
-        <div className="footer-links"><a href="/privacy">Privacy</a><a href="/termini">Termini</a><a href="/affitti">Affitti</a>
-        <a href="/faq">FAQ</a><a href="mailto:info@realaistate.ai">Contatti</a></div>
+        <div className="footer-links"><a href="/privacy">Privacy</a><a href="/termini">Termini</a><a href="/faq">FAQ</a><a href="mailto:info@realaistate.ai">Contatti</a></div>
         <div>© 2025 RealAIstate</div>
       </footer>
     </>
@@ -774,8 +774,7 @@ function TerminiPage() {
       </div>
       <footer className="footer">
         <div className="footer-logo">Real<span>AI</span>state</div>
-        <div className="footer-links"><a href="/privacy">Privacy</a><a href="/termini">Termini</a><a href="/affitti">Affitti</a>
-        <a href="/faq">FAQ</a><a href="mailto:info@realaistate.ai">Contatti</a></div>
+        <div className="footer-links"><a href="/privacy">Privacy</a><a href="/termini">Termini</a><a href="/faq">FAQ</a><a href="mailto:info@realaistate.ai">Contatti</a></div>
         <div>© 2025 RealAIstate</div>
       </footer>
     </>
