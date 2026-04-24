@@ -329,7 +329,7 @@ function Nav() {
           <li><a href="/scuse">Le scuse</a></li>
           <li style={{flex: 1}}></li>
           <li><a href="/affitti">Affitti</a></li>
-          <li><a href="/immobile/1">Compra casa</a></li>
+          <li><a href="/compra">Compra casa</a></li>
           <li><a href="/vendi">Vendi casa</a></li>
           <li><a href="/#early" className="nav-cta">Accesso</a></li>
         </ul>
@@ -343,7 +343,7 @@ function Nav() {
           <a href="/come-funziona" onClick={() => setOpen(false)}>Come funziona</a>
           <a href="/scuse" onClick={() => setOpen(false)}>Le scuse</a>
           <a href="/affitti" onClick={() => setOpen(false)}>Affitti</a>
-          <a href="/immobile/1" onClick={() => setOpen(false)}>Compra casa</a>
+          <a href="/compra" onClick={() => setOpen(false)}>Compra casa</a>
           <a href="/vendi" onClick={() => setOpen(false)}>Vendi casa</a>
           <a href="/#early" className="nav-mobile-cta" onClick={() => setOpen(false)}>Accesso →</a>
         </div>
