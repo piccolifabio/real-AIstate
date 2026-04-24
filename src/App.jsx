@@ -779,8 +779,8 @@ export default function App() {
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/termini" element={<TerminiPage />} />
         <Route path="/scuse" element={<ScusePage />} />
-        <Route path="/immobile/:id" element={<ImmobilePage />} />
-        <Route path="/immobile/:id/vendi" element={<ImmobileVenditore />} />
+        <Route path="/compra/:id" element={<ImmobilePage />} />
+        <Route path="/compra/:id/vendi" element={<ImmobileVenditore />} />
         <Route path="/immobile/:id/report-foto" element={<ReportFotoPage />} />
         <Route path="/metodologia" element={<MetodologiaPage />} />
         <Route path="/admin" element={<AdminPage />} />
