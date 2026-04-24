@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import NavBar from "./NavBar.jsx";
 
 const vendiStyles = `
   .vendi-nav-bar { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; padding: 1.2rem 3rem; border-bottom: 1px solid var(--border); background: rgba(10,10,10,0.9); backdrop-filter: blur(16px); }
@@ -271,9 +272,7 @@ export default function VendiForm() {
   if (submitted) return (
     <>
       <style>{vendiStyles}</style>
-      <nav className="vendi-nav-bar">
-        <a href="/" className="vendi-nav-logo">Real<span>AI</span>state</a>
-      </nav>
+      <NavBar />
       <div className="vendi-page">
         <div className="vendi-success">
           <div className="vendi-success-icon">✓</div>
@@ -293,9 +292,7 @@ export default function VendiForm() {
   return (
     <>
       <style>{vendiStyles}</style>
-      <nav className="vendi-nav-bar">
-        <a href="/" className="vendi-nav-logo">Real<span>AI</span>state</a>
-      </nav>
+      <NavBar />
       <div className="vendi-page">
 
         <div className="vendi-hero">
