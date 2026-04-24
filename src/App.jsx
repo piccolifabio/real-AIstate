@@ -611,10 +611,7 @@ function PrivacyPage() {
   useEffect(() => { window.scrollTo(0, 0); }, []);
   return (
     <>
-      <nav className="legal-nav">
-        <a href="/" className="legal-nav-logo">Real<span>AI</span>state</a>
-        <a href="/" className="legal-nav-back">← Torna alla home</a>
-      </nav>
+      <NavBar />
       <div className="legal-container">
         <div className="legal-eyebrow">Documento legale</div>
         <h1 className="legal-title">Privacy Policy</h1>
@@ -670,11 +667,7 @@ function PrivacyPage() {
           <p>Hai il diritto di proporre reclamo al <a href="https://www.garanteprivacy.it" target="_blank" rel="noopener noreferrer">Garante per la Protezione dei Dati Personali</a>.</p>
         </div>
       </div>
-      <footer className="footer">
-        <div className="footer-logo">Real<span>AI</span>state</div>
-        <div className="footer-links"><a href="/privacy">Privacy</a><a href="/termini">Termini</a><a href="/faq">FAQ</a><a href="mailto:info@realaistate.ai">Contatti</a></div>
-        <div>© 2025 RealAIstate</div>
-      </footer>
+      <SiteFooter />
     </>
   );
 }
@@ -684,10 +677,7 @@ function TerminiPage() {
   useEffect(() => { window.scrollTo(0, 0); }, []);
   return (
     <>
-      <nav className="legal-nav">
-        <a href="/" className="legal-nav-logo">Real<span>AI</span>state</a>
-        <a href="/" className="legal-nav-back">← Torna alla home</a>
-      </nav>
+      <NavBar />
       <div className="legal-container">
         <div className="legal-eyebrow">Documento legale</div>
         <h1 className="legal-title">Termini di Servizio</h1>
@@ -773,11 +763,7 @@ function TerminiPage() {
           </div>
         </div>
       </div>
-      <footer className="footer">
-        <div className="footer-logo">Real<span>AI</span>state</div>
-        <div className="footer-links"><a href="/privacy">Privacy</a><a href="/termini">Termini</a><a href="/faq">FAQ</a><a href="mailto:info@realaistate.ai">Contatti</a></div>
-        <div>© 2025 RealAIstate</div>
-      </footer>
+      <SiteFooter />
     </>
   );
 }
