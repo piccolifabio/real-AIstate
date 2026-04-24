@@ -421,7 +421,7 @@ function Home() {
         </h1>
         <div className="hero-answer">No.</div>
         <p className="hero-challenge">Che scusa hai per non usare <strong>RealAIstate</strong>?</p>
-        <p className="hero-sub">La piattaforma AI per comprare e vendere casa senza agenzia. Valutazione, documenti, professionisti e mediazione — tutto incluso. Anche il risparmio. In trasparenza.</p>
+        <p className="hero-sub">La piattaforma AI per comprare e vendere casa senza agenzia. Valutazione, documenti e professionisti — tutto incluso. Anche il risparmio. In trasparenza.</p>
         <div className="hero-actions">
           <a href="/scuse" className="btn-red">Smonta la tua scusa →</a>
         </div>
