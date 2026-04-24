@@ -8,6 +8,8 @@ import AdminPage from "./Admin.jsx";
 import VendiForm from "./VendiForm.jsx";
 import FaqPage from "./FaqPage.jsx";
 import ComeFunziona from "./ComeFunziona.jsx";
+import NavBar from "./NavBar.jsx";
+import SiteFooter from "./SiteFooter.jsx";
 import AffittiPage from "./AffittiPage.jsx";
 import ListingPage from "./Listing.jsx";
 
