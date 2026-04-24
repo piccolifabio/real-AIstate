@@ -70,7 +70,7 @@ const styles = `
   @keyframes pulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.4; transform:scale(1.4); } }
   .ai-summary { font-size: 0.95rem; line-height: 1.7; color: rgba(247,245,240,0.7); margin-bottom: 1.5rem; font-family: 'DM Serif Display', serif; font-style: italic; }
 
-  .ai-scores { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+  .ai-scores { display: grid; grid-template-columns: 1fr; gap: 1rem; margin-bottom: 1.5rem; max-width: 200px; }
   .score-card { background: rgba(247,245,240,0.04); border: 1px solid var(--border); border-radius: 2px; padding: 1rem; text-align: center; }
   .score-num { font-family: 'Bebas Neue', sans-serif; font-size: 2.2rem; line-height: 1; margin-bottom: 0.2rem; }
   .score-num.green { color: var(--green-light); }
@@ -260,8 +260,6 @@ const immobile = {
   disponibilita_rogito: "Immediata",
   scores: {
     prezzo: 88,
-    investimento: 81,
-    qualita: 58,
   },
   ai_summary: "Scorporando il valore del garage (20 mq × €2.400/mq OMI = €48.000), il prezzo dell'appartamento puro è €352.000 — ovvero €5.254/mq. Il range OMI per abitazioni civili Ottimo in zona D24 è €4.300–€6.300/mq: il prezzo si posiziona quasi esattamente al centro (47,7%). Fonte: Agenzia delle Entrate – OMI, zona D24, 2° sem. 2025.",
   punti_forza: [
@@ -601,7 +599,6 @@ export default function ImmobilePage() {
             <div className="ai-scores">
               {[
                 { label: "Fair Price Score", val: immobile.scores.prezzo, cls: "green", color: "#4ade80" },
-                { label: "Investment Score", val: immobile.scores.investimento, cls: "gold", color: "#c9a84c" },
               ].map(s => (
                 <div className="score-card" key={s.label}>
                   <div className={`score-num ${s.cls}`}>{s.val}</div>
