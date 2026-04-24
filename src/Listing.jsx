@@ -111,7 +111,6 @@ function PropCardReal({ imm }) {
           <img src={imm.foto} alt={imm.titolo} />
           <div className="prop-card-badges">
             <span className="prop-badge prop-badge-green">✓ Verificato</span>
-            <span className="prop-badge prop-badge-gold">Fair Price {imm.score}/100</span>
           </div>
         </div>
         <div className="prop-card-body">
