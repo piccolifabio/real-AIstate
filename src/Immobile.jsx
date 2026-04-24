@@ -518,17 +518,15 @@ export default function ImmobilePage() {
       {/* NAV */}
       <nav className="nav">
         <a href="/" className="nav-logo">Real<span>AI</span>state</a>
-        <a href="/" className="nav-back">← Torna alla ricerca</a>
-        <div className="nav-actions">
-          <button className="nav-btn" onClick={() => setSaved(!saved)}>
-            {saved ? "♥ Salvato" : "♡ Salva"}
-          </button>
-          <div style={{ position: "relative", display: "inline-block" }}>
-            <button className="nav-btn" style={{ opacity: 0.5, cursor: "not-allowed" }} title="Prossimamente">⤢ Confronta</button>
-          </div>
-          <a href="/vendi" className="nav-btn" style={{ color: "var(--red)", borderColor: "var(--red)", textDecoration: "none", display: "inline-flex", alignItems: "center" }}>Vendi casa</a>
-          <button className="nav-btn primary" onClick={scrollToChat}>Contatta venditore</button>
-        </div>
+        <div style={{width: "1.5rem"}}></div>
+        <ul style={{display:"flex",gap:"2.5rem",listStyle:"none",alignItems:"center",margin:0,padding:0,flex:1}}>
+          <li><a href="/come-funziona" style={{fontSize:"0.78rem",fontWeight:500,letterSpacing:"0.1em",textTransform:"uppercase",color:"rgba(247,245,240,0.4)",textDecoration:"none"}}>Come funziona</a></li>
+          <li><a href="/scuse" style={{fontSize:"0.78rem",fontWeight:500,letterSpacing:"0.1em",textTransform:"uppercase",color:"rgba(247,245,240,0.4)",textDecoration:"none"}}>Le scuse</a></li>
+          <li style={{flex:1}}></li>
+          <li><a href="/affitti" style={{fontSize:"0.78rem",fontWeight:500,letterSpacing:"0.1em",textTransform:"uppercase",color:"rgba(247,245,240,0.4)",textDecoration:"none"}}>Affitti</a></li>
+          <li><a href="/vendi" style={{fontSize:"0.78rem",fontWeight:500,letterSpacing:"0.1em",textTransform:"uppercase",color:"rgba(247,245,240,0.4)",textDecoration:"none"}}>Vendi casa</a></li>
+          <li><button className="nav-btn primary" onClick={scrollToChat} style={{fontSize:"0.78rem"}}>Contatta venditore</button></li>
+        </ul>
       </nav>
 
       {/* GALLERY */}
