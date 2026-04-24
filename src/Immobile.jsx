@@ -1,4 +1,6 @@
 import { useEffect, useState, useRef } from "react";
+import NavBar from "./NavBar.jsx";
+import SiteFooter from "./SiteFooter.jsx";
 
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Serif+Display:ital@0;1&display=swap');
@@ -516,18 +518,10 @@ export default function ImmobilePage() {
       <style>{styles}</style>
 
       {/* NAV */}
-      <nav className="nav">
-        <a href="/" className="nav-logo">Real<span>AI</span>state</a>
-        <div style={{width: "1.5rem"}}></div>
-        <ul style={{display:"flex",gap:"2.5rem",listStyle:"none",alignItems:"center",margin:0,padding:0,flex:1}}>
-          <li><a href="/come-funziona" style={{fontSize:"0.78rem",fontWeight:500,letterSpacing:"0.1em",textTransform:"uppercase",color:"rgba(247,245,240,0.4)",textDecoration:"none"}}>Come funziona</a></li>
-          <li><a href="/scuse" style={{fontSize:"0.78rem",fontWeight:500,letterSpacing:"0.1em",textTransform:"uppercase",color:"rgba(247,245,240,0.4)",textDecoration:"none"}}>Le scuse</a></li>
-          <li style={{flex:1}}></li>
-          <li><a href="/affitti" style={{fontSize:"0.78rem",fontWeight:500,letterSpacing:"0.1em",textTransform:"uppercase",color:"rgba(247,245,240,0.4)",textDecoration:"none"}}>Affitti</a></li>
-          <li><a href="/vendi" style={{fontSize:"0.78rem",fontWeight:500,letterSpacing:"0.1em",textTransform:"uppercase",color:"rgba(247,245,240,0.4)",textDecoration:"none"}}>Vendi casa</a></li>
-          <li><button className="nav-btn primary" onClick={scrollToChat} style={{fontSize:"0.78rem"}}>Contatta venditore</button></li>
-        </ul>
-      </nav>
+      <NavBar />
+      <div style={{ position: "fixed", top: "0.85rem", right: "3rem", zIndex: 101 }}>
+        <button className="nav-btn primary" onClick={scrollToChat} style={{ fontSize: "0.75rem", padding: "0.55rem 1.4rem" }}>Contatta venditore</button>
+      </div>
 
       {/* GALLERY */}
       <div className="gallery">
@@ -816,10 +810,7 @@ export default function ImmobilePage() {
 
       </div>
 
-      <footer className="footer">
-        <div className="footer-logo">Real<span>AI</span>state</div>
-        <div style={{ color: "rgba(247,245,240,0.2)" }}>© 2025 RealAIstate · realaistate.ai</div>
-      </footer>
+      <SiteFooter />
     </>
   );
 }
