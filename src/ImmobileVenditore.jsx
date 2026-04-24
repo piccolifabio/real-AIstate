@@ -309,7 +309,7 @@ export default function ImmobileVenditore() {
         <a href="/" className="nav-back">← I miei annunci</a>
         <div className="nav-actions">
           <span className="view-badge">👤 Vista Venditore</span>
-          <a href="/immobile/1" className="nav-btn">Vedi come compratore</a>
+          <a href="/compra/1" className="nav-btn">Vedi come compratore</a>
           <button className="nav-btn primary">Modifica annuncio</button>
         </div>
       </nav>
