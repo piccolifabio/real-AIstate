@@ -274,9 +274,8 @@ const immobile = {
   domande: [
     "Ci sono lavori straordinari deliberati o in programma in condominio?",
     "Le spese condominiali di €200/mese includono il riscaldamento?",
-    "Il garage è in proprietà separata o pertinenza dell'appartamento?",
     "La ristrutturazione 2023 ha incluso anche impianto elettrico e idraulico?",
-    "Il terrazzino è privato o condiviso? Qual è la metratura esatta?",
+    "Qual è la metratura esatta del terrazzino?",
   ],
   documenti: [
     { nome: "Visura Catastale", verificato: true },
