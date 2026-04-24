@@ -87,7 +87,7 @@ const immobiliReali = [
     piano: "2°",
     score: 88,
     foto: `${FOTO_BASE}/soggiorno1.jpg`,
-    link: "/immobile/1",
+    link: "/compra/1",
   },
 ];
 
