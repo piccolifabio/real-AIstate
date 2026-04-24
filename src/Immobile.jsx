@@ -519,9 +519,6 @@ export default function ImmobilePage() {
 
       {/* NAV */}
       <NavBar />
-      <div style={{ position: "fixed", top: "0.85rem", right: "3rem", zIndex: 101 }}>
-        <button className="nav-btn primary" onClick={scrollToChat} style={{ fontSize: "0.75rem", padding: "0.55rem 1.4rem" }}>Contatta venditore</button>
-      </div>
 
       {/* GALLERY */}
       <div className="gallery">
