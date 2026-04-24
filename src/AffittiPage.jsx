@@ -66,6 +66,29 @@ const styles = `
     .aff-btn { border-radius: 2px; }
     .aff-footer { flex-direction: column; gap: 1rem; text-align: center; padding: 2rem 1.5rem; }
   }
+
+  .std-nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; padding: 1.2rem 3rem; border-bottom: 1px solid var(--border); background: rgba(10,10,10,0.95); backdrop-filter: blur(16px); gap: 2rem; }
+  .std-nav-logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; letter-spacing: 0.05em; color: var(--white); text-decoration: none; }
+  .std-nav-logo span { color: var(--red); }
+  .std-nav-links { display: flex; gap: 2.5rem; list-style: none; align-items: center; margin: 0; padding: 0; flex: 1; }
+  .std-nav-links li { list-style: none; }
+  .std-nav-links a { font-size: 0.78rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(247,245,240,0.4); text-decoration: none; transition: color 0.2s; font-family: 'DM Sans', sans-serif; }
+  .std-nav-links a:hover { color: var(--white); }
+  .std-nav-cta { background: var(--red); color: white !important; padding: 0.4rem 1rem; border-radius: 2px; }
+  .std-nav-cta:hover { background: var(--red-dark); }
+  .std-footer { background: var(--black); padding: 2rem 3rem; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--border); font-size: 0.75rem; color: rgba(247,245,240,0.2); }
+  .std-footer-logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; color: rgba(247,245,240,0.4); }
+  .std-footer-logo span { color: var(--red); }
+  .std-footer-links { display: flex; gap: 1.5rem; align-items: center; }
+  .std-footer-links a { color: rgba(247,245,240,0.2); text-decoration: none; transition: color 0.2s; }
+  .std-footer-links a:hover { color: rgba(247,245,240,0.5); }
+  @media (max-width: 768px) {
+    .std-nav { padding: 1rem 1.5rem; }
+    .std-nav-links { display: none; }
+    .std-footer { flex-direction: column; gap: 1rem; text-align: center; padding: 2rem 1.5rem; }
+    .std-footer-links { flex-wrap: wrap; justify-content: center; }
+  }
+
 `;
 
 export default function AffittiPage() {
@@ -96,10 +119,19 @@ export default function AffittiPage() {
       <style>{styles}</style>
       <div className="aff-page">
 
-        <nav className="aff-nav">
-          <a href="/" className="aff-nav-logo">Real<span>AI</span>state</a>
-          <a href="/" className="aff-nav-back">← Torna alla home</a>
-        </nav>
+        <nav className="std-nav">
+        <a href="/" className="std-nav-logo">Real<span>AI</span>state</a>
+        <div style={{width: "1.5rem"}}></div>
+        <ul className="std-nav-links">
+          <li><a href="/come-funziona">Come funziona</a></li>
+          <li><a href="/scuse">Le scuse</a></li>
+          <li style={{flex: 1}}></li>
+          <li><a href="/affitti">Affitti</a></li>
+          <li><a href="/immobile/1">Compra casa</a></li>
+          <li><a href="/vendi">Vendi casa</a></li>
+          <li><a href="/#early" className="std-nav-cta">Accesso</a></li>
+        </ul>
+      </nav>
 
         <div className="aff-hero">
           <div className="aff-eyebrow">Prossimamente</div>
@@ -143,15 +175,20 @@ export default function AffittiPage() {
           )}
         </div>
 
-        <footer className="aff-footer">
-          <div className="aff-footer-logo">Real<span>AI</span>state</div>
-          <div>
-            <a href="/privacy">Privacy</a>
-            <a href="/termini">Termini</a>
-            <a href="/faq">FAQ</a>
-            <a href="mailto:info@realaistate.ai">Contatti</a>
-          </div>
-        </footer>
+        <footer className="std-footer">
+        <div className="std-footer-logo">Real<span>AI</span>state</div>
+        <div className="std-footer-links">
+          <a href="/privacy">Privacy</a>
+          <a href="/termini">Termini</a>
+          <a href="/faq">FAQ</a>
+          <a href="mailto:info@realaistate.ai">Contatti</a>
+          <a href="https://www.instagram.com/realaistate.ai" target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:"0.4rem"}}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+            @realaistate.ai
+          </a>
+        </div>
+        <div>© 2025 RealAIstate</div>
+      </footer>
 
       </div>
     </>
