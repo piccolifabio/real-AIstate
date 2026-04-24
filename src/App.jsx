@@ -339,7 +339,8 @@ function Nav() {
           <a href="/" onClick={() => setOpen(false)}>Home</a>
           <a href="/come-funziona" onClick={() => setOpen(false)}>Come funziona</a>
           <a href="/scuse" onClick={() => setOpen(false)}>Le scuse</a>
-          <a href="/vendi" style={{color:"var(--red)"}} onClick={() => setOpen(false)}>Vendi casa</a>
+          <a href="/immobile/1" onClick={() => setOpen(false)}>Compra casa</a>
+          <a href="/vendi" onClick={() => setOpen(false)}>Vendi casa</a>
           <a href="/#early" className="nav-mobile-cta" onClick={() => setOpen(false)}>Accesso →</a>
         </div>
       )}
