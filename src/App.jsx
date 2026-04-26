@@ -143,7 +143,7 @@ const styles = `
   .cta-error { font-size: 0.85rem; color: var(--red); margin-top: 0.5rem; }
 
   /* SCUSE PAGE */
-  .scuse-hero { min-height: 55vh; display: flex; flex-direction: column; justify-content: center; padding: 9rem 3rem 4rem; position: relative; overflow: hidden; }
+  .scuse-hero { min-height: 55vh; display: flex; flex-direction: column; justify-content: center; padding: 5.5rem 3rem 2.5rem; position: relative; overflow: hidden; }
   .scuse-hero-bg { position: absolute; right: -2rem; top: 50%; transform: translateY(-50%); font-family: 'Bebas Neue', sans-serif; font-size: clamp(180px, 28vw, 380px); color: rgba(247,245,240,0.025); line-height: 1; user-select: none; pointer-events: none; }
   .scuse-form-section { background: var(--white); padding: 5rem 3rem; }
   .scuse-section-label { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--red); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.8rem; }
@@ -184,10 +184,10 @@ const styles = `
   .legal-nav-logo span { color: var(--red); }
   .legal-nav-back { font-size: 0.78rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(247,245,240,0.4); text-decoration: none; transition: color 0.2s; }
   .legal-nav-back:hover { color: var(--white); }
-  .legal-container { max-width: 760px; margin: 0 auto; padding: 8rem 2rem 6rem; }
+  .legal-container { max-width: 760px; margin: 0 auto; padding: 5.5rem 2rem 6rem; }
   .legal-eyebrow { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--red); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.8rem; }
   .legal-eyebrow::before { content: ''; width: 24px; height: 1px; background: var(--red); }
-  .legal-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(3rem, 6vw, 5rem); line-height: 1; color: var(--white); margin-bottom: 0.5rem; }
+  .legal-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(3rem, 7vw, 6rem); line-height: 0.95; color: var(--white); margin-bottom: 0.5rem; }
   .legal-date { font-size: 0.78rem; color: rgba(247,245,240,0.3); margin-bottom: 4rem; }
   .legal-section { margin-bottom: 3rem; padding-bottom: 3rem; border-bottom: 1px solid var(--border); }
   .legal-section:last-child { border-bottom: none; }
@@ -227,7 +227,7 @@ const styles = `
     .nav { padding: 1rem 1.5rem; }
     .legal-nav { padding: 1rem 1.5rem; }
     .hero { padding: 6rem 1.5rem 4rem; }
-    .scuse-hero { padding: 7rem 1.5rem 4rem; }
+    .scuse-hero { padding: 5.5rem 3rem 2.5rem; }
     .hero-bg-number, .scuse-hero-bg { display: none; }
     .hero-h1 { font-size: clamp(2.5rem, 9vw, 5rem) !important; }
     .hero-answer { font-size: clamp(2.5rem, 9vw, 5rem) !important; }
@@ -548,7 +548,7 @@ function ScusePage() {
       <section className="scuse-hero">
         <div className="scuse-hero-bg">?</div>
         <div className="hero-eyebrow">Il grande libro delle scuse</div>
-        <h1 className="hero-h1" style={{ fontSize: "clamp(3rem, 8vw, 8rem)" }}>
+        <h1 className="hero-h1">
           La tua scusa<br />non regge.
         </h1>
         <p className="hero-sub">Hai una scusa per cui pensi di aver bisogno di un&apos;agenzia? Mandacela. L&apos;AI te la smonta in 3 secondi.</p>
