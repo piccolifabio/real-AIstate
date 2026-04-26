@@ -1,4 +1,6 @@
 import { useEffect } from "react";
+import NavBar from "./NavBar.jsx";
+import SiteFooter from "./SiteFooter.jsx";
 
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Serif+Display:ital@0;1&display=swap');
@@ -177,36 +179,37 @@ export default function MetodologiaPage() {
           </div>
         </div>
 
-        {/* SEZIONE 4 — ESEMPIO REALE */}
+        {/* SEZIONE 4 — ESEMPIO GENERICO */}
         <div className="section">
-          <div className="section-label">Esempio reale</div>
-          <h2 className="section-title">Via Capecelatro, 51 — Milano.</h2>
-          <p className="section-body">Ecco come abbiamo calcolato il Fair Price Score per l&apos;immobile demo della nostra piattaforma — con dati reali OMI.</p>
+          <div className="section-label">Esempio di calcolo</div>
+          <h2 className="section-title">Come funziona in pratica.</h2>
+          <p className="section-body">Esempio generico basato su parametri tipici del mercato milanese — i valori OMI variano per zona, tipologia e semestre.</p>
 
           <div className="example-box">
-            <div className="example-title">✓ Dati immobile · Zona D24 · Milano · 2° sem. 2025</div>
-            <div className="example-row"><span className="example-label">Prezzo totale richiesto</span><span className="example-val">€400.000</span></div>
-            <div className="example-row"><span className="example-label">Superficie abitazione</span><span className="example-val">67 mq</span></div>
-            <div className="example-row"><span className="example-label">Garage incluso</span><span className="example-val">20 mq</span></div>
-            <div className="example-row"><span className="example-label">Valore garage OMI (Box, Normale)</span><span className="example-val red">– €48.000 (20 mq × €2.400/mq)</span></div>
-            <div className="example-row"><span className="example-label">Prezzo abitazione pura</span><span className="example-val">€352.000</span></div>
-            <div className="example-row"><span className="example-label">Prezzo/mq corretto</span><span className="example-val">€5.254/mq</span></div>
-            <div className="example-row"><span className="example-label">Range OMI Abitazioni Civili Ottimo</span><span className="example-val">€4.300 – €6.300/mq</span></div>
-            <div className="example-row"><span className="example-label">Posizione nel range</span><span className="example-val highlight">47,7% — centro range</span></div>
-            <div className="example-row"><span className="example-label">Fair Price Score</span><span className="example-val highlight">88 / 100</span></div>
+            <div className="example-title">✓ Esempio · Appartamento con garage · Milano · Zona centrale</div>
+            <div className="example-row"><span className="example-label">Prezzo totale richiesto</span><span className="example-val">€350.000</span></div>
+            <div className="example-row"><span className="example-label">Superficie abitazione</span><span className="example-val">75 mq</span></div>
+            <div className="example-row"><span className="example-label">Garage incluso</span><span className="example-val">15 mq</span></div>
+            <div className="example-row"><span className="example-label">Valore garage OMI (Box, Normale)</span><span className="example-val red">– €33.000 (15 mq × €2.200/mq)</span></div>
+            <div className="example-row"><span className="example-label">Prezzo abitazione pura</span><span className="example-val">€317.000</span></div>
+            <div className="example-row"><span className="example-label">Prezzo/mq corretto</span><span className="example-val">€4.227/mq</span></div>
+            <div className="example-row"><span className="example-label">Range OMI Abitazioni Civili Normale</span><span className="example-val">€3.500 – €5.500/mq</span></div>
+            <div className="example-row"><span className="example-label">Posizione nel range</span><span className="example-val highlight">36,3% — primo terzo del range</span></div>
+            <div className="example-row"><span className="example-label">Fair Price Score</span><span className="example-val highlight">85 / 100</span></div>
           </div>
 
           <div className="range-section">
             <div className="range-title">Visualizzazione del range OMI</div>
-            <RangeVisualizer min={4300} max={6300} value={5254} label="Abitazioni Civili Ottimo — Zona D24 Milano" />
+            <RangeVisualizer min={3500} max={5500} value={4227} label="Abitazioni Civili Normale — Milano zona centrale" />
             <div style={{ marginTop: "1rem" }}>
-              <RangeVisualizer min={1800} max={3000} value={2400} label="Box/Garage Normale — Zona D24 Milano" />
+              <RangeVisualizer min={1600} max={2800} value={2200} label="Box/Garage Normale — Milano zona centrale" />
             </div>
             <div className="range-legend">
               <div className="range-legend-item"><div className="range-dot" style={{ background: "var(--green-light)" }} /><span>Posizione del prezzo nel range OMI</span></div>
               <div className="range-legend-item"><div className="range-dot" style={{ background: "rgba(217,48,37,0.5)" }} /><span>Estremi del range (Min/Max OMI)</span></div>
             </div>
           </div>
+          <p className="section-body" style={{ marginTop: "1rem" }}>I valori OMI reali per ogni zona italiana sono consultabili gratuitamente sul sito dell&apos;Agenzia delle Entrate — <a href="https://www.agenziaentrate.gov.it/portale/web/guest/schede/fabbricati-e-altri-beni-immobili/omi" target="_blank" rel="noopener noreferrer" style={{ color: "var(--red)" }}>vai al portale OMI →</a></p>
         </div>
 
         {/* SEZIONE 5 — TABELLA SCORE */}
@@ -242,10 +245,7 @@ export default function MetodologiaPage() {
 
       </div>
 
-      <footer className="footer">
-        <div className="footer-logo">Real<span>AI</span>state</div>
-        <div style={{ color: "rgba(247,245,240,0.2)" }}>© 2025 RealAIstate · Fonte dati: Agenzia delle Entrate – OMI</div>
-      </footer>
+      <SiteFooter />
     </>
   );
 }
