@@ -13,10 +13,10 @@ const faqStyles = `
   .faq-nav-back:hover { color: var(--white); }
 
   /* HERO */
-  .faq-hero { padding: 9rem 3rem 5rem; max-width: 900px; margin: 0 auto; }
+  .faq-hero { padding: 5.5rem 3rem 2.5rem; max-width: 900px; margin: 0 auto; }
   .faq-eyebrow { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--red); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.8rem; }
   .faq-eyebrow::before { content: ''; width: 32px; height: 1px; background: var(--red); }
-  .faq-h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(3rem, 7vw, 6rem); line-height: 0.95; color: var(--white); margin-bottom: 1.5rem; }
+  .faq-h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(3rem, 7vw, 6rem); line-height: 0.95; color: var(--white); margin-bottom: 1rem; }
   .faq-sub { font-size: 1rem; color: rgba(247,245,240,0.45); line-height: 1.7; max-width: 560px; }
 
   /* CONTENT */
@@ -60,7 +60,7 @@ const faqStyles = `
 
   @media (max-width: 900px) {
     .faq-nav { padding: 1rem 1.5rem; }
-    .faq-hero { padding: 7rem 1.5rem 4rem; }
+    .faq-hero { padding: 5.5rem 3rem 2.5rem; }
     .faq-content { padding: 0 1.5rem 4rem; }
     .faq-footer { flex-direction: column; gap: 1rem; text-align: center; padding: 2rem 1.5rem; }
   }`;
