@@ -116,7 +116,8 @@ const STEPS_VENDITORE = [
     num: "02",
     title: "Il Fair Price Score",
     desc: "Il prezzo del tuo immobile viene calcolato sui dati OMI dell'Agenzia delle Entrate — la fonte più affidabile in Italia, aggiornata ogni semestre. Il Fair Price Score ti dice se il tuo prezzo è in linea col mercato, spiegando ogni dettaglio con dati verificabili.",
-    highlight: "Fonte ufficiale, dati pubblici, nessun conflitto di interessi. L'AI non guadagna di più se vendi a meno.",
+    highlight: "Fonte ufficiale, dati pubblici, nessun conflitto di interessi. L'AI non guadagna di più se vendi a meno. → Come calcoliamo il Fair Price Score",
+    highlightLink: "/metodologia",
     agency_title: "L'agente stima il prezzo in base alla sua esperienza — e al suo interesse a chiudere",
     agency_desc: "Il suo guadagno non dipende dal prezzo finale ma dalla velocità di chiusura. Spingere al ribasso gli conviene. A te no.",
     agency_cost: "Ogni €10.000 in meno = tu perdi, l'agente quasi niente",
@@ -304,6 +305,13 @@ export default function ComeFunziona() {
                   <span className="cf-step-highlight-icon">→</span>
                   <span>{step.highlight}</span>
                 </div>
+                {step.highlightLink && (
+                  <div style={{ marginTop: "0.8rem" }}>
+                    <a href={step.highlightLink} style={{ fontSize: "0.8rem", color: "var(--gold)", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "0.3rem" }}>
+                      ✦ Come calcoliamo il Fair Price Score →
+                    </a>
+                  </div>
+                )}
               </div>
 
               <div className="cf-step-agency">
