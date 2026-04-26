@@ -14,13 +14,7 @@ const styles = `
   html { scroll-behavior: smooth; }
   body { font-family: 'DM Sans', sans-serif; background: var(--black); color: var(--white); overflow-x: hidden; }
 
-  .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 1.2rem 3rem; border-bottom: 1px solid var(--border); background: rgba(10,10,10,0.95); backdrop-filter: blur(16px); }
-  .nav-logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; letter-spacing: 0.05em; color: var(--white); text-decoration: none; }
-  .nav-logo span { color: var(--red); }
-  .nav-back { font-size: 0.78rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(247,245,240,0.4); text-decoration: none; transition: color 0.2s; }
-  .nav-back:hover { color: var(--white); }
-
-  .hero { padding: 6rem 3rem 2.5rem; max-width: 860px; margin: 0 auto; }
+  .hero { padding: 5.5rem 3rem 2rem; max-width: 860px; margin: 0 auto; }
   .eyebrow { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--red); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.8rem; }
   .eyebrow::before { content: ''; width: 32px; height: 1px; background: var(--red); }
   .hero-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(3rem, 7vw, 6rem); line-height: 0.95; color: var(--white); margin-bottom: 0.8rem; }
@@ -86,7 +80,6 @@ const styles = `
   .footer-logo span { color: var(--red); }
 
   @media (max-width: 900px) {
-    .nav { padding: 1rem 1.5rem; }
     .hero, .content { padding-left: 1.5rem; padding-right: 1.5rem; }
     .footer { flex-direction: column; gap: 1rem; text-align: center; padding: 2rem 1.5rem; }
   }
