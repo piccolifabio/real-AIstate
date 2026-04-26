@@ -112,7 +112,7 @@ export default function MetodologiaPage() {
       <style>{styles}</style>
       <NavBar />
 
-      <div className="hero">
+      <div className="hero" style={{ paddingTop: "5.5rem", paddingBottom: "2rem" }}>
         <div className="eyebrow">Trasparenza totale</div>
         <h1 className="hero-title">Come calcoliamo<br />il Fair Price Score.</h1>
         <p className="hero-sub">Nessun algoritmo misterioso. Nessun dato inventato. Il Fair Price Score è basato su dati ufficiali dell&apos;Agenzia delle Entrate — e puoi verificarlo tu stesso.</p>
