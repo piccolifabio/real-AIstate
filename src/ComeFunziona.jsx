@@ -25,12 +25,12 @@ const styles = `
   .cf-nav-cta:hover { background: var(--red-dark); }
 
   /* HERO */
-  .cf-hero { padding: 9rem 3rem 5rem; max-width: 1100px; margin: 0 auto; }
+  .cf-hero { padding: 5.5rem 3rem 2.5rem; max-width: 1100px; margin: 0 auto; }
   .cf-eyebrow { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--red); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.8rem; }
   .cf-eyebrow::before { content: ''; width: 32px; height: 1px; background: var(--red); }
-  .cf-h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(3rem, 7vw, 6rem); line-height: 0.95; color: var(--white); margin-bottom: 1.5rem; }
+  .cf-h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(3rem, 7vw, 6rem); line-height: 0.95; color: var(--white); margin-bottom: 1rem; }
   .cf-h1 span { color: var(--red); }
-  .cf-sub { font-size: 1.05rem; color: rgba(247,245,240,0.5); line-height: 1.7; max-width: 600px; margin-bottom: 3rem; }
+  .cf-sub { font-size: 1rem; color: rgba(247,245,240,0.45); line-height: 1.7; max-width: 600px; margin-bottom: 3rem; }
 
   /* TOGGLE */
   .cf-toggle { display: inline-flex; background: var(--warm); border: 1px solid var(--border); border-radius: 3px; padding: 4px; gap: 4px; }
@@ -94,7 +94,7 @@ const styles = `
   @media (max-width: 900px) {
     .cf-nav { padding: 1rem 1.5rem; }
     .cf-nav-links { display: none; }
-    .cf-hero { padding: 7rem 1.5rem 4rem; }
+    .cf-hero { padding: 5.5rem 3rem 2.5rem; }
     .cf-content { padding: 0 1.5rem 4rem; }
     .cf-step { grid-template-columns: 1fr; gap: 1.5rem; }
     .cf-step-num { font-size: 3rem; padding-top: 0; }
