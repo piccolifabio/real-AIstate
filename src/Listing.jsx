@@ -16,11 +16,11 @@ const styles = `
   .listing-page { padding-top: 5rem; min-height: 100vh; }
 
   /* HERO */
-  .listing-hero { padding: 3rem 3rem 2rem; max-width: 1400px; margin: 0 auto; }
+  .listing-hero { padding: 5.5rem 3rem 2.5rem; max-width: 1400px; margin: 0 auto; }
   .listing-eyebrow { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--red); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.8rem; }
   .listing-eyebrow::before { content: ''; width: 32px; height: 1px; background: var(--red); }
-  .listing-h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2.5rem, 5vw, 4rem); color: var(--white); line-height: 1; margin-bottom: 0.5rem; }
-  .listing-sub { font-size: 0.9rem; color: var(--muted); margin-bottom: 2rem; }
+  .listing-h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(3rem, 7vw, 6rem); color: var(--white); line-height: 0.95; margin-bottom: 0.5rem; }
+  .listing-sub { font-size: 1rem; color: rgba(247,245,240,0.45); margin-bottom: 2rem; }
 
   /* FILTERS */
   .listing-filters { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 2rem; }
