@@ -14,11 +14,11 @@ const styles = `
   html { scroll-behavior: smooth; }
   body { font-family: 'DM Sans', sans-serif; background: var(--black); color: var(--white); overflow-x: hidden; }
 
-  .hero { padding: 2rem 3rem 2rem; margin-top: 5rem; max-width: 860px; margin-left: auto; margin-right: auto; }
+  .metod-hero { padding: 2rem 3rem 2rem; margin-top: 5rem; max-width: 860px; margin-left: auto; margin-right: auto; }
   .eyebrow { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--red); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.8rem; }
   .eyebrow::before { content: ''; width: 32px; height: 1px; background: var(--red); }
-  .hero-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(3rem, 7vw, 6rem); line-height: 0.95; color: var(--white); margin-bottom: 0.8rem; }
-  .hero-sub { font-size: 1.1rem; line-height: 1.7; color: rgba(247,245,240,0.5); max-width: 640px; font-weight: 300; }
+  .metod-hero-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(3rem, 7vw, 6rem); line-height: 0.95; color: var(--white); margin-bottom: 0.8rem; }
+  .metod-hero-sub { font-size: 1.1rem; line-height: 1.7; color: rgba(247,245,240,0.5); max-width: 640px; font-weight: 300; }
 
   .content { max-width: 860px; margin: 0 auto; padding: 0 3rem 6rem; }
 
@@ -112,10 +112,10 @@ export default function MetodologiaPage() {
       <style>{styles}</style>
       <NavBar />
 
-      <div className="hero" style={{ paddingTop: "5.5rem", paddingBottom: "2rem" }}>
+      <div className="metod-hero" style={{ paddingTop: "5.5rem", paddingBottom: "2rem" }}>
         <div className="eyebrow">Trasparenza totale</div>
-        <h1 className="hero-title">Come calcoliamo<br />il Fair Price Score.</h1>
-        <p className="hero-sub">Nessun algoritmo misterioso. Nessun dato inventato. Il Fair Price Score è basato su dati ufficiali dell&apos;Agenzia delle Entrate — e puoi verificarlo tu stesso.</p>
+        <h1 className="metod-hero-title">Come calcoliamo<br />il Fair Price Score.</h1>
+        <p className="metod-hero-sub">Nessun algoritmo misterioso. Nessun dato inventato. Il Fair Price Score è basato su dati ufficiali dell&apos;Agenzia delle Entrate — e puoi verificarlo tu stesso.</p>
       </div>
 
       <div className="content">
