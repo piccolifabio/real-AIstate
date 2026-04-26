@@ -117,10 +117,7 @@ export default function MetodologiaPage() {
   return (
     <>
       <style>{styles}</style>
-      <nav className="nav">
-        <a href="/" className="nav-logo">Real<span>AI</span>state</a>
-        <a href="/" className="nav-back">← Torna alla home</a>
-      </nav>
+      <NavBar />
 
       <div className="hero">
         <div className="eyebrow">Trasparenza totale</div>
