@@ -22,15 +22,15 @@ const styles = `
 
   .aff-page { min-height: 100vh; display: flex; flex-direction: column; }
 
-  .aff-hero { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 10rem 3rem 5rem; max-width: 900px; margin: 0 auto; width: 100%; }
+  .aff-hero { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 5.5rem 3rem 2.5rem; max-width: 900px; margin: 0 auto; width: 100%; }
 
   .aff-eyebrow { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--red); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.8rem; }
   .aff-eyebrow::before { content: ''; width: 32px; height: 1px; background: var(--red); }
 
-  .aff-h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(3.5rem, 8vw, 7rem); line-height: 0.95; color: var(--white); margin-bottom: 2rem; }
+  .aff-h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(3rem, 7vw, 6rem); line-height: 0.95; color: var(--white); margin-bottom: 1rem; }
   .aff-h1 span { color: var(--red); }
 
-  .aff-desc { font-size: 1.05rem; color: rgba(247,245,240,0.6); line-height: 1.8; max-width: 620px; margin-bottom: 3rem; }
+  .aff-desc { font-size: 1rem; color: rgba(247,245,240,0.45); line-height: 1.7; max-width: 620px; margin-bottom: 3rem; }
   .aff-desc strong { color: var(--white); font-weight: 600; }
 
   .aff-pillole { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 3.5rem; }
@@ -62,7 +62,7 @@ const styles = `
 
   @media (max-width: 768px) {
     .aff-nav { padding: 1rem 1.5rem; }
-    .aff-hero { padding: 8rem 1.5rem 4rem; }
+    .aff-hero { padding: 5.5rem 3rem 2.5rem; }
     .aff-form { flex-direction: column; }
     .aff-input { border-right: 1px solid rgba(247,245,240,0.12); border-radius: 2px; border-bottom: none; }
     .aff-btn { border-radius: 2px; }
