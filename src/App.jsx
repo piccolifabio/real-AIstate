@@ -203,13 +203,6 @@ const styles = `
   .legal-highlight p { color: rgba(247,245,240,0.7) !important; }
 
   /* FOOTER */
-  .footer { background: var(--black); padding: 2rem 3rem; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--border); font-size: 0.75rem; color: rgba(247,245,240,0.2); }
-  .footer-logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; color: rgba(247,245,240,0.4); }
-  .footer-logo span { color: var(--red); }
-  .footer-links { display: flex; gap: 2rem; }
-  .footer-links a { color: rgba(247,245,240,0.2); text-decoration: none; transition: color 0.2s; display: inline-flex; align-items: center; gap: 0.3rem; }
-  .footer-links a:hover { color: rgba(247,245,240,0.6); }
-  .footer-ig:hover { color: var(--red) !important; }
 
   .reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.6s ease, transform 0.6s ease; }
   .reveal.visible { opacity: 1; transform: translateY(0); }
@@ -251,9 +244,7 @@ const styles = `
     .btn-cta-submit { border-radius: 0 0 2px 2px; }
     .scuse-textarea { border-right: 2px solid rgba(10,10,10,0.15); border-bottom: none; border-radius: 2px 2px 0 0; }
     .scuse-submit { border-radius: 0 0 2px 2px; padding: 1rem; }
-    .footer { flex-direction: column; gap: 1.5rem; text-align: center; padding: 2rem 1.5rem; }
-    .footer-links { flex-wrap: wrap; justify-content: center; }
-  }
+      }
 `;
 
 function useScrollReveal(dep = null) {
