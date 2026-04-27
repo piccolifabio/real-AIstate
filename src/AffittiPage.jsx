@@ -54,8 +54,6 @@ const styles = `
   .aff-success { font-size: 0.85rem; color: #4ade80; margin-top: 0.8rem; display: flex; align-items: center; gap: 0.4rem; }
   .aff-form-label { font-size: 0.72rem; color: var(--muted); margin-bottom: 0.6rem; }
 
-  .aff-footer a { color: rgba(247,245,240,0.2); text-decoration: none; margin-left: 1.5rem; }
-
   @media (max-width: 768px) {
     .aff-nav { padding: 1rem 1.5rem; }
     .aff-hero { padding: 5.5rem 3rem 2.5rem; }
