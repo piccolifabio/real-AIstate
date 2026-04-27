@@ -58,7 +58,6 @@ const styles = `
   .blog-card-meta { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.8rem; }
   .blog-card-title { font-family: 'DM Serif Display', serif; font-size: 1.1rem; color: var(--white); line-height: 1.3; margin-bottom: 0.7rem; flex: 1; }
   .blog-card-excerpt { font-size: 0.82rem; color: rgba(247,245,240,0.4); line-height: 1.6; margin-bottom: 1rem; }
-  .blog-card-footer { display: flex; align-items: center; justify-content: space-between; padding-top: 0.8rem; border-top: 1px solid var(--border); }
   .blog-card-read { font-size: 0.72rem; color: var(--muted); }
   .blog-card-arrow { font-size: 0.75rem; color: var(--red); font-weight: 600; }
 
