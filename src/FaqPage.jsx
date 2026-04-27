@@ -54,15 +54,11 @@ const faqStyles = `
   .faq-btn-outline:hover { border-color: rgba(247,245,240,0.4); color: var(--white); }
 
   /* FOOTER */
-  .faq-footer { background: var(--black); padding: 2rem 3rem; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--border); font-size: 0.75rem; color: rgba(247,245,240,0.2); }
-  .faq-footer-logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; color: rgba(247,245,240,0.4); }
-  .faq-footer-logo span { color: var(--red); }
 
   @media (max-width: 900px) {
     .faq-nav { padding: 1rem 1.5rem; }
     .faq-hero { padding: 5.5rem 3rem 2.5rem; }
     .faq-content { padding: 0 1.5rem 4rem; }
-    .faq-footer { flex-direction: column; gap: 1rem; text-align: center; padding: 2rem 1.5rem; }
   }`;
 
 const faqs = [
