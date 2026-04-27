@@ -53,7 +53,6 @@ const styles = `
   .prop-card-specs { display: flex; gap: 1.2rem; margin-bottom: 1rem; }
   .prop-card-spec { font-size: 0.75rem; color: var(--muted); }
   .prop-card-spec strong { color: rgba(247,245,240,0.7); font-weight: 600; }
-  .prop-card-footer { display: flex; align-items: center; justify-content: space-between; padding-top: 1rem; border-top: 1px solid var(--border); }
   .prop-card-price { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; color: var(--white); line-height: 1; }
   .prop-card-sqm { font-size: 0.72rem; color: var(--muted); margin-top: 0.15rem; }
   .prop-card-score { text-align: right; }
