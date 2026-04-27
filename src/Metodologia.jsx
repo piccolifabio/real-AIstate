@@ -74,8 +74,6 @@ const styles = `
   /* OMI BADGE */
   .omi-badge { display: inline-flex; align-items: center; gap: 0.6rem; background: rgba(45,106,79,0.1); border: 1px solid rgba(45,106,79,0.25); border-radius: 2px; padding: 0.6rem 1.2rem; margin: 1rem 0; }
   .omi-badge-text { font-size: 0.78rem; color: var(--green-light); font-weight: 500; }
-
-  .footer-logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; color: rgba(247,245,240,0.4); }
   .footer-logo span { color: var(--red); }
 
   @media (max-width: 900px) {
