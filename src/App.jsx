@@ -14,7 +14,6 @@ import AffittiPage from "./AffittiPage.jsx";
 import ListingPage from "./Listing.jsx";
 import BlogPage from "./BlogPage.jsx";
 import BlogVerona from "./BlogVerona.jsx";
-import BlogArticoloVerona from "./BlogArticoloVerona.jsx";
 
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Serif+Display:ital@0;1&display=swap');
