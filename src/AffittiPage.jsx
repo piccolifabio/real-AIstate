@@ -54,11 +54,7 @@ const styles = `
   .aff-success { font-size: 0.85rem; color: #4ade80; margin-top: 0.8rem; display: flex; align-items: center; gap: 0.4rem; }
   .aff-form-label { font-size: 0.72rem; color: var(--muted); margin-bottom: 0.6rem; }
 
-  .aff-footer { background: var(--black); padding: 2rem 3rem; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--border); font-size: 0.75rem; color: rgba(247,245,240,0.2); }
-  .aff-footer-logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; color: rgba(247,245,240,0.4); }
-  .aff-footer-logo span { color: var(--red); }
   .aff-footer a { color: rgba(247,245,240,0.2); text-decoration: none; margin-left: 1.5rem; }
-  .aff-footer a:hover { color: rgba(247,245,240,0.5); }
 
   @media (max-width: 768px) {
     .aff-nav { padding: 1rem 1.5rem; }
@@ -66,7 +62,6 @@ const styles = `
     .aff-form { flex-direction: column; }
     .aff-input { border-right: 1px solid rgba(247,245,240,0.12); border-radius: 2px; border-bottom: none; }
     .aff-btn { border-radius: 2px; }
-    .aff-footer { flex-direction: column; gap: 1rem; text-align: center; padding: 2rem 1.5rem; }
   }`;
 
 export default function AffittiPage() {
