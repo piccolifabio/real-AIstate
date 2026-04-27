@@ -1,11 +1,12 @@
 const footerStyles = `
-  .site-footer { background: #0a0a0a; padding: 2rem 3rem; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid rgba(247,245,240,0.08); font-size: 0.75rem; color: rgba(247,245,240,0.2); gap: 1.5rem; }
+  .site-footer { background: #0a0a0a !important; padding: 2rem 3rem !important; display: flex !important; align-items: center !important; justify-content: space-between !important; border-top: 1px solid rgba(247,245,240,0.08) !important; font-size: 0.75rem; color: rgba(247,245,240,0.2); gap: 1.5rem; flex-wrap: nowrap; }
   .site-footer-logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; color: rgba(247,245,240,0.4); }
   .site-footer-logo span { color: #d93025; }
-  .site-footer-links { display: flex; gap: 2rem; align-items: center; flex-wrap: wrap; flex: 1; justify-content: center; }
+  .site-footer-links { display: flex !important; gap: 2rem; align-items: center !important; flex-wrap: wrap; flex: 1 !important; justify-content: center !important; margin: 0 !important; padding: 0 !important; text-align: left !important; }
   .site-footer-links a { color: rgba(247,245,240,0.2); text-decoration: none; transition: color 0.2s; display: inline-flex; align-items: center; gap: 0.3rem; font-family: 'DM Sans', sans-serif; }
   .site-footer-links a:hover { color: rgba(247,245,240,0.6); }
   .site-footer-ig:hover { color: #d93025 !important; }
+  .site-footer-copy { white-space: nowrap; }
   @media (max-width: 900px) {
     .site-footer { padding: 1.5rem; flex-wrap: wrap; }
     .site-footer-links { gap: 1.2rem; justify-content: center; width: 100%; }
