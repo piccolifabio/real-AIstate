@@ -76,11 +76,6 @@ const styles = `
   .cf-btn-outline:hover { border-color: rgba(247,245,240,0.4); color: var(--white); }
 
   /* FOOTER */
-  .cf-footer { background: var(--black); padding: 2rem 3rem; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--border); font-size: 0.75rem; color: rgba(247,245,240,0.2); }
-  .cf-footer-logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; color: rgba(247,245,240,0.4); }
-  .cf-footer-logo span { color: var(--red); }
-  .cf-footer-links a { color: rgba(247,245,240,0.2); text-decoration: none; margin-left: 1.5rem; transition: color 0.2s; }
-  .cf-footer-links a:hover { color: rgba(247,245,240,0.5); }
 
   /* PILLOLE */
   .cf-pillole { display: flex; gap: 1rem; margin-top: 2.5rem; flex-wrap: wrap; }
@@ -99,7 +94,6 @@ const styles = `
     .cf-step { grid-template-columns: 1fr; gap: 1.5rem; }
     .cf-step-num { font-size: 3rem; padding-top: 0; }
     .cf-cta { padding: 3rem 1.5rem; }
-    .cf-footer { flex-direction: column; gap: 1rem; text-align: center; padding: 2rem 1.5rem; }
   }`;
 
 const STEPS_VENDITORE = [
