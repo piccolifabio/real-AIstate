@@ -75,13 +75,11 @@ const styles = `
   .omi-badge { display: inline-flex; align-items: center; gap: 0.6rem; background: rgba(45,106,79,0.1); border: 1px solid rgba(45,106,79,0.25); border-radius: 2px; padding: 0.6rem 1.2rem; margin: 1rem 0; }
   .omi-badge-text { font-size: 0.78rem; color: var(--green-light); font-weight: 500; }
 
-  .footer { background: var(--black); padding: 2rem 3rem; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--border); font-size: 0.75rem; color: rgba(247,245,240,0.2); }
   .footer-logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; color: rgba(247,245,240,0.4); }
   .footer-logo span { color: var(--red); }
 
   @media (max-width: 900px) {
     .hero, .content { padding-left: 1.5rem; padding-right: 1.5rem; }
-    .footer { flex-direction: column; gap: 1rem; text-align: center; padding: 2rem 1.5rem; }
   }
 `;
 
