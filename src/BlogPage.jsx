@@ -31,11 +31,9 @@ const styles = `
 
   /* FEATURED ARTICLE */
   .blog-featured { max-width: 1200px; margin: 0 auto; padding: 0 3rem 3rem; }
-  .blog-featured-card { display: grid; grid-template-columns: 1fr 1fr; gap: 0; background: var(--warm); border: 1px solid var(--border); border-radius: 3px; overflow: hidden; text-decoration: none; transition: border-color 0.2s; }
+  .blog-featured-card { display: block; background: var(--warm); border: 1px solid var(--border); border-radius: 3px; overflow: hidden; text-decoration: none; transition: border-color 0.2s; }
   .blog-featured-card:hover { border-color: rgba(247,245,240,0.2); }
-  .blog-featured-img { background: var(--surface); min-height: 360px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-  .blog-featured-img-bg { position: absolute; inset: 0; background: linear-gradient(135deg, #1a0a0a 0%, #0a0a0a 50%, #1a1a0a 100%); }
-  .blog-featured-img-text { position: relative; z-index: 1; font-family: 'Bebas Neue', sans-serif; font-size: 8rem; color: rgba(217,48,37,0.12); line-height: 1; text-align: center; padding: 2rem; }
+
   .blog-featured-body { padding: 2.5rem; display: flex; flex-direction: column; justify-content: space-between; }
   .blog-featured-meta { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.2rem; }
   .blog-tag { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 0.25rem 0.7rem; border-radius: 2px; }
@@ -82,8 +80,6 @@ const styles = `
   @media (max-width: 1024px) { .blog-grid { grid-template-columns: repeat(2, 1fr); } }
   @media (max-width: 768px) {
     .blog-hero, .blog-featured, .blog-grid-section, .blog-newsletter { padding-left: 1.5rem; padding-right: 1.5rem; }
-    .blog-featured-card { grid-template-columns: 1fr; }
-    .blog-featured-img { min-height: 200px; }
     .blog-grid { grid-template-columns: 1fr; }
     .blog-newsletter-box { flex-direction: column; gap: 1.5rem; }
     .blog-nl-form { width: 100%; }
@@ -185,10 +181,7 @@ export default function BlogPage() {
         {featured && (catAttiva === "Tutti" || catAttiva === featured.categoria) && (
           <div className="blog-featured">
             <a href={`/blog/${featured.slug}`} className="blog-featured-card">
-              <div className="blog-featured-img">
-                <div className="blog-featured-img-bg" />
-                <div className="blog-featured-img-text">{featured.num}</div>
-              </div>
+
               <div className="blog-featured-body">
                 <div>
                   <div className="blog-featured-meta">
