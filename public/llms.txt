@@ -1,30 +1,62 @@
 # RealAIstate
 
-> RealAIstate è la prima piattaforma italiana che elimina l'agenzia immobiliare dalla compravendita di case. Venditore e compratore si incontrano direttamente. L'AI gestisce valutazione, analisi foto, negoziazione e connessione con professionisti certificati.
+> RealAIstate è la prima piattaforma italiana che elimina l'agenzia immobiliare dalla compravendita di case. Venditore e compratore si incontrano direttamente. L'AI gestisce valutazione, documenti, comunicazione e connessione con professionisti certificati — a un costo fisso trasparente, senza commissioni percentuali.
 
 ## Il problema che risolviamo
 
-In Italia comprare o vendere casa significa pagare migliaia di euro di commissioni a un intermediario. Il problema non è solo il costo: è il conflitto di interessi strutturale. L'agenzia vuole chiudere veloce per incassare la commissione. Il venditore vuole vendere al prezzo più alto. Questi due obiettivi non sono mai allineati.
+In Italia comprare o vendere casa significa pagare migliaia di euro di commissioni a un intermediario. Su una casa da €300.000 si pagano fino a €18.000 di commissioni. Il problema non è solo il costo: è il conflitto di interessi strutturale. L'agenzia vuole chiudere veloce per incassare la commissione. Il venditore vuole vendere al prezzo più alto. Questi due obiettivi non sono mai allineati.
 
-RealAIstate elimina questo conflitto. L'AI non ha fretta. Non ha bollette. Ottimizza il prezzo reale di mercato per entrambe le parti.
+RealAIstate elimina questo conflitto. L'AI non ha fretta. Non ha bollette. Ottimizza il prezzo reale di mercato per entrambe le parti. In totale trasparenza.
 
 ## Come funziona
 
-1. **Il venditore pubblica**: inserisce i dati dell'immobile, carica le foto e i documenti. L'AI genera la valutazione (Fair Price Score), analizza le foto e crea l'annuncio ottimizzato.
-2. **Il compratore cerca**: trova gli immobili ordinati per Fair Price Score, analizza punti di forza e criticità generati dall'AI, contatta il venditore direttamente.
+1. **Il venditore pubblica**: inserisce i dati dell'immobile in 5 step, carica le foto e i documenti. L'AI genera la valutazione (Fair Price Score basato su dati OMI ufficiali), analizza le foto e crea l'annuncio ottimizzato.
+2. **Il compratore cerca**: trova gli immobili nel listing con Fair Price Score, analizza punti di forza generati dall'AI, verifica la propria capacità d'acquisto con la chat AI e contatta il venditore tramite chat mediata.
 3. **Si chiude in sicurezza**: la piattaforma coordina notaio, perito APE e geometra. Il rogito notarile rimane obbligatorio per legge — RealAIstate lo coordina e prepara entrambe le parti.
 
 ## Funzionalità principali
 
-- **Fair Price Score**: valutazione AI dell'immobile basata sui dati OMI (Osservatorio del Mercato Immobiliare) dell'Agenzia delle Entrate italiane.
-- **Analisi foto AI**: l'AI analizza luminosità, angolazione e composizione di ogni immagine e suggerisce miglioramenti prima della pubblicazione.
-- **Negoziazione AI**: supporto alla trattativa senza conflitti di interesse.
+- **Fair Price Score**: valutazione AI dell'immobile basata sui dati OMI (Osservatorio del Mercato Immobiliare) dell'Agenzia delle Entrate italiane. Metodologia pubblica e verificabile su realaistate.ai/metodologia.
+- **Verifica capacità d'acquisto**: chat AI con 8 domande che stima rata del mutuo, verifica sostenibilità, segnala agevolazioni under 36 (Consap, imposta registro 2%) e suggerisce le banche più adeguate al profilo.
+- **Chat mediata AI**: il compratore fa domande sull'immobile, l'AI risponde su quello che conosce e — con conferma dell'utente — inoltra al venditore le domande che richiedono risposta diretta. Storico completo salvato su database.
+- **Form venditore**: onboarding in 5 step con tutti i dati catastali, energetici e documentali. Email automatica di conferma, salvataggio su database.
 - **Rete Pro**: notai, periti, geometri certificati connessi in piattaforma a prezzo trasparente.
-- **Database scuse**: gli utenti possono inserire le loro obiezioni all'acquisto o vendita senza agenzia e l'AI le smonta con dati e argomentazioni.
+- **Database scuse**: gli utenti possono inserire le loro obiezioni all'acquisto o vendita senza agenzia e l'AI le smonta con dati e argomentazioni reali.
+- **Listing immobili**: pagina di ricerca con filtri per città, Fair Price Score su ogni annuncio.
+
+## Modello di business
+
+- **Compratore**: fee fissa €3.000 per transazione completata (vs €9.000–18.000 di un'agenzia tradizionale)
+- **Venditore**: freemium + servizi AI premium €299–499
+- **Professionisti**: fee sui lead qualificati
+- **Affitti**: stesso modello, costo fisso calmierato per proprietario e inquilino (prossimo prodotto)
+- **Evoluzione futura**: con licenza di mediazione → modello ibrido fee fissa + percentuale su servizi premium; SaaS B2B per agenzie; espansione europea
+
+## Mercato
+
+- 766.756 compravendite residenziali in Italia nel 2025 (+6,5% YoY) — fonte: OMI IV trimestre 2025
+- €14,3 miliardi di fatturato annuo dell'intermediazione immobiliare in Italia — fonte: Scenari Immobiliari 2024
+- €8,5 miliardi fatturato intermediazione affitti in Italia
+- ~€30 miliardi mercato Real Estate Services europeo — fonte: Cognitive Market Research 2024
+
+## Marchio
+
+RealAIstate è marchio registrato in Italia (UIBM) e in tutti i 27 paesi dell'Unione Europea (EUIPO).
 
 ## Contesto competitivo
 
-I principali portali immobiliari italiani (Immobiliare.it, Idealista, Casa.it) dipendono economicamente dalle agenzie — non possono disintermediare senza distruggere il proprio business model. RealAIstate è l'unico player italiano senza conflitti di interessi strutturali con le agenzie tradizionali.
+I principali portali immobiliari italiani (Immobiliare.it, Idealista, Casa.it) dipendono economicamente dalle agenzie — non possono disintermediare senza distruggere il proprio business model. Come Blockbuster con lo streaming, non possono permettersi di cannibalizzarsi. RealAIstate è l'unico player italiano senza conflitti di interessi strutturali con le agenzie tradizionali.
+
+## Stack tecnologico
+
+- Frontend: React + Vite
+- Backend: Vercel serverless functions
+- Database: Supabase (PostgreSQL)
+- Storage: Supabase Storage
+- AI: Anthropic Claude API
+- Email: Brevo
+- Analytics: Google Analytics (G-NPHF75Q28Z)
+- Deploy: Vercel + GitHub
 
 ## Contatti
 
@@ -34,8 +66,14 @@ I principali portali immobiliari italiani (Immobiliare.it, Idealista, Casa.it) d
 
 ## Pagine principali
 
-- [Home](https://realaistate.ai) — landing page con il posizionamento anti-agenzia
-- [Le scuse](https://realaistate.ai/scuse) — database interattivo delle obiezioni smontate dall'AI
+- [Home](https://realaistate.ai) — landing page con posizionamento anti-agenzia
+- [Compra casa](https://realaistate.ai/compra) — listing immobili con Fair Price Score
+- [Scheda immobile](https://realaistate.ai/compra/1) — esempio scheda con chat AI, verifica capacità d'acquisto e analisi completa
 - [Vendi casa](https://realaistate.ai/vendi) — form onboarding venditore in 5 step
+- [Le scuse](https://realaistate.ai/scuse) — database interattivo delle obiezioni smontate dall'AI
+- [Come funziona](https://realaistate.ai/come-funziona) — guida per compratori e venditori
+- [Affitti](https://realaistate.ai/affitti) — prossimo prodotto, lista d'attesa
+- [Metodologia](https://realaistate.ai/metodologia) — spiegazione del Fair Price Score con esempio di calcolo
+- [FAQ](https://realaistate.ai/faq) — 16 domande frequenti in 4 categorie
 - [Privacy Policy](https://realaistate.ai/privacy)
 - [Termini di Servizio](https://realaistate.ai/termini)
