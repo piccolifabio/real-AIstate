@@ -187,6 +187,7 @@ export default function BlogPage() {
                     <span className={`blog-tag ${featured.tagClass}`}>{featured.categoria}</span>
                     <span className="blog-date">{featured.data} · {featured.lettura} di lettura</span>
                   </div>
+
                   <h2 className="blog-featured-title">{featured.titolo}</h2>
                   <p className="blog-featured-excerpt">{featured.excerpt}</p>
                 </div>
@@ -201,7 +202,7 @@ export default function BlogPage() {
           <div className="blog-section-label">Tutti gli articoli</div>
           <div className="blog-grid">
             {griglia.map(art => (
-              <div key={art.id} className="blog-card" style={{cursor: "default"}}>
+              <div key={art.id} className="blog-card" style={{cursor: art.id === 2 ? "pointer" : "default"}} onClick={art.id === 2 ? () => window.location.href = `/blog/${art.slug}` : undefined}>
 
                 <div className="blog-card-body">
                   <div className="blog-card-meta">
