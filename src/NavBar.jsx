@@ -54,6 +54,7 @@ export default function NavBar() {
       {open && (
         <div className="nav-mobile-menu" style={{ display: "flex" }}>
           <a href="/" onClick={() => setOpen(false)}>Home</a>
+          <a href="/blog" onClick={() => setOpen(false)}>Blog</a>
           <a href="/come-funziona" onClick={() => setOpen(false)}>Come funziona</a>
           <a href="/scuse" onClick={() => setOpen(false)}>Le scuse</a>
           <a href="/affitti" onClick={() => setOpen(false)}>Affitti</a>
