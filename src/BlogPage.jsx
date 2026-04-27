@@ -31,19 +31,19 @@ const styles = `
 
   /* FEATURED ARTICLE */
   .blog-featured { max-width: 1200px; margin: 0 auto; padding: 0 3rem 3rem; }
-  .blog-featured-card { display: block; background: var(--warm); border: 1px solid var(--border); border-radius: 3px; overflow: hidden; text-decoration: none; transition: border-color 0.2s; }
+  .blog-featured-card { display: block; background: var(--warm); border: 1px solid var(--border); border-radius: 3px; overflow: hidden; text-decoration: none; transition: border-color 0.2s, transform 0.2s; max-width: 380px; }
   .blog-featured-card:hover { border-color: rgba(247,245,240,0.2); }
 
-  .blog-featured-body { padding: 2.5rem; display: flex; flex-direction: column; justify-content: space-between; }
-  .blog-featured-meta { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.2rem; }
+  .blog-featured-body { padding: 1.3rem; display: flex; flex-direction: column; }
+  .blog-featured-meta { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.8rem; }
   .blog-tag { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 0.25rem 0.7rem; border-radius: 2px; }
   .blog-tag-red { background: rgba(217,48,37,0.15); color: var(--red); border: 1px solid rgba(217,48,37,0.3); }
   .blog-tag-gold { background: rgba(201,168,76,0.15); color: var(--gold); border: 1px solid rgba(201,168,76,0.3); }
   .blog-tag-gray { background: rgba(247,245,240,0.05); color: var(--muted); border: 1px solid var(--border); }
   .blog-date { font-size: 0.75rem; color: var(--muted); }
-  .blog-featured-title { font-family: 'DM Serif Display', serif; font-size: clamp(1.5rem, 2.5vw, 2rem); color: var(--white); line-height: 1.2; margin-bottom: 1rem; }
-  .blog-featured-excerpt { font-size: 0.9rem; color: rgba(247,245,240,0.5); line-height: 1.7; margin-bottom: 2rem; flex: 1; }
-  .blog-cta-link { font-size: 0.78rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--red); display: flex; align-items: center; gap: 0.5rem; transition: gap 0.2s; }
+  .blog-featured-title { font-family: 'DM Serif Display', serif; font-size: 1.1rem; color: var(--white); line-height: 1.3; margin-bottom: 0.7rem; }
+  .blog-featured-excerpt { font-size: 0.82rem; color: rgba(247,245,240,0.4); line-height: 1.6; margin-bottom: 1rem; }
+  .blog-cta-link { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--red); display: flex; align-items: center; gap: 0.5rem; padding-top: 0.8rem; border-top: 1px solid var(--border); }
   .blog-featured-card:hover .blog-cta-link { gap: 0.8rem; }
 
   /* GRID */
