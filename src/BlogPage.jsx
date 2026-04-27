@@ -55,8 +55,7 @@ const styles = `
   .blog-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
   .blog-card { background: var(--warm); border: 1px solid var(--border); border-radius: 3px; overflow: hidden; text-decoration: none; transition: border-color 0.2s, transform 0.2s; display: flex; flex-direction: column; }
   .blog-card:hover { border-color: rgba(247,245,240,0.15); transform: translateY(-2px); }
-  .blog-card-img { height: 160px; background: var(--surface); position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-  .blog-card-img-num { font-family: 'Bebas Neue', sans-serif; font-size: 5rem; color: rgba(247,245,240,0.04); }
+
   .blog-card-body { padding: 1.3rem; flex: 1; display: flex; flex-direction: column; }
   .blog-card-meta { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.8rem; }
   .blog-card-title { font-family: 'DM Serif Display', serif; font-size: 1.1rem; color: var(--white); line-height: 1.3; margin-bottom: 0.7rem; flex: 1; }
@@ -211,9 +210,7 @@ export default function BlogPage() {
           <div className="blog-grid">
             {griglia.map(art => (
               <a key={art.id} href={`/blog/${art.slug}`} className="blog-card">
-                <div className="blog-card-img">
-                  <div className="blog-card-img-num">{art.num}</div>
-                </div>
+
                 <div className="blog-card-body">
                   <div className="blog-card-meta">
                     <span className={`blog-tag ${art.tagClass}`}>{art.categoria}</span>
