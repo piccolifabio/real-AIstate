@@ -192,7 +192,7 @@ export default function BlogPage() {
                 </div>
                 <span className="blog-cta-link">Leggi l'articolo →</span>
               </div>
-            </a>
+            </div>
           </div>
         )}
 
@@ -201,7 +201,7 @@ export default function BlogPage() {
           <div className="blog-section-label">Tutti gli articoli</div>
           <div className="blog-grid">
             {griglia.map(art => (
-              <a key={art.id} href={`/blog/${art.slug}`} className="blog-card">
+              <div key={art.id} className="blog-card" style={{cursor: "default"}}>
 
                 <div className="blog-card-body">
                   <div className="blog-card-meta">
@@ -215,7 +215,7 @@ export default function BlogPage() {
                     <span className="blog-card-arrow">→</span>
                   </div>
                 </div>
-              </a>
+              </div>
             ))}
           </div>
         </div>
