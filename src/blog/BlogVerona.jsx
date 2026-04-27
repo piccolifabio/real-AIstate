@@ -1,6 +1,6 @@
 import { useEffect } from "react";
-import NavBar from "./NavBar.jsx";
-import SiteFooter from "./SiteFooter.jsx";
+import NavBar from "../NavBar.jsx";
+import SiteFooter from "../SiteFooter.jsx";
 
 export default function BlogVerona() {
   useEffect(() => { window.scrollTo(0, 0); }, []);
