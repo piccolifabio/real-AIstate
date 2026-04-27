@@ -21,6 +21,7 @@ export default function SiteFooter() {
         <div className="site-footer-links">
           <a href="/privacy">Privacy</a>
           <a href="/termini">Termini</a>
+          <a href="/blog">Blog</a>
           <a href="/faq">FAQ</a>
           <a href="mailto:info@realaistate.ai">Contatti</a>
           <a href="https://www.instagram.com/realaistate.ai" target="_blank" rel="noopener noreferrer" className="site-footer-ig">
