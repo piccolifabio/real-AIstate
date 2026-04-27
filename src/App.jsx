@@ -767,7 +767,6 @@ export default function App() {
         <Route path="/compra" element={<ListingPage />} />
         <Route path="/blog" element={<BlogPage />} />
         <Route path="/blog/agenzie-abusive-verona" element={<BlogVerona />} />
-        <Route path="/blog/agenzie-abusive-verona" element={<BlogArticoloVerona />} />
       </Routes>
     </>
   );
