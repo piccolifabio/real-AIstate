@@ -52,7 +52,7 @@ const styles = `
   .blog-section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
   .blog-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
   .blog-card { background: var(--warm); border: 1px solid var(--border); border-radius: 3px; overflow: hidden; text-decoration: none; transition: border-color 0.2s, transform 0.2s; display: flex; flex-direction: column; }
-  .blog-card:hover { border-color: rgba(247,245,240,0.15); transform: translateY(-2px); }
+  .blog-card.clickable:hover { border-color: rgba(247,245,240,0.15); transform: translateY(-2px); cursor: pointer; }
 
   .blog-card-body { padding: 1.3rem; flex: 1; display: flex; flex-direction: column; }
   .blog-card-meta { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.8rem; }
@@ -192,7 +192,7 @@ export default function BlogPage() {
                 </div>
                 <span className="blog-cta-link">Leggi l'articolo →</span>
               </div>
-            </div>
+            </a>
           </div>
         )}
 
