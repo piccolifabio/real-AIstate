@@ -13,7 +13,7 @@ import SiteFooter from "./SiteFooter.jsx";
 import AffittiPage from "./AffittiPage.jsx";
 import ListingPage from "./Listing.jsx";
 import BlogPage from "./BlogPage.jsx";
-import BlogVerona from "./blog/BlogVerona.jsx";
+import BlogVerona from "./BlogVerona.jsx";
 import BlogArticoloVerona from "./BlogArticoloVerona.jsx";
 
 const styles = `
