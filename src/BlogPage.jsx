@@ -202,7 +202,7 @@ export default function BlogPage() {
           <div className="blog-section-label">Tutti gli articoli</div>
           <div className="blog-grid">
             {griglia.map(art => (
-              <div key={art.id} className="blog-card" style={{cursor: art.id === 2 ? "pointer" : "default"}} onClick={art.id === 2 ? () => window.location.href = `/blog/${art.slug}` : undefined}>
+              <div key={art.id} className="blog-card" style={{cursor: SLUGS_ATTIVI.includes(art.slug) ? "pointer" : "default"}} onClick={SLUGS_ATTIVI.includes(art.slug) ? () => window.location.href = `/blog/${art.slug}` : undefined}>
 
                 <div className="blog-card-body">
                   <div className="blog-card-meta">
