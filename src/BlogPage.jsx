@@ -143,6 +143,17 @@ const articoli = [
     excerpt: "Non un algoritmo proprietario. Non una stima soggettiva. Il Fair Price Score di RealAIstate usa i dati OMI dell'Agenzia delle Entrate — gli stessi che usa il fisco.",
     num: "OMI",
   },
+  {
+    id: 6,
+    slug: "ai-real-estate-morgan-stanley",
+    categoria: "Mercato",
+    tagClass: "blog-tag-gold",
+    data: "28 Aprile 2026",
+    lettura: "6 min",
+    titolo: "L'AI cambierà il modo in cui compri casa. Secondo Morgan Stanley, vale $34 miliardi. In Italia, è già iniziato.",
+    excerpt: "Un'analisi di Morgan Stanley stima $34 miliardi di efficienza che l'AI porterà al settore immobiliare entro il 2030. Ma cosa significa concretamente per chi compra o vende casa oggi?",
+    num: "$34B",
+  },
 ];
 
 const categorie = ["Tutti", "Mercato", "Trasparenza", "Normativa", "Guide"];
