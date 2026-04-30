@@ -236,15 +236,7 @@ export default function Privacy() {
         </div>
       </div>
 
-      <footer className="legal-footer">
-        <div className="legal-footer-logo">Real<span>AI</span>state</div>
-        <div className="legal-footer-links">
-          <a href="/privacy">Privacy</a>
-          <a href="/termini">Termini</a>
-          <a href="mailto:info@realaistate.ai">Contatti</a>
-        </div>
-        <div>© 2025 RealAIstate</div>
-      </footer>
+      <Footer />
     </>
   );
 }
