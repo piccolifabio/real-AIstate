@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import SiteFooter from "./SiteFooter.jsx";
 
 const BK = "#0a0a0a";
 const WH = "#f7f5f0";
@@ -158,18 +159,7 @@ export default function HomeEN() {
         </div>
       </div>
 
-      {/* FOOTER */}
-      <footer style={{ padding: "2rem 3rem", display: "flex", alignItems: "center", justifyContent: "space-between", borderTop: `1px solid ${BR}`, fontSize: "0.75rem", color: "rgba(247,245,240,0.2)", gap: "1.5rem", flexWrap: "wrap" }}>
-        <div style={bebas({ fontSize: "1.2rem", color: "rgba(247,245,240,0.4)" })}>
-          Real<span style={{ color: RD }}>AI</span>state
-        </div>
-        <div style={{ display: "flex", gap: "2rem", flex: 1, justifyContent: "center", flexWrap: "wrap" }}>
-          {[["Privacy", "/privacy"], ["Terms", "/termini"], ["Contact", "mailto:info@realaistate.ai"], ["Instagram", "https://www.instagram.com/realaistate.ai"]].map(([label, href]) => (
-            <a key={label} href={href} style={{ color: "rgba(247,245,240,0.2)", textDecoration: "none" }}>{label}</a>
-          ))}
-        </div>
-        <div>© 2025 RealAIstate</div>
-      </footer>
+      <SiteFooter />
 
     </div>
   );
