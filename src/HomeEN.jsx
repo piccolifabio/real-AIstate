@@ -45,8 +45,8 @@ export default function HomeEN() {
         </a>
         <div style={{ flex: 1 }} />
         <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-          <a href="/" title="Italiano" style={{ fontSize: "1.3rem", padding: "0.2rem 0.5rem", border: `1px solid ${BR}`, borderRadius: "2px", textDecoration: "none", lineHeight: 1.4 }}>🇮🇹</a>
-          <a href="/en" title="English" style={{ fontSize: "1.3rem", padding: "0.2rem 0.5rem", border: `1px solid rgba(217,48,37,0.4)`, borderRadius: "2px", textDecoration: "none", lineHeight: 1.4 }}>🇬🇧</a>
+          <a href="/" title="Italiano" style={{ display:"inline-flex", alignItems:"center", padding:"0.3rem 0.5rem", border:"1px solid rgba(247,245,240,0.1)", borderRadius:"2px", textDecoration:"none" }} dangerouslySetInnerHTML={{ __html: `<svg width="20" height="14" viewBox="0 0 20 14" xmlns="http://www.w3.org/2000/svg"><rect width="20" height="14" fill="#CE2B37"/><rect width="13.33" height="14" fill="#fff"/><rect width="6.67" height="14" fill="#009246"/></svg>` }} />
+          <a href="/en" title="English" style={{ display:"inline-flex", alignItems:"center", padding:"0.3rem 0.5rem", border:"1px solid rgba(217,48,37,0.4)", borderRadius:"2px", textDecoration:"none" }} dangerouslySetInnerHTML={{ __html: `<svg width="20" height="14" viewBox="0 0 20 14" xmlns="http://www.w3.org/2000/svg"><rect width="20" height="14" fill="#012169"/><path d="M0,0 L20,14 M20,0 L0,14" stroke="#fff" stroke-width="2.8"/><path d="M0,0 L20,14 M20,0 L0,14" stroke="#C8102E" stroke-width="1.8"/><path d="M10,0 V14 M0,7 H20" stroke="#fff" stroke-width="4.5"/><path d="M10,0 V14 M0,7 H20" stroke="#C8102E" stroke-width="2.8"/></svg>` }} />
         </div>
         <a href="#early" style={p({ background: RD, color: WH, padding: "0.55rem 1.2rem", borderRadius: "2px", fontSize: "0.75rem", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", textDecoration: "none" })}>
           Get early access
