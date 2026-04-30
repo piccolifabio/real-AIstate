@@ -40,7 +40,7 @@ export default function HomeEN() {
 
       {/* NAV */}
       <nav style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 100, display: "flex", alignItems: "center", padding: "1.2rem 3rem", borderBottom: `1px solid ${BR}`, background: "rgba(10,10,10,0.95)", backdropFilter: "blur(16px)", gap: "2rem" }}>
-        <a href="/en" style={bebas({ fontSize: "1.6rem", letterSpacing: "0.05em", color: WH, textDecoration: "none" })}>
+        <a href="/" style={bebas({ fontSize: "1.6rem", letterSpacing: "0.05em", color: WH, textDecoration: "none" })}>
           Real<span style={{ color: RD }}>AI</span>state
         </a>
         <div style={{ flex: 1 }} />
