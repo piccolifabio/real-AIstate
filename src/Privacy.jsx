@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import SiteFooter from "./SiteFooter.jsx";
 
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
@@ -102,23 +103,9 @@ const styles = `
   }
   .legal-highlight p { color: rgba(247,245,240,0.7) !important; }
 
-  .legal-footer {
-    background: var(--black); padding: 2rem 3rem;
-    display: flex; align-items: center; justify-content: space-between;
-    border-top: 1px solid var(--border);
-    font-size: 0.75rem; color: rgba(247,245,240,0.2);
-  }
-  .legal-footer-logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; color: rgba(247,245,240,0.4); }
-  .legal-footer-logo span { color: var(--red); }
-  .legal-footer-links { display: flex; gap: 2rem; }
-  .legal-footer-links a { color: rgba(247,245,240,0.2); text-decoration: none; transition: color 0.2s; }
-  .legal-footer-links a:hover { color: rgba(247,245,240,0.6); }
-
   @media (max-width: 768px) {
     .legal-nav { padding: 1rem 1.5rem; }
     .legal-container { padding: 7rem 1.5rem 4rem; }
-    .legal-footer { flex-direction: column; gap: 1rem; text-align: center; padding: 2rem 1.5rem; }
-    .legal-footer-links { flex-wrap: wrap; justify-content: center; }
   }
 `;
 
@@ -185,15 +172,15 @@ export default function Privacy() {
           <h2>Servizi di terze parti</h2>
           <p>Utilizziamo i seguenti servizi esterni, ciascuno con la propria privacy policy:</p>
           <ul>
-            <li><strong>Brevo (ex Sendinblue)</strong> — per la gestione della lista email e l'invio di comunicazioni. <a href="https://www.brevo.com/legal/privacypolicy/" target="_blank" rel="noopener noreferrer">Privacy policy Brevo</a></li>
-            <li><strong>Google Analytics</strong> — per l'analisi del traffico web con IP anonimizzato. <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Privacy policy Google</a></li>
-            <li><strong>Vercel</strong> — per l'hosting del sito web. <a href="https://vercel.com/legal/privacy-policy" target="_blank" rel="noopener noreferrer">Privacy policy Vercel</a></li>
+            <li><strong>Brevo (ex Sendinblue)</strong> — per la gestione della lista email. <a href="https://www.brevo.com/legal/privacypolicy/" target="_blank" rel="noopener noreferrer">Privacy policy Brevo</a></li>
+            <li><strong>Google Analytics</strong> — per l'analisi del traffico con IP anonimizzato. <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Privacy policy Google</a></li>
+            <li><strong>Vercel</strong> — per l'hosting del sito. <a href="https://vercel.com/legal/privacy-policy" target="_blank" rel="noopener noreferrer">Privacy policy Vercel</a></li>
           </ul>
         </div>
 
         <div className="legal-section">
           <h2>Conservazione dei dati</h2>
-          <p>I tuoi dati vengono conservati per il tempo strettamente necessario alle finalità per cui sono stati raccolti:</p>
+          <p>I tuoi dati vengono conservati per il tempo strettamente necessario:</p>
           <ul>
             <li>Gli indirizzi email della lista d'attesa vengono conservati fino alla cancellazione volontaria o alla chiusura del servizio</li>
             <li>I dati di navigazione raccolti da Google Analytics vengono conservati per 14 mesi</li>
@@ -202,7 +189,7 @@ export default function Privacy() {
 
         <div className="legal-section">
           <h2>I tuoi diritti</h2>
-          <p>In conformità al Regolamento Generale sulla Protezione dei Dati (GDPR — Reg. UE 2016/679), hai il diritto di:</p>
+          <p>In conformità al GDPR (Reg. UE 2016/679), hai il diritto di:</p>
           <ul>
             <li>Accedere ai tuoi dati personali in nostro possesso</li>
             <li>Richiedere la rettifica di dati inesatti</li>
@@ -211,32 +198,14 @@ export default function Privacy() {
             <li>Richiedere la portabilità dei dati</li>
             <li>Revocare il consenso in qualsiasi momento</li>
           </ul>
-          <p>Per esercitare i tuoi diritti, scrivi a <a href="mailto:privacy@realaistate.ai">privacy@realaistate.ai</a>. Risponderemo entro 30 giorni.</p>
+          <p>Per esercitare i tuoi diritti: <a href="mailto:privacy@realaistate.ai">privacy@realaistate.ai</a>. Risponderemo entro 30 giorni.</p>
         </div>
 
         <div className="legal-section">
           <h2>Cookie</h2>
-          <p>Il sito utilizza esclusivamente cookie tecnici necessari al funzionamento e cookie analitici di Google Analytics. Non utilizziamo cookie di profilazione o cookie di terze parti a fini pubblicitari.</p>
-          <p>Puoi disabilitare i cookie analitici nelle impostazioni del tuo browser o tramite il <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener noreferrer">Google Analytics Opt-out Add-on</a>.</p>
+          <p>Il sito utilizza esclusivamente cookie tecnici necessari al funzionamento e cookie analitici di Google Analytics. Non utilizziamo cookie di profilazione o pubblicitari.</p>
+          <p>Puoi disabilitare i cookie analitici tramite il <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener noreferrer">Google Analytics Opt-out Add-on</a>.</p>
         </div>
 
         <div className="legal-section">
           <h2>Modifiche alla privacy policy</h2>
-          <p>Ci riserviamo il diritto di modificare questa privacy policy in qualsiasi momento. Le modifiche saranno pubblicate su questa pagina con la data di aggiornamento. Ti invitiamo a consultarla periodicamente.</p>
-        </div>
-
-        <div className="legal-section">
-          <h2>Contatti</h2>
-          <p>Per qualsiasi domanda relativa al trattamento dei tuoi dati personali, contattaci a:</p>
-          <div className="legal-highlight">
-            <p><strong>Fabio Piccoli — RealAIstate</strong><br />
-            Email: <a href="mailto:privacy@realaistate.ai">privacy@realaistate.ai</a></p>
-          </div>
-          <p>Hai inoltre il diritto di proporre reclamo al Garante per la Protezione dei Dati Personali (<a href="https://www.garanteprivacy.it" target="_blank" rel="noopener noreferrer">www.garanteprivacy.it</a>) se ritieni che il trattamento dei tuoi dati violi il GDPR.</p>
-        </div>
-      </div>
-
-      <Footer />
-    </>
-  );
-}
