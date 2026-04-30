@@ -45,8 +45,8 @@ export default function HomeEN() {
         </a>
         <div style={{ flex: 1 }} />
         <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-          <a href="/" title="Italiano" style={{ fontSize: "1.2rem", padding: "0.2rem 0.4rem", border: `1px solid ${BR}`, borderRadius: "2px", textDecoration: "none" }}>🇮🇹</a>
-          <a href="/en" title="English" style={{ fontSize: "1.2rem", padding: "0.2rem 0.4rem", border: `1px solid rgba(217,48,37,0.4)`, borderRadius: "2px", textDecoration: "none" }}>🇬🇧</a>
+          <a href="/" title="Italiano" style={{ fontSize: "1.3rem", padding: "0.2rem 0.5rem", border: `1px solid ${BR}`, borderRadius: "2px", textDecoration: "none", lineHeight: 1.4 }}>🇮🇹</a>
+          <a href="/en" title="English" style={{ fontSize: "1.3rem", padding: "0.2rem 0.5rem", border: `1px solid rgba(217,48,37,0.4)`, borderRadius: "2px", textDecoration: "none", lineHeight: 1.4 }}>🇬🇧</a>
         </div>
         <a href="#early" style={p({ background: RD, color: WH, padding: "0.55rem 1.2rem", borderRadius: "2px", fontSize: "0.75rem", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", textDecoration: "none" })}>
           Get early access
@@ -54,14 +54,13 @@ export default function HomeEN() {
       </nav>
 
       {/* HERO */}
-      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "8rem 3rem 5rem", maxWidth: "900px", margin: "0 auto" }}>
+      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "8rem 3rem 5rem", maxWidth: "900px", margin: "0 auto", alignItems: "flex-start" }}>
         <div style={{ fontSize: "0.7rem", fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase", color: RD, marginBottom: "1.5rem" }}>
           AI-powered real estate
         </div>
-        <h1 style={bebas({ fontSize: "clamp(3.5rem, 8vw, 7.5rem)", lineHeight: 0.92, color: WH, marginBottom: "1.5rem" })}>
-          Buying property<br />
-          in Italy. Or elsewhere,<br />
-          for that matter.<br />
+        <h1 style={bebas({ fontSize: "clamp(2.5rem, 5vw, 5rem)", lineHeight: 0.95, color: WH, marginBottom: "1.5rem" })}>
+          Buying or selling<br />
+          property.<br />
           <span style={{ color: RD }}>Finally simple.</span>
         </h1>
         <p style={{ fontSize: "1.1rem", fontWeight: 300, lineHeight: 1.75, color: "rgba(247,245,240,0.5)", maxWidth: "600px", marginBottom: "3rem" }}>
