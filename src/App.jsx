@@ -328,6 +328,7 @@ function Nav() {
           <li><a href="/compra">Compra casa</a></li>
           <li><a href="/vendi">Vendi casa</a></li>
           <li><a href="/#early" className="nav-cta">Accesso</a></li>
+          <li><a href="/en" style={{ fontSize:"1rem", padding:"0.2rem 0.4rem", border:"1px solid rgba(247,245,240,0.1)", borderRadius:"2px", lineHeight:1 }} title="English">🇬🇧</a></li>
         </ul>
         <button className="nav-hamburger" onClick={() => setOpen(!open)} aria-label="Menu">
           <span /><span /><span />
