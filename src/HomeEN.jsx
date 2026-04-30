@@ -44,9 +44,6 @@ export default function HomeEN() {
           Real<span style={{ color: RD }}>AI</span>state
         </a>
         <div style={{ flex: 1 }} />
-        <a href="#early" style={p({ background: RD, color: WH, padding: "0.55rem 1.2rem", borderRadius: "2px", fontSize: "0.75rem", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", textDecoration: "none" })}>
-          Get early access
-        </a>
         <a href="/" title="Italiano" style={{ display:"inline-flex", alignItems:"center", padding:"0.3rem 0.5rem", border:"1px solid rgba(247,245,240,0.1)", borderRadius:"2px", textDecoration:"none" }} dangerouslySetInnerHTML={{ __html: `<svg width="20" height="14" viewBox="0 0 20 14" xmlns="http://www.w3.org/2000/svg"><rect width="20" height="14" fill="#CE2B37"/><rect width="13.33" height="14" fill="#fff"/><rect width="6.67" height="14" fill="#009246"/></svg>` }} />
       </nav>
 
