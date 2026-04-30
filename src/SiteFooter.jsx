@@ -20,9 +20,9 @@ export default function SiteFooter() {
         gap: "1.5rem",
         flexWrap: "wrap",
       }}>
-        <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "1.2rem", color: "rgba(247,245,240,0.4)", flexShrink: 0 }}>
+        <a href="/" style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "1.2rem", color: "rgba(247,245,240,0.4)", flexShrink: 0, textDecoration: "none" }}>
           Real<span style={{ color: "#d93025" }}>AI</span>state
-        </div>
+        </a>
         <div className="site-footer-links" style={{
           display: "flex",
           gap: "2rem",
