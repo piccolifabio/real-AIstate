@@ -182,30 +182,4 @@ export default function Privacy() {
           <h2>Conservazione dei dati</h2>
           <p>I tuoi dati vengono conservati per il tempo strettamente necessario:</p>
           <ul>
-            <li>Gli indirizzi email della lista d'attesa vengono conservati fino alla cancellazione volontaria o alla chiusura del servizio</li>
-            <li>I dati di navigazione raccolti da Google Analytics vengono conservati per 14 mesi</li>
-          </ul>
-        </div>
-
-        <div className="legal-section">
-          <h2>I tuoi diritti</h2>
-          <p>In conformità al GDPR (Reg. UE 2016/679), hai il diritto di:</p>
-          <ul>
-            <li>Accedere ai tuoi dati personali in nostro possesso</li>
-            <li>Richiedere la rettifica di dati inesatti</li>
-            <li>Richiedere la cancellazione dei tuoi dati ("diritto all'oblio")</li>
-            <li>Opporti al trattamento dei tuoi dati</li>
-            <li>Richiedere la portabilità dei dati</li>
-            <li>Revocare il consenso in qualsiasi momento</li>
-          </ul>
-          <p>Per esercitare i tuoi diritti: <a href="mailto:privacy@realaistate.ai">privacy@realaistate.ai</a>. Risponderemo entro 30 giorni.</p>
-        </div>
-
-        <div className="legal-section">
-          <h2>Cookie</h2>
-          <p>Il sito utilizza esclusivamente cookie tecnici necessari al funzionamento e cookie analitici di Google Analytics. Non utilizziamo cookie di profilazione o pubblicitari.</p>
-          <p>Puoi disabilitare i cookie analitici tramite il <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener noreferrer">Google Analytics Opt-out Add-on</a>.</p>
-        </div>
-
-        <div className="legal-section">
-          <h2>Modifiche alla privacy policy</h2>
+            <li>Gli indirizzi email della l
