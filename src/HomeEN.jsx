@@ -60,7 +60,7 @@ const styles = `
 
   /* EARLY ACCESS */
   .en-early { background: var(--warm); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 6rem 3rem; text-align: center; position: relative; overflow: hidden; }
-  .en-early::before { content: "EARLY"; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-family: 'Bebas Neue', sans-serif; font-size: 20rem; color: rgba(247,245,240,0.02); line-height: 1; pointer-events: none; white-space: nowrap; }
+  .en-early::before { content: 'EARLY'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-family: 'Bebas Neue', sans-serif; font-size: 20rem; color: rgba(247,245,240,0.02); line-height: 1; pointer-events: none; white-space: nowrap; }
   .en-early-inner { position: relative; z-index: 1; max-width: 600px; margin: 0 auto; }
   .en-early-badge { display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(217,48,37,0.1); border: 1px solid rgba(217,48,37,0.3); color: var(--red); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; padding: 0.4rem 1rem; border-radius: 2px; margin-bottom: 1.5rem; }
   .en-early-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2.5rem, 5vw, 4rem); line-height: 0.95; color: var(--white); margin-bottom: 1rem; }
