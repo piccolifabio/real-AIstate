@@ -4,50 +4,32 @@ import SiteFooter from "./SiteFooter.jsx";
 
 const styles = `
   .blog-page { min-height: 100vh; }
-
-  /* HERO */
   .blog-hero { padding: 8rem 3rem 3rem; max-width: 1100px; margin: 0 auto; position: relative; }
   .blog-eyebrow { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--red); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.8rem; }
   .blog-eyebrow::before { content: ''; width: 32px; height: 1px; background: var(--red); }
   .blog-h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(3rem, 7vw, 6rem); line-height: 0.95; color: var(--white); margin-bottom: 0.5rem; }
   .blog-h1 span { color: var(--red); }
   .blog-sub { font-size: 1rem; font-weight: 300; line-height: 1.7; color: rgba(247,245,240,0.45); max-width: 560px; margin-bottom: 2.5rem; }
-
-  /* CATEGORIES */
   .blog-cats { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 3rem; }
   .blog-cat { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; padding: 0.45rem 1rem; border-radius: 2px; cursor: pointer; transition: all 0.2s; border: 1px solid var(--border); color: var(--muted); background: transparent; font-family: 'DM Sans', sans-serif; }
   .blog-cat:hover, .blog-cat.active { background: var(--red); border-color: var(--red); color: white; }
-
-  /* FEATURED ARTICLE */
-  .blog-featured { max-width: 1100px; margin: 0 auto; padding: 0 3rem 3rem; }
-  .blog-featured-card { display: block; background: var(--surface); border: 1px solid var(--border); border-radius: 3px; overflow: hidden; text-decoration: none; transition: border-color 0.2s; max-width: 380px; }
-  .blog-featured-card:hover { border-color: rgba(247,245,240,0.2); }
-  .blog-featured-body { padding: 1.3rem; display: flex; flex-direction: column; }
-  .blog-featured-meta { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.8rem; }
   .blog-tag { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 0.25rem 0.7rem; border-radius: 2px; }
   .blog-tag-red { background: rgba(217,48,37,0.15); color: var(--red); border: 1px solid rgba(217,48,37,0.3); }
   .blog-tag-gold { background: rgba(201,168,76,0.15); color: var(--gold); border: 1px solid rgba(201,168,76,0.3); }
   .blog-tag-gray { background: rgba(247,245,240,0.05); color: var(--muted); border: 1px solid var(--border); }
   .blog-date { font-size: 0.75rem; color: var(--muted); }
-  .blog-featured-title { font-family: 'DM Serif Display', serif; font-size: 1.1rem; color: var(--white); line-height: 1.3; margin-bottom: 0.7rem; }
-  .blog-featured-excerpt { font-size: 0.82rem; color: rgba(247,245,240,0.4); line-height: 1.6; margin-bottom: 1rem; }
-  .blog-cta-link { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--red); display: flex; align-items: center; gap: 0.5rem; padding-top: 0.8rem; border-top: 1px solid var(--border); }
-
-  /* GRID */
   .blog-grid-section { max-width: 1100px; margin: 0 auto; padding: 0 3rem 5rem; }
   .blog-section-label { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.8rem; }
   .blog-section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
   .blog-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
-  .blog-card { background: var(--surface); border: 1px solid var(--border); border-radius: 3px; overflow: hidden; text-decoration: none; transition: border-color 0.2s, transform 0.2s; display: flex; flex-direction: column; }
-  .blog-card.clickable:hover { border-color: rgba(247,245,240,0.15); transform: translateY(-2px); cursor: pointer; }
+  .blog-card { background: var(--surface); border: 1px solid var(--border); border-radius: 3px; overflow: hidden; text-decoration: none; transition: border-color 0.2s, transform 0.2s; display: flex; flex-direction: column; cursor: pointer; }
+  .blog-card:hover { border-color: rgba(247,245,240,0.15); transform: translateY(-2px); }
   .blog-card-body { padding: 1.3rem; flex: 1; display: flex; flex-direction: column; }
   .blog-card-meta { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.8rem; }
   .blog-card-title { font-family: 'DM Serif Display', serif; font-size: 1.1rem; color: var(--white); line-height: 1.3; margin-bottom: 0.7rem; flex: 1; }
   .blog-card-excerpt { font-size: 0.82rem; color: rgba(247,245,240,0.4); line-height: 1.6; margin-bottom: 1rem; }
   .blog-card-read { font-size: 0.72rem; color: var(--muted); }
   .blog-card-arrow { font-size: 0.75rem; color: var(--red); font-weight: 600; }
-
-  /* NEWSLETTER */
   .blog-newsletter { max-width: 1100px; margin: 0 auto; padding: 0 3rem 5rem; }
   .blog-newsletter-box { background: var(--surface); border: 1px solid var(--border); border-radius: 3px; padding: 3rem; display: flex; align-items: center; justify-content: space-between; gap: 3rem; position: relative; overflow: hidden; }
   .blog-newsletter-box::before { content: 'BLOG'; position: absolute; right: -1rem; top: 50%; transform: translateY(-50%); font-family: 'Bebas Neue', sans-serif; font-size: 10rem; color: rgba(247,245,240,0.02); line-height: 1; pointer-events: none; }
@@ -61,10 +43,9 @@ const styles = `
   .blog-nl-btn { background: var(--red); border: none; color: white; padding: 0.85rem 1.5rem; font-family: 'DM Sans', sans-serif; font-size: 0.8rem; font-weight: 600; cursor: pointer; border-radius: 0 2px 2px 0; letter-spacing: 0.08em; text-transform: uppercase; transition: background 0.2s; white-space: nowrap; }
   .blog-nl-btn:hover { background: var(--red-dark); }
   .blog-nl-success { font-size: 0.85rem; color: #4ade80; display: flex; align-items: center; gap: 0.4rem; }
-
   @media (max-width: 1024px) { .blog-grid { grid-template-columns: repeat(2, 1fr); } }
   @media (max-width: 768px) {
-    .blog-hero, .blog-featured, .blog-grid-section, .blog-newsletter { padding-left: 1.5rem; padding-right: 1.5rem; }
+    .blog-hero, .blog-grid-section, .blog-newsletter { padding-left: 1.5rem; padding-right: 1.5rem; }
     .blog-grid { grid-template-columns: 1fr; }
     .blog-newsletter-box { flex-direction: column; gap: 1.5rem; }
     .blog-nl-form { width: 100%; }
@@ -74,15 +55,25 @@ const styles = `
 
 const articoli = [
   {
+    id: 0,
+    slug: "piano-casa-2026-costo-nascosto",
+    categoria: "Normativa",
+    tagClass: "blog-tag-red",
+    data: "04 Maggio 2026",
+    lettura: "5 min",
+    titolo: "Il governo stanzia 10 miliardi per la casa. Ma nessuno parla del costo nascosto che svuota il tuo budget prima ancora di iniziare.",
+    excerpt: "Il Piano Casa 2026 promette 100.000 alloggi a prezzi calmierati e uno sconto del 33% sul mercato. Ma se compri tramite agenzia, una parte di quello sconto sparisce in commissioni.",
+    num: "10B",
+  },
+  {
     id: 1,
     slug: "agenzie-abusive-verona",
-    featured: true,
     categoria: "Trasparenza",
     tagClass: "blog-tag-red",
     data: "23 Aprile 2026",
     lettura: "4 min",
     titolo: "7 agenzie abusive e 15 agenti senza patentino scoperti a Verona. Non è un caso isolato.",
-    excerpt: "La Guardia di Finanza ha scoperto nel Veronese 7 agenzie e 15 agenti immobiliari che operavano senza le abilitazioni richieste dalla legge. Migliaia di clienti hanno pagato commissioni ad intermediari non autorizzati. Ecco perché accade e come proteggersi.",
+    excerpt: "La Guardia di Finanza ha scoperto nel Veronese 7 agenzie e 15 agenti immobiliari che operavano senza le abilitazioni richieste dalla legge. Migliaia di clienti hanno pagato commissioni ad intermediari non autorizzati.",
     num: "07",
   },
   {
@@ -151,21 +142,17 @@ export default function BlogPage() {
 
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
-  const featured = articoli.find(a => a.featured);
-  const griglia = articoli.filter(a => !a.featured && (catAttiva === "Tutti" || a.categoria === catAttiva));
+  const filtered = articoli.filter(a => catAttiva === "Tutti" || a.categoria === catAttiva);
 
   return (
     <>
       <style>{styles}</style>
       <NavBar />
       <div className="blog-page">
-
-        {/* HERO */}
         <div className="blog-hero">
           <div className="blog-eyebrow">Blog</div>
           <h1 className="blog-h1">Il mercato immobiliare<br />spiegato senza filtri.<br /><span>In trasparenza.</span></h1>
           <p className="blog-sub">Dati, analisi e storie sul mercato immobiliare italiano. Senza conflitti di interesse. Senza agenzia.</p>
-
           <div className="blog-cats">
             {categorie.map(c => (
               <button key={c} className={`blog-cat ${catAttiva === c ? "active" : ""}`} onClick={() => setCatAttiva(c)}>{c}</button>
@@ -173,34 +160,11 @@ export default function BlogPage() {
           </div>
         </div>
 
-        {/* ARTICOLO IN EVIDENZA */}
-        {featured && (catAttiva === "Tutti" || catAttiva === featured.categoria) && (
-          <div className="blog-featured">
-            <a href={`/blog/${featured.slug}`} className="blog-featured-card">
-
-              <div className="blog-featured-body">
-                <div>
-                  <div className="blog-featured-meta">
-                    <span className={`blog-tag ${featured.tagClass}`}>{featured.categoria}</span>
-                    <span className="blog-date">{featured.data} · {featured.lettura} di lettura</span>
-                  </div>
-
-                  <h2 className="blog-featured-title">{featured.titolo}</h2>
-                  <p className="blog-featured-excerpt">{featured.excerpt}</p>
-                </div>
-                <span className="blog-cta-link">Leggi l'articolo →</span>
-              </div>
-            </a>
-          </div>
-        )}
-
-        {/* GRIGLIA */}
         <div className="blog-grid-section">
           <div className="blog-section-label">Tutti gli articoli</div>
           <div className="blog-grid">
-            {griglia.map(art => (
-              <div key={art.id} className="blog-card" style={{cursor: ["agenzie-abusive-verona","mercato-immobiliare-2025-dati","commissioni-agenzia-quanto-costano","under-36-agevolazioni-prima-casa","fair-price-score-come-funziona","ai-real-estate-morgan-stanley"].includes(art.slug) ? "pointer" : "default"}} onClick={["agenzie-abusive-verona","mercato-immobiliare-2025-dati","commissioni-agenzia-quanto-costano","under-36-agevolazioni-prima-casa","fair-price-score-come-funziona","ai-real-estate-morgan-stanley"].includes(art.slug) ? () => window.location.href = `/blog/${art.slug}` : undefined}>
-
+            {filtered.map(art => (
+              <div key={art.id} className="blog-card" onClick={() => window.location.href = `/blog/${art.slug}`}>
                 <div className="blog-card-body">
                   <div className="blog-card-meta">
                     <span className={`blog-tag ${art.tagClass}`}>{art.categoria}</span>
@@ -208,7 +172,7 @@ export default function BlogPage() {
                   </div>
                   <h3 className="blog-card-title">{art.titolo}</h3>
                   <p className="blog-card-excerpt">{art.excerpt}</p>
-                  <div className="blog-card-footer">
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <span className="blog-card-read">{art.lettura} di lettura</span>
                     <span className="blog-card-arrow">→</span>
                   </div>
@@ -218,7 +182,6 @@ export default function BlogPage() {
           </div>
         </div>
 
-        {/* NEWSLETTER */}
         <div className="blog-newsletter">
           <div className="blog-newsletter-box">
             <div className="blog-nl-left">
@@ -227,24 +190,14 @@ export default function BlogPage() {
             </div>
             {!iscritto ? (
               <div className="blog-nl-form">
-                <input
-                  className="blog-nl-input"
-                  type="email"
-                  placeholder="la-tua@email.it"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && email.trim() && setIscritto(true)}
-                />
-                <button className="blog-nl-btn" onClick={() => email.trim() && setIscritto(true)}>
-                  Iscriviti →
-                </button>
+                <input className="blog-nl-input" type="email" placeholder="la-tua@email.it" value={email} onChange={e => setEmail(e.target.value)} onKeyDown={e => e.key === "Enter" && email.trim() && setIscritto(true)} />
+                <button className="blog-nl-btn" onClick={() => email.trim() && setIscritto(true)}>Iscriviti →</button>
               </div>
             ) : (
               <div className="blog-nl-success">✓ Perfetto — ti avvisiamo ad ogni nuovo articolo.</div>
             )}
           </div>
         </div>
-
       </div>
       <SiteFooter />
     </>
