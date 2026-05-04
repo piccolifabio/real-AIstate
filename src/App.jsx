@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useAuth } from "./AuthContext";
 import { Routes, Route } from "react-router-dom";
 import ImmobilePage from "./Immobile.jsx";
 import ImmobileVenditore from "./ImmobileVenditore.jsx";
@@ -15,6 +16,7 @@ import ListingPage from "./Listing.jsx";
 import BlogPage from "./BlogPage.jsx";
 import BlogArticolo from "./blog/BlogArticolo.jsx";
 import HomeEN from "./HomeEN.jsx";
+import LoginPage from "./LoginPage.jsx";
 
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Serif+Display:ital@0;1&display=swap');
@@ -314,6 +316,7 @@ const cards = [
 ];
 
 function Nav() {
+  const { user } = useAuth()
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -327,7 +330,7 @@ function Nav() {
           <li><a href="/affitti">Affitti</a></li>
           <li><a href="/compra">Compra casa</a></li>
           <li><a href="/vendi">Vendi casa</a></li>
-          <li><a href="/#early" className="nav-cta">Accesso</a></li>
+          <li><a href={user ? "/account" : "/login"} className="nav-cta">{user ? "Il mio account" : "Accesso"}</a></li>
           <li><a href="/en" style={{ display:"inline-flex", alignItems:"center", padding:"0.3rem 0.5rem", border:"1px solid rgba(247,245,240,0.1)", borderRadius:"2px" }} title="English" dangerouslySetInnerHTML={{ __html: `<svg width="20" height="14" viewBox="0 0 20 14" xmlns="http://www.w3.org/2000/svg"><rect width="20" height="14" fill="#012169"/><path d="M0,0 L20,14 M20,0 L0,14" stroke="#fff" stroke-width="2.8"/><path d="M0,0 L20,14 M20,0 L0,14" stroke="#C8102E" stroke-width="1.8"/><path d="M10,0 V14 M0,7 H20" stroke="#fff" stroke-width="4.5"/><path d="M10,0 V14 M0,7 H20" stroke="#C8102E" stroke-width="2.8"/></svg>` }} /></li>
         </ul>
         <button className="nav-hamburger" onClick={() => setOpen(!open)} aria-label="Menu">
@@ -769,6 +772,7 @@ export default function App() {
         <Route path="/blog" element={<BlogPage />} />
         <Route path="/blog/:slug" element={<BlogArticolo />} />
         <Route path="/en" element={<HomeEN />} />
+        <Route path="/login" element={<LoginPage />} />
       </Routes>
     </>
   );
