@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useAuth } from "./AuthContext";
 
 const navStyles = `
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
@@ -30,6 +31,7 @@ const navStyles = `
 `;
 
 export default function NavBar() {
+  const { user } = useAuth()
   const [open, setOpen] = useState(false);
 
   return (
@@ -45,7 +47,7 @@ export default function NavBar() {
           <li><a href="/affitti">Affitti</a></li>
           <li><a href="/compra">Compra casa</a></li>
           <li><a href="/vendi">Vendi casa</a></li>
-          <li><a href="/#early" className="nav-cta">Accesso</a></li>
+          <li><a href={user ? "/account" : "/login"} className="nav-cta">{user ? "Il mio account" : "Accesso"}</a></li>
           <li><a href="/en" style={{ display:"inline-flex", alignItems:"center", padding:"0.3rem 0.5rem", border:"1px solid rgba(247,245,240,0.1)", borderRadius:"2px" }} title="English" dangerouslySetInnerHTML={{ __html: `<svg width="20" height="14" viewBox="0 0 20 14" xmlns="http://www.w3.org/2000/svg"><rect width="20" height="14" fill="#012169"/><path d="M0,0 L20,14 M20,0 L0,14" stroke="#fff" stroke-width="2.8"/><path d="M0,0 L20,14 M20,0 L0,14" stroke="#C8102E" stroke-width="1.8"/><path d="M10,0 V14 M0,7 H20" stroke="#fff" stroke-width="4.5"/><path d="M10,0 V14 M0,7 H20" stroke="#C8102E" stroke-width="2.8"/></svg>` }} /></li>
         </ul>
         <button className="nav-hamburger" onClick={() => setOpen(!open)} aria-label="Menu">
@@ -61,7 +63,7 @@ export default function NavBar() {
           <a href="/affitti" onClick={() => setOpen(false)}>Affitti</a>
           <a href="/compra" onClick={() => setOpen(false)}>Compra casa</a>
           <a href="/vendi" onClick={() => setOpen(false)}>Vendi casa</a>
-          <a href="/#early" className="nav-mobile-cta" onClick={() => setOpen(false)}>Accesso →</a>
+          <a href={user ? "/account" : "/login"} className="nav-mobile-cta" onClick={() => setOpen(false)}>{user ? "Il mio account" : "Accesso →"}</a>
         </div>
       )}
     </>
