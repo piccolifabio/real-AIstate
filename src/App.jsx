@@ -17,6 +17,8 @@ import BlogPage from "./BlogPage.jsx";
 import BlogArticolo from "./blog/BlogArticolo.jsx";
 import HomeEN from "./HomeEN.jsx";
 import LoginPage from "./LoginPage.jsx";
+import ProtectedRoute from "./ProtectedRoute.jsx";
+import AccountPage from "./AccountPage.jsx";
 
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Serif+Display:ital@0;1&display=swap');
@@ -759,7 +761,7 @@ export default function App() {
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/termini" element={<TerminiPage />} />
         <Route path="/scuse" element={<ScusePage />} />
-        <Route path="/compra/:id" element={<ImmobilePage />} />
+        <Route path="/compra/:id" element={<ProtectedRoute><ImmobilePage /></ProtectedRoute>} />
         <Route path="/compra/:id/vendi" element={<ImmobileVenditore />} />
         <Route path="/immobile/:id/report-foto" element={<ReportFotoPage />} />
         <Route path="/metodologia" element={<MetodologiaPage />} />
@@ -773,6 +775,7 @@ export default function App() {
         <Route path="/blog/:slug" element={<BlogArticolo />} />
         <Route path="/en" element={<HomeEN />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/account" element={<ProtectedRoute><AccountPage /></ProtectedRoute>} />
       </Routes>
     </>
   );
