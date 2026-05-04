@@ -3,20 +3,10 @@ import NavBar from "./NavBar.jsx";
 import SiteFooter from "./SiteFooter.jsx";
 
 const styles = `
-  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
-
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --black: #0a0a0a; --white: #f7f5f0; --red: #d93025; --red-dark: #b02020;
-    --muted: #6b6b6b; --surface: #141414; --border: rgba(247,245,240,0.08);
-    --warm: #1e1e1e; --green: #2d6a4f; --green-light: #4ade80; --gold: #c9a84c;
-  }
-  body { font-family: 'DM Sans', sans-serif; background: var(--black); color: var(--white); overflow-x: hidden; }
-
-  .listing-page { padding-top: 5rem; min-height: 100vh; }
+  .listing-page { min-height: 100vh; }
 
   /* HERO */
-  .listing-hero { padding: 5.5rem 3rem 2.5rem; max-width: 1400px; margin: 0 auto; }
+  .listing-hero { padding: 8rem 3rem 2.5rem; max-width: 1100px; margin: 0 auto; }
   .listing-eyebrow { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--red); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.8rem; }
   .listing-eyebrow::before { content: ''; width: 32px; height: 1px; background: var(--red); }
   .listing-h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(3rem, 7vw, 6rem); color: var(--white); line-height: 0.95; margin-bottom: 0.5rem; }
@@ -24,17 +14,17 @@ const styles = `
 
   /* FILTERS */
   .listing-filters { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 2rem; }
-  .filter-select { background: var(--warm); border: 1px solid var(--border); color: var(--white); font-family: 'DM Sans', sans-serif; font-size: 0.82rem; padding: 0.6rem 1rem; border-radius: 2px; outline: none; cursor: pointer; transition: border-color 0.2s; }
+  .filter-select { background: var(--surface); border: 1px solid var(--border); color: var(--white); font-family: 'DM Sans', sans-serif; font-size: 0.82rem; padding: 0.6rem 1rem; border-radius: 2px; outline: none; cursor: pointer; transition: border-color 0.2s; }
   .filter-select:focus { border-color: var(--red); }
   .filter-select option { background: #1a1a1a; }
   .filter-count { font-size: 0.78rem; color: var(--muted); display: flex; align-items: center; margin-left: auto; }
 
   /* GRID */
-  .listing-content { padding: 0 3rem 5rem; max-width: 1400px; margin: 0 auto; }
+  .listing-content { padding: 0 3rem 5rem; max-width: 1100px; margin: 0 auto; }
   .listing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
 
   /* CARD */
-  .prop-card { background: var(--warm); border: 1px solid var(--border); border-radius: 3px; overflow: hidden; transition: border-color 0.2s, transform 0.2s; }
+  .prop-card { background: var(--surface); border: 1px solid var(--border); border-radius: 3px; overflow: hidden; transition: border-color 0.2s, transform 0.2s; }
   .prop-card.real:hover { border-color: rgba(247,245,240,0.2); transform: translateY(-2px); cursor: pointer; }
   .prop-card.fake { opacity: 0.5; }
   .prop-card-img { height: 200px; overflow: hidden; position: relative; background: var(--surface); }
@@ -70,7 +60,6 @@ const styles = `
     .filter-count { margin-left: 0; width: 100%; }
   }
 `;
-
 const FOTO_BASE = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/immobili/1/pub`;
 
 const immobiliReali = [

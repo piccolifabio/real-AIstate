@@ -3,24 +3,13 @@ import NavBar from "./NavBar.jsx";
 import SiteFooter from "./SiteFooter.jsx";
 
 const styles = `
-  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Serif+Display:ital@0;1&display=swap');
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --black: #0a0a0a; --white: #f7f5f0; --red: #d93025; --red-dark: #b02020;
-    --gold: #c9a84c; --muted: #6b6b6b; --surface: #141414;
-    --border: rgba(247,245,240,0.08); --green: #2d6a4f; --green-light: #4ade80;
-    --warm: #1e1e1e;
-  }
-  html { scroll-behavior: smooth; }
-  body { font-family: 'DM Sans', sans-serif; background: var(--black); color: var(--white); overflow-x: hidden; }
-
-  .metod-hero { padding: 5.5rem 3rem 2.5rem; margin-top: 5rem; max-width: 860px; margin-left: auto; margin-right: auto; }
+  .metod-hero { padding: 8rem 3rem 2.5rem; max-width: 1100px; margin: 0 auto; }
   .eyebrow { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--red); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.8rem; }
   .eyebrow::before { content: ''; width: 32px; height: 1px; background: var(--red); }
   .metod-hero-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(3rem, 7vw, 6rem); line-height: 0.95; color: var(--white); margin-bottom: 1rem; }
   .metod-hero-sub { font-size: 1rem; line-height: 1.7; color: rgba(247,245,240,0.45); max-width: 640px; font-weight: 300; }
 
-  .content { max-width: 860px; margin: 0 auto; padding: 0 3rem 6rem; }
+  .content { max-width: 1100px; margin: 0 auto; padding: 0 3rem 6rem; }
 
   .section { margin-bottom: 4rem; padding-bottom: 4rem; border-bottom: 1px solid var(--border); }
   .section:last-child { border-bottom: none; }
@@ -29,8 +18,7 @@ const styles = `
   .section-body { font-size: 0.95rem; line-height: 1.8; color: rgba(247,245,240,0.6); margin-bottom: 1.2rem; }
   .section-body strong { color: var(--white); font-weight: 600; }
 
-  /* FORMULA BOX */
-  .formula-box { background: var(--warm); border: 1px solid var(--border); border-radius: 3px; padding: 2rem; margin: 2rem 0; position: relative; overflow: hidden; }
+  .formula-box { background: var(--surface); border: 1px solid var(--border); border-radius: 3px; padding: 2rem; margin: 2rem 0; position: relative; overflow: hidden; }
   .formula-box::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--red), var(--gold)); }
   .formula-title { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold); margin-bottom: 1.2rem; }
   .formula { font-family: 'DM Sans', sans-serif; font-size: 1.1rem; color: var(--white); line-height: 2; }
@@ -38,7 +26,6 @@ const styles = `
   .formula .result { color: var(--green-light); font-weight: 600; }
   .formula .comment { color: var(--muted); font-size: 0.82rem; font-style: italic; }
 
-  /* RANGE VISUALIZER */
   .range-section { margin: 2rem 0; }
   .range-title { font-size: 0.82rem; font-weight: 600; color: rgba(247,245,240,0.5); margin-bottom: 1.2rem; letter-spacing: 0.06em; text-transform: uppercase; }
   .range-bar-wrap { position: relative; margin-bottom: 0.6rem; }
@@ -51,7 +38,6 @@ const styles = `
   .range-legend-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.78rem; color: rgba(247,245,240,0.5); }
   .range-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
 
-  /* ESEMPIO */
   .example-box { background: rgba(45,106,79,0.08); border: 1px solid rgba(45,106,79,0.2); border-radius: 3px; padding: 1.8rem; margin: 2rem 0; }
   .example-title { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--green-light); margin-bottom: 1.2rem; }
   .example-row { display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid rgba(247,245,240,0.04); font-size: 0.9rem; }
@@ -61,7 +47,6 @@ const styles = `
   .example-val.highlight { color: var(--green-light); font-weight: 600; }
   .example-val.red { color: var(--red); }
 
-  /* SCORE TABLE */
   .score-table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; }
   .score-table th { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); padding: 0.6rem 1rem; border-bottom: 1px solid var(--border); text-align: left; }
   .score-table td { font-size: 0.88rem; padding: 0.8rem 1rem; border-bottom: 1px solid rgba(247,245,240,0.04); color: rgba(247,245,240,0.7); }
@@ -71,13 +56,12 @@ const styles = `
   .score-table td.score.gold { color: var(--gold); }
   .score-table td.score.red { color: var(--red); }
 
-  /* OMI BADGE */
   .omi-badge { display: inline-flex; align-items: center; gap: 0.6rem; background: rgba(45,106,79,0.1); border: 1px solid rgba(45,106,79,0.25); border-radius: 2px; padding: 0.6rem 1.2rem; margin: 1rem 0; }
   .omi-badge-text { font-size: 0.78rem; color: var(--green-light); font-weight: 500; }
-  .footer-logo span { color: var(--red); }
 
   @media (max-width: 900px) {
-    .hero, .content { padding-left: 1.5rem; padding-right: 1.5rem; }
+    .metod-hero { padding: 6rem 1.5rem 2.5rem; }
+    .content { padding-left: 1.5rem; padding-right: 1.5rem; }
   }
 `;
 

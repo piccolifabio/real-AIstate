@@ -5,22 +5,15 @@ import SiteFooter from "./SiteFooter.jsx";
 const faqStyles = `
   .faq-page { min-height: 100vh; background: var(--black); }
 
-  /* NAV */
-  .faq-nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 1.2rem 3rem; border-bottom: 1px solid var(--border); background: rgba(10,10,10,0.9); backdrop-filter: blur(16px); }
-  .faq-nav-logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; letter-spacing: 0.05em; color: var(--white); text-decoration: none; }
-  .faq-nav-logo span { color: var(--red); }
-  .faq-nav-back { font-size: 0.78rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(247,245,240,0.4); text-decoration: none; transition: color 0.2s; }
-  .faq-nav-back:hover { color: var(--white); }
-
   /* HERO */
-  .faq-hero { padding: 5.5rem 3rem 2.5rem; max-width: 900px; margin: 0 auto; }
+  .faq-hero { padding: 8rem 3rem 5rem; max-width: 1100px; margin: 0 auto; }
   .faq-eyebrow { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--red); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.8rem; }
   .faq-eyebrow::before { content: ''; width: 32px; height: 1px; background: var(--red); }
   .faq-h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(3rem, 7vw, 6rem); line-height: 0.95; color: var(--white); margin-bottom: 1rem; }
   .faq-sub { font-size: 1rem; color: rgba(247,245,240,0.45); line-height: 1.7; max-width: 560px; }
 
   /* CONTENT */
-  .faq-content { max-width: 900px; margin: 0 auto; padding: 0 3rem 6rem; }
+  .faq-content { max-width: 1100px; margin: 0 auto; padding: 0 3rem 6rem; }
 
   /* CATEGORY */
   .faq-category { margin-bottom: 4rem; }
@@ -53,13 +46,11 @@ const faqStyles = `
   .faq-btn-outline { background: transparent; color: rgba(247,245,240,0.6); border: 1px solid rgba(247,245,240,0.15); padding: 0.9rem 2rem; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; cursor: pointer; border-radius: 2px; text-decoration: none; display: inline-block; transition: all 0.2s; }
   .faq-btn-outline:hover { border-color: rgba(247,245,240,0.4); color: var(--white); }
 
-  /* FOOTER */
-
   @media (max-width: 900px) {
-    .faq-nav { padding: 1rem 1.5rem; }
-    .faq-hero { padding: 5.5rem 3rem 2.5rem; }
+    .faq-hero { padding: 6rem 1.5rem 3rem; }
     .faq-content { padding: 0 1.5rem 4rem; }
-  }`;
+  }
+`;
 
 const faqs = [
   {

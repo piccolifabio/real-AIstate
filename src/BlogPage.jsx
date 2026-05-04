@@ -3,20 +3,10 @@ import NavBar from "./NavBar.jsx";
 import SiteFooter from "./SiteFooter.jsx";
 
 const styles = `
-  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Serif+Display:ital@0;1&display=swap');
-
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --black: #0a0a0a; --white: #f7f5f0; --red: #d93025; --red-dark: #b02020;
-    --muted: #6b6b6b; --surface: #141414; --border: rgba(247,245,240,0.08);
-    --warm: #1e1e1e; --gold: #c9a84c;
-  }
-  body { font-family: 'DM Sans', sans-serif; background: var(--black); color: var(--white); overflow-x: hidden; }
-
   .blog-page { min-height: 100vh; }
 
   /* HERO */
-  .blog-hero { padding: 5.5rem 3rem 3rem; max-width: 1200px; margin: 0 auto; position: relative; }
+  .blog-hero { padding: 8rem 3rem 3rem; max-width: 1100px; margin: 0 auto; position: relative; }
   .blog-eyebrow { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--red); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.8rem; }
   .blog-eyebrow::before { content: ''; width: 32px; height: 1px; background: var(--red); }
   .blog-h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(3rem, 7vw, 6rem); line-height: 0.95; color: var(--white); margin-bottom: 0.5rem; }
@@ -27,13 +17,11 @@ const styles = `
   .blog-cats { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 3rem; }
   .blog-cat { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; padding: 0.45rem 1rem; border-radius: 2px; cursor: pointer; transition: all 0.2s; border: 1px solid var(--border); color: var(--muted); background: transparent; font-family: 'DM Sans', sans-serif; }
   .blog-cat:hover, .blog-cat.active { background: var(--red); border-color: var(--red); color: white; }
-  .blog-cat.active { background: var(--red); border-color: var(--red); color: white; }
 
   /* FEATURED ARTICLE */
-  .blog-featured { max-width: 1200px; margin: 0 auto; padding: 0 3rem 3rem; }
-  .blog-featured-card { display: block; background: var(--warm); border: 1px solid var(--border); border-radius: 3px; overflow: hidden; text-decoration: none; transition: border-color 0.2s, transform 0.2s; max-width: 380px; }
+  .blog-featured { max-width: 1100px; margin: 0 auto; padding: 0 3rem 3rem; }
+  .blog-featured-card { display: block; background: var(--surface); border: 1px solid var(--border); border-radius: 3px; overflow: hidden; text-decoration: none; transition: border-color 0.2s; max-width: 380px; }
   .blog-featured-card:hover { border-color: rgba(247,245,240,0.2); }
-
   .blog-featured-body { padding: 1.3rem; display: flex; flex-direction: column; }
   .blog-featured-meta { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.8rem; }
   .blog-tag { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 0.25rem 0.7rem; border-radius: 2px; }
@@ -44,16 +32,14 @@ const styles = `
   .blog-featured-title { font-family: 'DM Serif Display', serif; font-size: 1.1rem; color: var(--white); line-height: 1.3; margin-bottom: 0.7rem; }
   .blog-featured-excerpt { font-size: 0.82rem; color: rgba(247,245,240,0.4); line-height: 1.6; margin-bottom: 1rem; }
   .blog-cta-link { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--red); display: flex; align-items: center; gap: 0.5rem; padding-top: 0.8rem; border-top: 1px solid var(--border); }
-  .blog-featured-card:hover .blog-cta-link { gap: 0.8rem; }
 
   /* GRID */
-  .blog-grid-section { max-width: 1200px; margin: 0 auto; padding: 0 3rem 5rem; }
+  .blog-grid-section { max-width: 1100px; margin: 0 auto; padding: 0 3rem 5rem; }
   .blog-section-label { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.8rem; }
   .blog-section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
   .blog-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
-  .blog-card { background: var(--warm); border: 1px solid var(--border); border-radius: 3px; overflow: hidden; text-decoration: none; transition: border-color 0.2s, transform 0.2s; display: flex; flex-direction: column; }
+  .blog-card { background: var(--surface); border: 1px solid var(--border); border-radius: 3px; overflow: hidden; text-decoration: none; transition: border-color 0.2s, transform 0.2s; display: flex; flex-direction: column; }
   .blog-card.clickable:hover { border-color: rgba(247,245,240,0.15); transform: translateY(-2px); cursor: pointer; }
-
   .blog-card-body { padding: 1.3rem; flex: 1; display: flex; flex-direction: column; }
   .blog-card-meta { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.8rem; }
   .blog-card-title { font-family: 'DM Serif Display', serif; font-size: 1.1rem; color: var(--white); line-height: 1.3; margin-bottom: 0.7rem; flex: 1; }
@@ -62,8 +48,8 @@ const styles = `
   .blog-card-arrow { font-size: 0.75rem; color: var(--red); font-weight: 600; }
 
   /* NEWSLETTER */
-  .blog-newsletter { max-width: 1200px; margin: 0 auto; padding: 0 3rem 5rem; }
-  .blog-newsletter-box { background: var(--warm); border: 1px solid var(--border); border-radius: 3px; padding: 3rem; display: flex; align-items: center; justify-content: space-between; gap: 3rem; position: relative; overflow: hidden; }
+  .blog-newsletter { max-width: 1100px; margin: 0 auto; padding: 0 3rem 5rem; }
+  .blog-newsletter-box { background: var(--surface); border: 1px solid var(--border); border-radius: 3px; padding: 3rem; display: flex; align-items: center; justify-content: space-between; gap: 3rem; position: relative; overflow: hidden; }
   .blog-newsletter-box::before { content: 'BLOG'; position: absolute; right: -1rem; top: 50%; transform: translateY(-50%); font-family: 'Bebas Neue', sans-serif; font-size: 10rem; color: rgba(247,245,240,0.02); line-height: 1; pointer-events: none; }
   .blog-nl-left { flex: 1; }
   .blog-nl-title { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; color: var(--white); margin-bottom: 0.5rem; }

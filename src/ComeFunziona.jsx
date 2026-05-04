@@ -3,29 +3,8 @@ import NavBar from "./NavBar.jsx";
 import SiteFooter from "./SiteFooter.jsx";
 
 const styles = `
-  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Serif+Display:ital@0;1&display=swap');
-
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --black: #0a0a0a; --white: #f7f5f0; --red: #d93025; --red-dark: #b02020;
-    --muted: #6b6b6b; --surface: #141414; --border: rgba(247,245,240,0.08);
-    --green: #2d6a4f; --green-light: #4ade80; --warm: #1e1e1e; --gold: #c9a84c;
-  }
-  html { scroll-behavior: smooth; overflow-x: hidden; }
-  body { font-family: 'DM Sans', sans-serif; background: var(--black); color: var(--white); overflow-x: hidden; }
-
-  /* NAV */
-  .cf-nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 1.2rem 3rem; border-bottom: 1px solid var(--border); background: rgba(10,10,10,0.95); backdrop-filter: blur(16px); }
-  .cf-nav-logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; letter-spacing: 0.05em; color: var(--white); text-decoration: none; }
-  .cf-nav-logo span { color: var(--red); }
-  .cf-nav-links { display: flex; gap: 1.5rem; align-items: center; }
-  .cf-nav-link { font-size: 0.78rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(247,245,240,0.4); text-decoration: none; transition: color 0.2s; }
-  .cf-nav-link:hover { color: var(--white); }
-  .cf-nav-cta { background: var(--red); color: white; border: none; padding: 0.5rem 1.4rem; border-radius: 2px; font-family: 'DM Sans', sans-serif; font-size: 0.78rem; font-weight: 600; cursor: pointer; text-decoration: none; letter-spacing: 0.06em; transition: background 0.2s; }
-  .cf-nav-cta:hover { background: var(--red-dark); }
-
   /* HERO */
-  .cf-hero { padding: 8rem 3rem 2.5rem; max-width: 1100px; margin: 0 auto; }
+  .cf-hero { padding: 8rem 3rem 5rem; max-width: 1100px; margin: 0 auto; }
   .cf-eyebrow { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--red); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.8rem; }
   .cf-eyebrow::before { content: ''; width: 32px; height: 1px; background: var(--red); }
   .cf-h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(3rem, 7vw, 6rem); line-height: 0.95; color: var(--white); margin-bottom: 1rem; }
@@ -45,16 +24,12 @@ const styles = `
   .cf-step { display: grid; grid-template-columns: 80px 1fr 1fr; gap: 3rem; padding: 3.5rem 0; border-bottom: 1px solid var(--border); align-items: start; }
   .cf-step:last-child { border-bottom: none; }
   .cf-step-num { font-family: 'Bebas Neue', sans-serif; font-size: 5rem; line-height: 1; color: rgba(247,245,240,0.06); padding-top: 0.2rem; }
-
-  /* LEFT — RealAIstate */
   .cf-step-real { }
   .cf-step-badge { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.25rem 0.7rem; border-radius: 2px; background: rgba(217,48,37,0.12); border: 1px solid rgba(217,48,37,0.25); font-size: 0.65rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--red); margin-bottom: 0.8rem; }
   .cf-step-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; color: var(--white); line-height: 1; margin-bottom: 0.8rem; }
   .cf-step-desc { font-size: 0.9rem; color: rgba(247,245,240,0.65); line-height: 1.75; margin-bottom: 1.2rem; }
   .cf-step-highlight { display: flex; align-items: flex-start; gap: 0.6rem; background: rgba(45,106,79,0.1); border: 1px solid rgba(45,106,79,0.25); border-radius: 2px; padding: 0.8rem 1rem; font-size: 0.82rem; color: var(--green-light); line-height: 1.5; }
   .cf-step-highlight-icon { flex-shrink: 0; font-size: 1rem; }
-
-  /* RIGHT — Agenzia */
   .cf-step-agency { background: var(--warm); border: 1px solid var(--border); border-radius: 3px; padding: 1.5rem; position: relative; }
   .cf-step-agency::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: rgba(247,245,240,0.06); }
   .cf-agency-label { font-size: 0.65rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
@@ -75,8 +50,6 @@ const styles = `
   .cf-btn-outline { background: transparent; color: rgba(247,245,240,0.5); border: 1px solid rgba(247,245,240,0.15); padding: 0.9rem 2.5rem; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; cursor: pointer; border-radius: 2px; text-decoration: none; display: inline-block; transition: all 0.2s; }
   .cf-btn-outline:hover { border-color: rgba(247,245,240,0.4); color: var(--white); }
 
-  /* FOOTER */
-
   /* PILLOLE */
   .cf-pillole { display: flex; gap: 1rem; margin-top: 2.5rem; flex-wrap: wrap; }
   .cf-pillola { display: flex; align-items: center; gap: 0.7rem; background: rgba(247,245,240,0.04); border: 1px solid var(--border); border-radius: 2px; padding: 0.8rem 1.2rem; flex: 1; min-width: 200px; }
@@ -87,15 +60,13 @@ const styles = `
   .cf-trasparenza em { color: var(--white); font-style: normal; }
 
   @media (max-width: 900px) {
-    .cf-nav { padding: 1rem 1.5rem; }
-    .cf-nav-links { display: none; }
-    .cf-hero { padding: 8rem 3rem 2.5rem; }
+    .cf-hero { padding: 6rem 1.5rem 3rem; }
     .cf-content { padding: 0 1.5rem 4rem; }
     .cf-step { grid-template-columns: 1fr; gap: 1.5rem; }
     .cf-step-num { font-size: 3rem; padding-top: 0; }
     .cf-cta { padding: 3rem 1.5rem; }
-  }`;
-
+  }
+`;
 const STEPS_VENDITORE = [
   {
     num: "01",

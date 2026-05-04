@@ -2,11 +2,8 @@ import { useState, useRef } from "react";
 import NavBar from "./NavBar.jsx";
 
 const vendiStyles = `
-  .vendi-nav-bar { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; padding: 1.2rem 3rem; border-bottom: 1px solid var(--border); background: rgba(10,10,10,0.9); backdrop-filter: blur(16px); }
-  .vendi-nav-logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; letter-spacing: 0.05em; color: var(--white); text-decoration: none; }
-  .vendi-nav-logo span { color: var(--red); }
-  .vendi-page { min-height: 100vh; background: var(--black); padding: 7rem 3rem 5rem; }
-  .vendi-hero { max-width: 760px; margin: 0 auto 4rem; }
+  .vendi-page { min-height: 100vh; background: var(--black); padding: 8rem 3rem 5rem; max-width: 1100px; margin: 0 auto; }
+.vendi-hero { max-width: 900px; margin: 0 auto 4rem; padding: 0 3rem; }
   .vendi-eyebrow { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--red); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.8rem; }
   .vendi-eyebrow::before { content: ''; width: 32px; height: 1px; background: var(--red); }
   .vendi-h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(3rem, 6vw, 5.5rem); line-height: 0.95; color: var(--white); margin-bottom: 1rem; }
@@ -105,7 +102,7 @@ const vendiStyles = `
   .vendi-error { font-size: 0.8rem; color: var(--red); margin-top: 0.3rem; }
 
   @media (max-width: 900px) {
-    .vendi-page { padding: 6rem 1.5rem 4rem; }
+    .vendi-page { padding: 8rem 3rem 5rem; }
     .vendi-card { padding: 2rem 1.5rem; }
     .vendi-grid { grid-template-columns: 1fr; }
     .vendi-grid.three { grid-template-columns: 1fr 1fr; }
@@ -114,7 +111,6 @@ const vendiStyles = `
     .vendi-tooltip-box { white-space: normal; width: 200px; left: 0; transform: none; }
   }
 `;
-
 const STEPS = [
   { label: "Immobile" },
   { label: "Prezzo" },
@@ -273,7 +269,8 @@ export default function VendiForm() {
     <>
       <style>{vendiStyles}</style>
       <NavBar />
-      <div className="vendi-page">
+      
+      <div style={{ maxWidth: '760px', margin: '0 auto' }}>
         <div className="vendi-success">
           <div className="vendi-success-icon">✓</div>
           <h1 className="vendi-success-title">Ci siamo.<br /><span>Quasi.</span></h1>
