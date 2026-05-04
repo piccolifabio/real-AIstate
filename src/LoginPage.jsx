@@ -39,12 +39,16 @@ export default function LoginPage() {
         background: '#141414', border: '1px solid rgba(247,245,240,0.08)',
         borderRadius: '4px', padding: '3rem', width: '100%', maxWidth: '420px'
       }}>
-        <div style={{
-          fontFamily: 'Bebas Neue, sans-serif', fontSize: '1.6rem',
-          letterSpacing: '0.05em', color: '#f7f5f0', marginBottom: '2rem'
-        }}>
-          Real<span style={{ color: '#d93025' }}>AI</span>state
-        </div>
+<a href="/" style={{
+  fontFamily: 'Bebas Neue, sans-serif', fontSize: '1.6rem',
+  letterSpacing: '0.05em', color: '#f7f5f0', textDecoration: 'none',
+  marginBottom: '2rem', display: 'block', transition: 'color 0.2s'
+}}
+onMouseEnter={e => e.currentTarget.style.color = '#7c3aed'}
+onMouseLeave={e => e.currentTarget.style.color = '#f7f5f0'}
+>
+  Real<span style={{ color: '#d93025' }}>AI</span>state
+</a>
         <h1 style={{
           fontFamily: 'Bebas Neue, sans-serif', fontSize: '2.5rem',
           color: '#f7f5f0', marginBottom: '0.5rem', lineHeight: 1

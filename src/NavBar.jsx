@@ -5,8 +5,9 @@ const navStyles = `
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
 
   .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; padding: 1.2rem 3rem; border-bottom: 1px solid rgba(247,245,240,0.08); background: rgba(10,10,10,0.95); backdrop-filter: blur(16px); }
-  .nav-logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; letter-spacing: 0.05em; color: #f7f5f0; text-decoration: none; flex-shrink: 0; }
-  .nav-logo span { color: #d93025; }
+.nav-logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; letter-spacing: 0.05em; color: #f7f5f0; text-decoration: none; flex-shrink: 0; transition: color 0.2s; }
+.nav-logo:hover { color: #7c3aed; }
+.nav-logo span { color: #d93025; }
   .nav-spacer { width: 1.5rem; flex-shrink: 0; }
   .nav-links { display: flex; gap: 2.5rem; list-style: none; align-items: center; margin: 0; padding: 0; flex: 1; }
   .nav-links li { list-style: none; }

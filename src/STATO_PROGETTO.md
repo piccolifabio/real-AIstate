@@ -5,7 +5,7 @@ Aggiornato: 04/05/2026
 - Frontend: React + Vite, deploy su Vercel
 - Backend: Supabase (auth + database + storage)
 - API serverless: Vercel functions (api/)
-- Email: Brevo
+- Email: Brevo (SMTP collegato a Supabase)
 - AI: Anthropic API
 - Repo: github.com/piccolifabio/real-AIstate
 - Sito live: realaistate.ai
@@ -20,7 +20,7 @@ Aggiornato: 04/05/2026
 - Form venditore completo (api/vendi-submit.js)
 - Marchio UIBM + EUIPO depositato (23 aprile 2026)
 - Instagram @realaistate.ai attivo
-- Blog live con 6 articoli
+- Blog live con 7 articoli
 
 ### Settimana 1 MVP ✅ — completata 04/05/2026
 - [x] Task 1: Supabase Auth — login e registrazione ✅
@@ -31,6 +31,8 @@ Aggiornato: 04/05/2026
 - [x] Task 2: Pagine protette + ProtectedRoute + pagina /account ✅
 - [x] Task 3: Documenti con controllo accesso — lucchetto non loggati ✅
 - [x] Task 4: Chat con storico persistente su Supabase ✅
+- [x] Email conferma registrazione con template RealAIstate via Brevo ✅
+- [x] Blog: articolo Piano Casa 2026 aggiunto, griglia uniforme senza featured ✅
 
 ## File chiave
 - src/supabase.js — connessione Supabase (anon key eyJ...)
@@ -40,13 +42,16 @@ Aggiornato: 04/05/2026
 - src/AccountPage.jsx — pagina account utente con logout
 - src/index.css — CSS globale: reset, variabili, footer, standard padding
 - src/Immobile.jsx — scheda immobile con chat persistente
+- src/blog/articoli.js — contenuto articoli blog
+- src/BlogPage.jsx — lista articoli (aggiungere in cima all'array per ordine cronologico)
 
 ## Decisioni architetturali
 - Pagamenti: esclusi MVP v1, notaio partner come depositario
 - Firma: FEA via Yousign per offerta d'acquisto
-- Non loggati vedono: prezzo, foto, descrizione, Fair Price Score + lucchetti documenti
-- Loggati vedono: documenti pubblici scaricabili (APE, Visura, Planimetria) + chat con storico
+- Non loggati: prezzo, foto, descrizione, Fair Price Score + lucchetti documenti
+- Loggati: documenti pubblici scaricabili (APE, Visura, Planimetria) + chat con storico
 - Documenti sensibili (Atto di provenienza, delibere): su richiesta per tutti
+- Blog: aggiungere nuovo articolo in cima ad articoli.js e BlogPage.jsx
 - SRL: da aprire al primo commitment angel
 
 ## Da fare post-MVP
@@ -57,7 +62,6 @@ Aggiornato: 04/05/2026
 - Memoria condivisa per immobile: AI risponde con risposte già date dal venditore
 
 ## Prossima sessione — Settimana 2
-- Task 5: Storico chat per utente (dashboard conversazioni)
-- Task 6: Notifiche email quando arriva un messaggio
-- Task 7: Dashboard venditore — vede le conversazioni sui propri immobili
-- Task 8: Form contatto notaio con email automatica
+- Task 5: Notifiche email quando arriva un messaggio in chat
+- Task 6: Dashboard venditore — vede le conversazioni sui propri immobili
+- Task 7: Form contatto notaio con email automatica
