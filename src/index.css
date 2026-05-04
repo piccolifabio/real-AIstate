@@ -14,9 +14,21 @@ button { cursor: pointer; font-family: 'DM Sans', sans-serif; border: none; back
 
 .footer { background: var(--black); padding: 2rem 3rem; display: flex !important; align-items: center !important; justify-content: space-between !important; border-top: 1px solid var(--border); font-size: 0.75rem; color: rgba(247,245,240,0.2); }
 
-.footer-logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; color: rgba(247,245,240,0.4); }
+.footer-logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.2rem;
+  color: var(--white);
+  text-decoration: none;
+  transition: color 0.2s;
+}
 
-.footer-logo span { color: #d93025; }
+.footer-logo:hover {
+  color: #7c3aed;
+}
+
+.footer-logo span {
+  color: #d93025;
+}
 
 .footer-links { display: flex; gap: 2rem; }
 
