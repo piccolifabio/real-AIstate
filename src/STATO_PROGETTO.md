@@ -33,11 +33,14 @@ Aggiornato: 04/05/2026
 - Quality check CSS completo su tutte le pagine src/
 - RLS abilitata su tabella chat_messages (Supabase)
 - File blog obsoleti rimossi (BlogVerona.jsx, BlogOMI2025.jsx, index.js)
+- ProtectedRoute: scheda immobile protetta, redirect a /login se non loggati
+- Redirect post-login alla pagina richiesta
+- Pagina /account con email utente e logout
 
 ### Settimana 1 MVP — in corso
 - [x] Supabase Auth: login e registrazione ✅
 - [x] Navbar dinamica: "Accesso"/"Il mio account" ✅
-- [ ] Task 2: Pagine protette (scheda solo loggati)
+- [x] Task 2: Pagine protette ✅
 - [ ] Task 3: Documenti scaricabili con controllo accesso
 - [ ] Task 4: Chat immobile legata al login
 
@@ -45,6 +48,8 @@ Aggiornato: 04/05/2026
 - src/supabase.js — connessione Supabase (anon key eyJ...)
 - src/AuthContext.jsx — gestione sessione utente globale
 - src/LoginPage.jsx — pagina login/registrazione
+- src/ProtectedRoute.jsx — componente route protetta
+- src/AccountPage.jsx — pagina account utente con logout
 - src/index.css — CSS globale: reset, variabili, footer, standard padding
 
 ## Decisioni architetturali
@@ -60,7 +65,7 @@ Aggiornato: 04/05/2026
 - VendiForm.jsx: fix allineamento padding laterale
 - Google OAuth: aggiungere dopo email+password
 
-## Prossima sessione — Task 2
-- Proteggere scheda immobile: redirect a /login se non loggati
-- Creare pagina /account base
-- Mostrare documenti solo a utenti loggati
+## Prossima sessione — Task 3
+- Documenti scaricabili solo per utenti loggati
+- Logica accesso: non loggati vedono lucchetto, loggati scaricano
+- Utenti con offerta accettata: accesso a compromesso e documentazione completa

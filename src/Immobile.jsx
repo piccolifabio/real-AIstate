@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { useAuth } from "./AuthContext";
 import NavBar from "./NavBar.jsx";
 import SiteFooter from "./SiteFooter.jsx";
 
@@ -453,6 +454,7 @@ function AffordabilityChat({ immobile }) {
 }
 
 export default function ImmobilePage() {
+  const { user } = useAuth()
   const [saved, setSaved] = useState(false);
   const [activeTab, setActiveTab] = useState("analisi");
   const [mapTab, setMapTab] = useState("streetview");
@@ -600,28 +602,60 @@ export default function ImmobilePage() {
           </div>
 
           {/* DOCUMENTS */}
-          <div className="docs-section">
-            <h2 className="section-title">Documenti</h2>
-            <div style={{ fontSize: "0.82rem", color: "var(--muted)", marginBottom: "1rem" }}>
-              {docsVerified} su {docsTotal} documenti verificati.
-              {!allVerified && <span style={{ color: "var(--gold)" }}> Il venditore ha 30 giorni per completare la documentazione.</span>}
-            </div>
-            <div className="docs-grid">
-              {immobile.documenti.map((doc, i) => (
-                <div className="doc-item" key={i}>
-                  <div className={`doc-icon ${doc.verificato ? "verified" : "missing"}`}>
-                    {doc.verificato ? "✓" : "✗"}
-                  </div>
-                  <div className="doc-info">
-                    <div className="doc-name">{doc.nome}</div>
-                    <div className={`doc-status ${doc.verificato ? "ok" : "ko"}`}>
-                      {doc.verificato ? "Verificato" : "Mancante"}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+<div className="docs-section">
+  <h2 className="section-title">Documenti</h2>
+  <div style={{ fontSize: "0.82rem", color: "var(--muted)", marginBottom: "1rem" }}>
+    {docsVerified} su {docsTotal} documenti verificati.
+    {!allVerified && <span style={{ color: "var(--gold)" }}> Il venditore ha 30 giorni per completare la documentazione.</span>}
+  </div>
+  {!user && (
+    <div style={{ background: "rgba(217,48,37,0.08)", border: "1px solid rgba(217,48,37,0.2)", borderRadius: 3, padding: "1.2rem 1.5rem", marginBottom: "1rem", display: "flex", alignItems: "center", gap: "1rem" }}>
+      <span style={{ fontSize: "1.2rem" }}>🔒</span>
+      <div>
+        <div style={{ fontSize: "0.82rem", fontWeight: 600, color: "#f7f5f0", marginBottom: "0.3rem" }}>Accedi per scaricare i documenti</div>
+        <div style={{ fontSize: "0.78rem", color: "rgba(247,245,240,0.5)" }}>
+          Registrati gratuitamente per accedere a planimetria, visura catastale e APE.{" "}
+          <a href="/login" style={{ color: "var(--red)", textDecoration: "none", fontWeight: 600 }}>Accedi →</a>
+        </div>
+      </div>
+    </div>
+  )}
+  <div className="docs-grid">
+    {immobile.documenti.map((doc, i) => {
+      const pubblico = ["Visura Catastale", "Planimetria Catastale", "APE — Classe Energetica C"].includes(doc.nome)
+      return (
+        <div className="doc-item" key={i}>
+          <div className={`doc-icon ${doc.verificato ? "verified" : "missing"}`}>
+            {doc.verificato ? "✓" : "✗"}
           </div>
+          <div className="doc-info">
+            <div className="doc-name">{doc.nome}</div>
+            <div className={`doc-status ${doc.verificato ? "ok" : "ko"}`}>
+              {doc.verificato ? "Verificato" : "Mancante"}
+            </div>
+            {doc.verificato && (
+              pubblico ? (
+                user ? (
+                  <div style={{ fontSize: "0.7rem", color: "var(--red)", marginTop: "0.3rem", cursor: "pointer", fontWeight: 600 }}>
+                    ↓ Scarica
+                  </div>
+                ) : (
+                  <div style={{ fontSize: "0.7rem", color: "var(--muted)", marginTop: "0.3rem" }}>
+                    🔒 Accedi per scaricare
+                  </div>
+                )
+              ) : (
+                <div style={{ fontSize: "0.7rem", color: "var(--muted)", marginTop: "0.3rem" }}>
+                  Su richiesta
+                </div>
+              )
+            )}
+          </div>
+        </div>
+      )
+    })}
+  </div>
+</div>
 
           {/* MAP & STREET VIEW */}
           <div className="map-section">
