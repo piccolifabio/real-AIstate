@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useAuth } from "./AuthContext";
+import { supabase } from "./supabase";
 import NavBar from "./NavBar.jsx";
 import SiteFooter from "./SiteFooter.jsx";
 
@@ -284,13 +285,32 @@ function StickyTooltip({ text }) {
   );
 }
 
-function AiChat() {
+function AiChat({ user }) {
   const [messages, setMessages] = useState(initialMessages);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [sessioneId] = useState(() => `sess_${Date.now()}_${Math.random().toString(36).slice(2)}`);
-  const bottomRef = useRef(null);
-
+  useEffect(() => {
+  if (!user) return
+  const loadHistory = async () => {
+    const { data } = await supabase
+      .from('chat_messages')
+      .select('*')
+      .eq('immobile_id', immobile.id)
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: true })
+    
+    if (data && data.length > 0) {
+      setMessages(data.map(m => ({
+        role: m.mittente === 'compratore' ? 'user' : 'ai',
+        text: m.testo,
+        note: null
+      })))
+    }
+  }
+  loadHistory()
+}, [user])
+  
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [messages, loading]);
@@ -301,6 +321,16 @@ function AiChat() {
     setInput("");
     setMessages(prev => [...prev, { role: "user", text: userMsg, note: "In attesa di revisione AI" }]);
     setLoading(true);
+
+    if (user) {
+      await supabase.from('chat_messages').insert({
+        sessione_id: sessioneId,
+        immobile_id: immobile.id,
+        mittente: 'compratore',
+        testo: userMsg,
+        user_id: user.id
+      })
+    }
 
     try {
       const res = await fetch("/api/chat-immobile", {
@@ -335,11 +365,22 @@ function AiChat() {
         { ...prev[prev.length - 1], note: null },
         { role: "ai", text: data.risposta, note: data.forwarded ? "Inoltrato al venditore — risponderà entro 24h" : null }
       ]);
+      if (user) {
+        await supabase.from('chat_messages').insert({
+          sessione_id: sessioneId,
+          immobile_id: immobile.id,
+          mittente: 'ai',
+          testo: data.risposta,
+          user_id: user.id
+        })
+      }
     } catch {
       setMessages(prev => [...prev, { role: "ai", text: "Qualcosa è andato storto. Riprova tra un momento.", note: null }]);
     }
     setLoading(false);
   };
+
+  const bottomRef = useRef(null);
 
   return (
     <div className="chat-box">
@@ -702,7 +743,7 @@ export default function ImmobilePage() {
               <span>✦</span>
               <span>Ogni messaggio è revisionato dall&apos;AI prima di essere consegnato. Nessuna sorpresa, nessuna tensione.</span>
             </div>
-            <AiChat />
+            <AiChat user={user} />
           </div>
 
           {/* AFFORDABILITY */}
