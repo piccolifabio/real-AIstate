@@ -79,10 +79,18 @@ const uploadResponse = await fetch(`${YOUSIGN_BASE}/documents`, {
     }
 
     // 3. Attiva
-    await fetch(`${YOUSIGN_BASE}/signature_requests/${signatureData.id}/activate`, {
+    const activateResponse = await fetch(`${YOUSIGN_BASE}/signature_requests/${signatureData.id}/activate`, {
       method: "POST",
-      headers: { "Authorization": `Bearer ${YOUSIGN_API_KEY}` },
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${YOUSIGN_API_KEY}` 
+      },
     });
+
+    const activateData = await activateResponse.json();
+    if (!activateResponse.ok) {
+      return res.status(500).json({ error: "Errore attivazione Yousign", detail: activateData });
+    }
 
     return res.status(200).json({ ok: true, signature_request_id: signatureData.id });
 
