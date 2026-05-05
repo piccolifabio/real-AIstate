@@ -15,20 +15,22 @@ export default async function handler(req, res) {
   try {
     const base64Doc = await generatePDF({ compratore_nome, compratore_email, venditore_nome, venditore_email, immobile, importo, condizioni, data_rogito, note });
 
-    // 1. Carica il documento
-    const uploadResponse = await fetch(`${YOUSIGN_BASE}/documents`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${YOUSIGN_API_KEY}`,
-      },
-      body: JSON.stringify({
-        name: "Proposta_Acquisto_RealAIstate.pdf",
-        content_type: "application/pdf",
-        content: base64Doc,
-        nature: "signable_document",
-      }),
-    });
+   // 1. Carica il documento
+const pdfBuffer = Buffer.from(base64Doc, "base64");
+
+const formData = new FormData();
+const blob = new Blob([pdfBuffer], { type: "application/pdf" });
+formData.append("file", blob, "Proposta_Acquisto_RealAIstate.pdf");
+formData.append("nature", "signable_document");
+formData.append("content_type", "application/pdf");
+
+const uploadResponse = await fetch(`${YOUSIGN_BASE}/documents`, {
+  method: "POST",
+  headers: {
+    "Authorization": `Bearer ${YOUSIGN_API_KEY}`,
+  },
+  body: formData,
+});
 
     const uploadData = await uploadResponse.json();
     if (!uploadResponse.ok) {
