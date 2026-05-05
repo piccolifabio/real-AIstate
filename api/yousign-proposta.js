@@ -28,25 +28,36 @@ export default async function handler(req, res) {
         name: `Proposta acquisto — ${immobile.indirizzo}`,
         delivery_mode: "email",
         timezone: "Europe/Rome",
-        signers: [
-          {
-            info: { first_name: compratore_nome.split(" ")[0], last_name: compratore_nome.split(" ").slice(1).join(" ") || "—", email: compratore_email },
-            signature_level: "electronic_signature",
-            signature_authentication_mode: "no_otp",
-          },
-          {
-            info: { first_name: venditore_nome.split(" ")[0], last_name: venditore_nome.split(" ").slice(1).join(" ") || "—", email: venditore_email },
-            signature_level: "electronic_signature",
-            signature_authentication_mode: "no_otp",
-          },
-        ],
-        documents: [
-          {
-            name: "Proposta_Acquisto_RealAIstate.pdf",
-            content_type: "application/pdf",
-            content: base64Doc,
-          },
-        ],
+       signers: [
+  {
+    info: { 
+      first_name: compratore_nome.split(" ")[0], 
+      last_name: compratore_nome.split(" ").slice(1).join(" ") || "—", 
+      email: compratore_email,
+      locale: "it"
+    },
+    signature_level: "electronic_signature",
+    signature_authentication_mode: "no_otp",
+  },
+  {
+    info: { 
+      first_name: venditore_nome.split(" ")[0], 
+      last_name: venditore_nome.split(" ").slice(1).join(" ") || "—", 
+      email: venditore_email,
+      locale: "it"
+    },
+    signature_level: "electronic_signature",
+    signature_authentication_mode: "no_otp",
+  },
+],
+documents: [
+  {
+    name: "Proposta_Acquisto_RealAIstate.pdf",
+    content_type: "application/pdf",
+    content: base64Doc,
+    nature: "signable_document",
+  },
+],
       }),
     });
 
