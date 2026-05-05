@@ -342,7 +342,10 @@ const handleSubmit = async () => {
 
 <div style={{ background: 'rgba(45,106,79,0.08)', border: '1px solid rgba(45,106,79,0.2)', borderRadius: 2, padding: '1rem', marginBottom: '1rem', fontSize: '0.78rem', color: 'rgba(247,245,240,0.6)', lineHeight: 1.6 }}>
   <strong style={{ color: '#4ade80', display: 'block', marginBottom: '0.3rem' }}>ℹ️ Come funziona</strong>
-  Questa proposta non è legalmente vincolante. Il venditore la valuterà e ti risponderà entro 24 ore. Solo dopo l&apos;accettazione firmerete digitalmente il documento formale che impegna entrambe le parti.
+  Questa proposta diventa vincolante solo dopo la firma digitale di entrambe le parti. Il venditore la valuterà e ti risponderà entro 24 ore.{' '}
+  <a href="/proposta_acquisto_template.html" target="_blank" rel="noopener noreferrer" style={{ color: '#4ade80', fontWeight: 600 }}>
+    Visualizza il documento che firmerai →
+  </a>
 </div>
             <button onClick={handleSubmit} disabled={!form.importo || status === 'loading'} style={{ width: '100%', padding: '1rem', background: '#2d6a4f', border: 'none', borderRadius: 2, color: 'white', fontFamily: 'DM Sans, sans-serif', fontSize: '0.85rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer' }}>
               {status === 'loading' ? '...' : 'Invia proposta →'}
@@ -731,17 +734,25 @@ export default function ImmobilePage() {
     {!allVerified && <span style={{ color: "var(--gold)" }}> Il venditore ha 30 giorni per completare la documentazione.</span>}
   </div>
   {!user && (
-    <div style={{ background: "rgba(217,48,37,0.08)", border: "1px solid rgba(217,48,37,0.2)", borderRadius: 3, padding: "1.2rem 1.5rem", marginBottom: "1rem", display: "flex", alignItems: "center", gap: "1rem" }}>
-      <span style={{ fontSize: "1.2rem" }}>🔒</span>
-      <div>
-        <div style={{ fontSize: "0.82rem", fontWeight: 600, color: "#f7f5f0", marginBottom: "0.3rem" }}>Accedi per scaricare i documenti</div>
-        <div style={{ fontSize: "0.78rem", color: "rgba(247,245,240,0.5)" }}>
-          Registrati gratuitamente per accedere a planimetria, visura catastale e APE.{" "}
-          <a href="/login" style={{ color: "var(--red)", textDecoration: "none", fontWeight: 600 }}>Accedi →</a>
-        </div>
+  <div style={{ background: "rgba(217,48,37,0.08)", border: "1px solid rgba(217,48,37,0.2)", borderRadius: 3, padding: "1.2rem 1.5rem", marginBottom: "1rem", display: "flex", alignItems: "center", gap: "1rem" }}>
+    <span style={{ fontSize: "1.2rem" }}>🔒</span>
+    <div>
+      <div style={{ fontSize: "0.82rem", fontWeight: 600, color: "#f7f5f0", marginBottom: "0.3rem" }}>Accedi per scaricare i documenti</div>
+      <div style={{ fontSize: "0.78rem", color: "rgba(247,245,240,0.5)" }}>
+        Registrati gratuitamente per accedere a planimetria, visura catastale e APE.{" "}
+        <a href="/login" style={{ color: "var(--red)", textDecoration: "none", fontWeight: 600 }}>Accedi →</a>
       </div>
     </div>
-  )}
+  </div>
+)}
+<div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 2, padding: "1rem", marginBottom: "1rem", display: "flex", alignItems: "center", gap: "0.8rem" }}>
+  <div style={{ width: 36, height: 36, borderRadius: 2, background: "rgba(217,48,37,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1rem", flexShrink: 0 }}>📄</div>
+  <div style={{ flex: 1 }}>
+    <div style={{ fontSize: "0.82rem", fontWeight: 500, color: "var(--white)", marginBottom: "0.2rem" }}>Template Proposta d'Acquisto</div>
+    <div style={{ fontSize: "0.68rem", letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--green-light)" }}>Disponibile</div>
+<a href="/proposta_acquisto_template.html" target="_blank" rel="noopener noreferrer" style={{ fontSize: "0.7rem", color: "var(--red)", fontWeight: 600, textDecoration: "none", display: "block", marginTop: "0.3rem" }}>↓ Visualizza documento</a>
+  </div>
+</div>
   <div className="docs-grid">
     {immobile.documenti.map((doc, i) => {
       const pubblico = ["Visura Catastale", "Planimetria Catastale", "APE — Classe Energetica C"].includes(doc.nome)

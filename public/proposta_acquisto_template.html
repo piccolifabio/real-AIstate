@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 10pt; color: #1a1a1a; background: white; padding: 40px; max-width: 800px; margin: 0 auto; }
+  
+  .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #d93025; padding-bottom: 20px; margin-bottom: 28px; }
+  .logo { font-size: 22pt; font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.05em; font-weight: 400; }
+  .logo span { color: #d93025; }
+  .doc-title { text-align: right; }
+  .doc-title h1 { font-size: 13pt; font-weight: 700; color: #1a1a1a; text-transform: uppercase; letter-spacing: 0.1em; }
+  .doc-title .doc-num { font-size: 8pt; color: #666; margin-top: 4px; }
+
+  .notice { background: #fff8f8; border-left: 3px solid #d93025; padding: 10px 14px; margin-bottom: 24px; font-size: 8.5pt; color: #444; line-height: 1.5; }
+  .notice strong { color: #d93025; }
+
+  .section { margin-bottom: 22px; }
+  .section-title { font-size: 7.5pt; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: #d93025; border-bottom: 1px solid #e8e8e8; padding-bottom: 5px; margin-bottom: 12px; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; }
+  
+  .field { margin-bottom: 10px; }
+  .field label { font-size: 7pt; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #888; display: block; margin-bottom: 3px; }
+  .field .value { font-size: 10pt; color: #1a1a1a; border-bottom: 1px solid #ddd; padding-bottom: 3px; min-height: 20px; }
+  .field .value.highlight { font-weight: 700; font-size: 12pt; color: #1a1a1a; }
+  .field .value.empty { min-height: 28px; }
+
+  .pertinenza-row { background: #f8f8f8; border: 1px solid #e8e8e8; border-radius: 3px; padding: 10px 12px; margin-bottom: 8px; }
+  .pertinenza-row .pert-title { font-size: 7.5pt; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
+
+  .fee-box { background: #f8f8f8; border: 1px solid #e0e0e0; border-radius: 4px; padding: 14px; margin-bottom: 20px; }
+  .fee-box .fee-title { font-size: 7.5pt; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: #444; margin-bottom: 10px; }
+  .fee-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid #e8e8e8; font-size: 9pt; }
+  .fee-row:last-child { border-bottom: none; }
+  .fee-row .fee-label { color: #444; }
+  .fee-row .fee-amount { font-weight: 700; color: #1a1a1a; }
+  .fee-note { font-size: 7.5pt; color: #888; padding-top: 8px; line-height: 1.5; }
+
+  .payment-box { background: #f0f7f0; border: 1px solid #c8e0c8; border-radius: 4px; padding: 14px; margin-bottom: 20px; }
+  .payment-box .payment-title { font-size: 7.5pt; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: #2d6a4f; margin-bottom: 10px; }
+  .payment-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 6px 0; border-bottom: 1px solid #d8ead8; font-size: 9pt; gap: 12px; }
+  .payment-row:last-child { border-bottom: none; }
+  .payment-row .p-label { color: #444; flex: 1; }
+  .payment-row .p-value { font-weight: 600; color: #1a1a1a; text-align: right; min-width: 120px; }
+  .payment-note { font-size: 7.5pt; color: #2d6a4f; padding-top: 8px; line-height: 1.5; }
+
+  .clauses { background: #fff; border: 1px solid #e0e0e0; border-radius: 4px; padding: 14px; margin-bottom: 20px; }
+  .clause { font-size: 8.5pt; line-height: 1.6; color: #333; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #f0f0f0; }
+  .clause:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+  .clause strong { color: #1a1a1a; }
+  .clause .clause-num { font-weight: 700; color: #d93025; margin-right: 6px; }
+
+  .notes-box { border: 1px solid #e0e0e0; border-radius: 4px; padding: 14px; margin-bottom: 20px; min-height: 80px; }
+  .notes-content { font-size: 9pt; color: #444; line-height: 1.6; min-height: 60px; }
+
+  .signature-section { margin-top: 30px; }
+  .sig-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 16px; }
+  .sig-box { border: 1px solid #ddd; border-radius: 4px; padding: 16px; }
+  .sig-box .sig-role { font-size: 7pt; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  .sig-box .sig-name { font-size: 9.5pt; font-weight: 600; color: #1a1a1a; margin-bottom: 4px; }
+  .sig-box .sig-date { font-size: 8pt; color: #888; margin-bottom: 16px; }
+  .sig-line { border-bottom: 1px solid #999; height: 40px; margin-top: 8px; }
+  .sig-line-label { font-size: 7pt; color: #aaa; text-align: center; margin-top: 4px; }
+
+  .footer { margin-top: 30px; padding-top: 14px; border-top: 1px solid #e8e8e8; display: flex; justify-content: space-between; align-items: center; }
+  .footer-logo { font-size: 11pt; font-family: 'Bebas Neue', sans-serif; color: #888; letter-spacing: 0.05em; }
+  .footer-logo span { color: #d93025; }
+  .footer-info { font-size: 7.5pt; color: #aaa; text-align: right; line-height: 1.5; }
+
+  @media print { body { padding: 20px; } }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="logo">REAL<span>AI</span>STATE</div>
+  <div class="doc-title">
+    <h1>Proposta d'Acquisto</h1>
+    <div class="doc-num">Documento generato da RealAIstate · {{DATA_PROPOSTA}}</div>
+  </div>
+</div>
+
+<!-- AVVISO -->
+<div class="notice">
+  <strong>Natura del documento.</strong> La presente proposta d'acquisto, una volta sottoscritta digitalmente da entrambe le parti, costituisce atto contrattualmente vincolante ai sensi degli artt. 1326 e seguenti del Codice Civile. Il recesso unilaterale comporta le conseguenze previste dalla disciplina della caparra confirmatoria (art. 1385 c.c.). RealAIstate non è un'agenzia immobiliare e non svolge attività di mediazione ai sensi della L. 39/1989. Il servizio consiste nella fornitura di strumenti tecnologici di supporto alla compravendita tra privati.
+</div>
+
+<!-- 1. IMMOBILE -->
+<div class="section">
+  <div class="section-title">1 · Immobile oggetto della proposta</div>
+  <div class="grid-2">
+    <div class="field">
+      <label>Indirizzo completo</label>
+      <div class="value">{{INDIRIZZO}}</div>
+    </div>
+    <div class="field">
+      <label>Comune e CAP</label>
+      <div class="value">{{COMUNE}}</div>
+    </div>
+  </div>
+  <div class="grid-4">
+    <div class="field">
+      <label>Superficie catastale</label>
+      <div class="value">{{SUPERFICIE}} m²</div>
+    </div>
+    <div class="field">
+      <label>Piano</label>
+      <div class="value">{{PIANO}}</div>
+    </div>
+    <div class="field">
+      <label>Locali</label>
+      <div class="value">{{LOCALI}}</div>
+    </div>
+    <div class="field">
+      <label>Classe energetica</label>
+      <div class="value">{{CLASSE_ENERGETICA}}</div>
+    </div>
+  </div>
+
+  <!-- Dati catastali -->
+  <div class="pertinenza-row">
+    <div class="pert-title">Dati catastali — Immobile principale</div>
+    <div class="grid-4">
+      <div class="field">
+        <label>Foglio</label>
+        <div class="value">{{CAT_FOGLIO}}</div>
+      </div>
+      <div class="field">
+        <label>Particella</label>
+        <div class="value">{{CAT_PARTICELLA}}</div>
+      </div>
+      <div class="field">
+        <label>Subalterno</label>
+        <div class="value">{{CAT_SUBALTERNO}}</div>
+      </div>
+      <div class="field">
+        <label>Categoria</label>
+        <div class="value">{{CAT_CATEGORIA}}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pertinenze -->
+  <div class="pertinenza-row">
+    <div class="pert-title">Pertinenze incluse nella proposta</div>
+    <table style="width:100%; border-collapse:collapse; font-size:8.5pt;">
+      <thead>
+        <tr style="border-bottom:1px solid #ddd;">
+          <th style="text-align:left; padding:5px 8px; font-size:7pt; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:#888; width:35%;">Descrizione</th>
+          <th style="text-align:left; padding:5px 8px; font-size:7pt; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:#888; width:15%;">Foglio</th>
+          <th style="text-align:left; padding:5px 8px; font-size:7pt; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:#888; width:18%;">Particella</th>
+          <th style="text-align:left; padding:5px 8px; font-size:7pt; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:#888; width:18%;">Subalterno</th>
+          <th style="text-align:left; padding:5px 8px; font-size:7pt; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:#888; width:14%;">Categoria</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom:1px solid #eee;">
+          <td style="padding:8px; border-bottom:1px solid #eee;">{{PERT1_DESC}}</td>
+          <td style="padding:8px; border-bottom:1px solid #eee;">{{PERT1_FOGLIO}}</td>
+          <td style="padding:8px; border-bottom:1px solid #eee;">{{PERT1_PARTICELLA}}</td>
+          <td style="padding:8px; border-bottom:1px solid #eee;">{{PERT1_SUB}}</td>
+          <td style="padding:8px; border-bottom:1px solid #eee;">{{PERT1_CAT}}</td>
+        </tr>
+        <tr style="border-bottom:1px solid #eee;">
+          <td style="padding:8px; border-bottom:1px solid #eee;">{{PERT2_DESC}}</td>
+          <td style="padding:8px; border-bottom:1px solid #eee;">{{PERT2_FOGLIO}}</td>
+          <td style="padding:8px; border-bottom:1px solid #eee;">{{PERT2_PARTICELLA}}</td>
+          <td style="padding:8px; border-bottom:1px solid #eee;">{{PERT2_SUB}}</td>
+          <td style="padding:8px; border-bottom:1px solid #eee;">{{PERT2_CAT}}</td>
+        </tr>
+        <tr style="border-bottom:1px solid #eee;">
+          <td style="padding:8px; border-bottom:1px solid #eee;">{{PERT3_DESC}}</td>
+          <td style="padding:8px; border-bottom:1px solid #eee;">{{PERT3_FOGLIO}}</td>
+          <td style="padding:8px; border-bottom:1px solid #eee;">{{PERT3_PARTICELLA}}</td>
+          <td style="padding:8px; border-bottom:1px solid #eee;">{{PERT3_SUB}}</td>
+          <td style="padding:8px; border-bottom:1px solid #eee;">{{PERT3_CAT}}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px; min-height:28px;">&nbsp;</td>
+          <td style="padding:8px;">&nbsp;</td>
+          <td style="padding:8px;">&nbsp;</td>
+          <td style="padding:8px;">&nbsp;</td>
+          <td style="padding:8px;">&nbsp;</td>
+        </tr>
+      </tbody>
+    </table>
+    <div style="font-size:7pt; color:#aaa; margin-top:6px;">Lasciare vuoto se non applicabile. Aggiungere righe se necessario.</div>
+  </div>
+
+  <div class="field" style="margin-top:10px;">
+    <label>Prezzo richiesto dal Venditore</label>
+    <div class="value highlight">€ {{PREZZO_RICHIESTO}}</div>
+  </div>
+</div>
+
+<!-- 2. PROPONENTE -->
+<div class="section">
+  <div class="section-title">2 · Dati del Proponente (Compratore)</div>
+  <div class="grid-2">
+    <div class="field">
+      <label>Nome e Cognome</label>
+      <div class="value">{{COMPRATORE_NOME}}</div>
+    </div>
+    <div class="field">
+      <label>Codice Fiscale</label>
+      <div class="value">{{COMPRATORE_CF}}</div>
+    </div>
+    <div class="field">
+      <label>Indirizzo di residenza</label>
+      <div class="value">{{COMPRATORE_INDIRIZZO}}</div>
+    </div>
+    <div class="field">
+      <label>Email</label>
+      <div class="value">{{COMPRATORE_EMAIL}}</div>
+    </div>
+  </div>
+</div>
+
+<!-- 3. VENDITORE -->
+<div class="section">
+  <div class="section-title">3 · Dati del Venditore</div>
+  <div class="grid-2">
+    <div class="field">
+      <label>Nome e Cognome</label>
+      <div class="value">{{VENDITORE_NOME}}</div>
+    </div>
+    <div class="field">
+      <label>Codice Fiscale</label>
+      <div class="value">{{VENDITORE_CF}}</div>
+    </div>
+    <div class="field">
+      <label>Indirizzo di residenza</label>
+      <div class="value">{{VENDITORE_INDIRIZZO}}</div>
+    </div>
+    <div class="field">
+      <label>Email</label>
+      <div class="value">{{VENDITORE_EMAIL}}</div>
+    </div>
+  </div>
+</div>
+
+<!-- 4. PROPOSTA ECONOMICA -->
+<div class="section">
+  <div class="section-title">4 · Proposta economica</div>
+  <div class="grid-2">
+    <div class="field">
+      <label>Importo offerto</label>
+      <div class="value highlight">€ {{IMPORTO_OFFERTO}}</div>
+    </div>
+    <div class="field">
+      <label>Data rogito proposta</label>
+      <div class="value">{{DATA_ROGITO}}</div>
+    </div>
+    <div class="field">
+      <label>Condizioni</label>
+      <div class="value">{{CONDIZIONI}}</div>
+    </div>
+    <div class="field">
+      <label>Data consegna immobile</label>
+      <div class="value">{{DATA_CONSEGNA}}</div>
+    </div>
+  </div>
+</div>
+
+<!-- 5. CONDIZIONI DI PAGAMENTO -->
+<div class="payment-box">
+  <div class="payment-title">5 · Condizioni di pagamento e deposito</div>
+  <div class="payment-row">
+    <span class="p-label">Modalità di acquisto</span>
+    <span class="p-value">{{MODALITA_PAGAMENTO}}</span>
+  </div>
+  <div class="payment-row">
+    <span class="p-label">Importo deposito cauzionale (da versare entro {{GIORNI_DEPOSITO}} giorni dall'accettazione)</span>
+    <span class="p-value">€ {{IMPORTO_DEPOSITO}}</span>
+  </div>
+  <div class="payment-row">
+    <span class="p-label">Destinatario del deposito</span>
+    <span class="p-value">Notaio depositario</span>
+  </div>
+  <div class="payment-row">
+    <span class="p-label">Saldo al rogito</span>
+    <span class="p-value">€ {{SALDO_ROGITO}}</span>
+  </div>
+  <div class="payment-note">
+    ⚠ Il deposito cauzionale dovrà essere versato esclusivamente tramite bonifico bancario al notaio designato come terzo depositario. Non sarà in alcun caso versato direttamente al Venditore prima del rogito. Il deposito ha natura di caparra confirmatoria ai sensi dell'art. 1385 c.c.: in caso di recesso del Proponente, il deposito è trattenuto dal Venditore; in caso di recesso del Venditore, il Venditore è tenuto a restituire il doppio del deposito ricevuto.
+  </div>
+</div>
+
+<!-- 6. FEE REALAISTATE -->
+<div class="fee-box">
+  <div class="fee-title">6 · Corrispettivo per il servizio RealAIstate</div>
+  <div class="fee-row">
+    <span class="fee-label">Servizio piattaforma tecnologica — a carico del Proponente (Compratore)</span>
+    <span class="fee-amount">€ 2.000</span>
+  </div>
+  <div class="fee-row">
+    <span class="fee-label">Servizio piattaforma tecnologica — a carico del Venditore</span>
+    <span class="fee-amount">€ 499</span>
+  </div>
+  <div class="fee-note">
+    Il corrispettivo è dovuto esclusivamente a transazione completata con rogito notarile. RealAIstate S.r.l. non è un'agenzia immobiliare e non svolge attività di mediazione ai sensi della L. 39/1989. Il servizio consiste nella fornitura di strumenti tecnologici di supporto alla compravendita diretta tra privati.
+  </div>
+</div>
+
+<!-- 7. CLAUSOLE -->
+<div class="section">
+  <div class="section-title">7 · Clausole e condizioni</div>
+  <div class="clauses">
+    <div class="clause">
+      <span class="clause-num">7.1</span>
+      <strong>Efficacia vincolante.</strong> La presente proposta diventa contrattualmente vincolante per entrambe le parti al momento della firma digitale del Venditore in segno di accettazione. Dal momento dell'accettazione si applicano le disposizioni degli artt. 1326 e seguenti c.c. e la disciplina della caparra confirmatoria di cui all'art. 1385 c.c.
+    </div>
+    <div class="clause">
+      <span class="clause-num">7.2</span>
+      <strong>Termine di irrevocabilità.</strong> Il Proponente si impegna a mantenere la presente proposta ferma e irrevocabile per <strong>7 (sette) giorni</strong> dalla data di firma digitale. Trascorso tale termine senza accettazione scritta del Venditore, la proposta si intende automaticamente decaduta senza conseguenze per le parti.
+    </div>
+    <div class="clause">
+      <span class="clause-num">7.3</span>
+      <strong>Stato dell'immobile.</strong> Il Proponente dichiara di aver preso visione dell'immobile e della documentazione disponibile sulla piattaforma RealAIstate e di accettare l'immobile nello stato di fatto e di diritto in cui si trova, libero da persone e cose alla data concordata di consegna.
+    </div>
+    <div class="clause">
+      <span class="clause-num">7.4</span>
+      <strong>Deposito e caparra.</strong> Il Proponente si impegna a versare l'importo indicato al punto 5 a titolo di caparra confirmatoria entro i termini ivi indicati, tramite bonifico bancario al notaio designato quale terzo depositario. Il mancato versamento nei termini costituisce inadempimento e comporta la decadenza della proposta.
+    </div>
+    <div class="clause">
+      <span class="clause-num">7.5</span>
+      <strong>Spese e imposte.</strong> Le spese notarili e le imposte relative all'acquisto (imposta di registro o IVA, ipotecaria, catastale) sono a carico del Proponente, salvo diverse disposizioni di legge. Le eventuali imposte dovute dal Venditore sulla plusvalenza rimangono a carico del Venditore.
+    </div>
+    <div class="clause">
+      <span class="clause-num">7.6</span>
+      <strong>Contratto preliminare.</strong> Entro 30 giorni dall'accettazione della presente proposta, le parti si impegnano a sottoscrivere contratto preliminare di compravendita (compromesso) da registrare all'Agenzia delle Entrate ai sensi del DPR 131/1986. I costi di registrazione del preliminare sono a carico del Proponente.
+    </div>
+    <div class="clause">
+      <span class="clause-num">7.7</span>
+      <strong>Corrispettivo RealAIstate.</strong> Le parti prendono atto e accettano il corrispettivo indicato al punto 6, dovuto a RealAIstate esclusivamente al perfezionamento della transazione con rogito notarile. Il corrispettivo remunera l'utilizzo della piattaforma tecnologica e non costituisce provvigione di mediazione.
+    </div>
+    <div class="clause">
+      <span class="clause-num">7.8</span>
+      <strong>Approvazione clausole onerose.</strong> Ai sensi e per gli effetti degli artt. 1341 e 1342 c.c., il Proponente dichiara di approvare espressamente le seguenti clausole: 7.2 (termine di irrevocabilità), 7.4 (caparra confirmatoria), 7.6 (obbligo preliminare).
+    </div>
+  </div>
+</div>
+
+<!-- 8. NOTE LIBERE -->
+<div class="section">
+  <div class="section-title">8 · Note e condizioni aggiuntive</div>
+  <div class="notes-box">
+    <div class="notes-content">{{NOTE_LIBERE}}</div>
+  </div>
+</div>
+
+<!-- 9. FIRME -->
+<div class="signature-section">
+  <div class="section-title">9 · Firme delle parti</div>
+  <div class="sig-grid">
+    <div class="sig-box">
+      <div class="sig-role">Proponente (Compratore)</div>
+      <div class="sig-name">{{COMPRATORE_NOME}}</div>
+      <div class="sig-date">Data firma: {{DATA_PROPOSTA}}</div>
+      <div class="sig-line"></div>
+      <div class="sig-line-label">Firma digitale FEA</div>
+    </div>
+    <div class="sig-box">
+      <div class="sig-role">Venditore — Accettazione</div>
+      <div class="sig-name">{{VENDITORE_NOME}}</div>
+      <div class="sig-date">Data firma: _______________</div>
+      <div class="sig-line"></div>
+      <div class="sig-line-label">Firma digitale FEA per accettazione</div>
+    </div>
+  </div>
+  <div style="margin-top:16px; background:#f8f8f8; border:1px solid #e8e8e8; border-radius:3px; padding:10px 14px; font-size:7.5pt; color:#666; line-height:1.5;">
+    <strong>Approvazione clausole onerose (art. 1341-1342 c.c.)</strong> — Il Proponente approva espressamente le clausole 7.2, 7.4, 7.6 apponendo separata firma digitale di seguito.
+    <div class="sig-line" style="max-width:300px; margin-top:12px;"></div>
+    <div class="sig-line-label">Firma separata Proponente per approvazione clausole onerose</div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <div class="footer-logo">REAL<span>AI</span>STATE · realaistate.ai</div>
+  <div class="footer-info">
+    Documento generato dalla piattaforma RealAIstate<br>
+    info@realaistate.ai · RealAIstate non è un'agenzia immobiliare
+  </div>
+</div>
+
+</body>
+</html>
