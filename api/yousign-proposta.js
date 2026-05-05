@@ -1,3 +1,4 @@
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
@@ -15,7 +16,7 @@ export default async function handler(req, res) {
     const htmlContent = generateHTML({ compratore_email, compratore_nome, venditore_email, venditore_nome, immobile, importo, condizioni, data_rogito, note });
     
     // 2. Converti HTML in base64
-    const base64Doc = Buffer.from(htmlContent).toString("base64");
+   const base64Doc = await generatePDF({ compratore_nome, compratore_email, venditore_nome, venditore_email, immobile, importo, condizioni, data_rogito, note });
 
     // 3. Crea la firma request su Yousign
     const signatureResponse = await fetch(`${YOUSIGN_BASE}/signature_requests`, {
@@ -82,112 +83,122 @@ documents: [
   }
 }
 
-function generateHTML({ compratore_nome, compratore_email, venditore_nome, venditore_email, immobile, importo, condizioni, data_rogito, note }) {
-  const oggi = new Date().toLocaleDateString("it-IT");
+async function generatePDF({ compratore_nome, compratore_email, venditore_nome, venditore_email, immobile, importo, condizioni, data_rogito, note }) {
+  const pdfDoc = await PDFDocument.create();
+  const page = pdfDoc.addPage([595, 842]); // A4
+  const { width, height } = page.getSize();
+  
+  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  
+  const red = rgb(0.85, 0.19, 0.15);
+  const black = rgb(0.1, 0.1, 0.1);
+  const gray = rgb(0.4, 0.4, 0.4);
+  
+  let y = height - 50;
+  
+  // Logo
+  page.drawText("REAL", { x: 50, y, size: 22, font: fontBold, color: black });
+  page.drawText("AI", { x: 96, y, size: 22, font: fontBold, color: red });
+  page.drawText("STATE", { x: 118, y, size: 22, font: fontBold, color: black });
+  
+  // Titolo
+  page.drawText("PROPOSTA D'ACQUISTO", { x: 350, y, size: 13, font: fontBold, color: black });
+  page.drawText(`Data: ${new Date().toLocaleDateString("it-IT")}`, { x: 350, y: y - 16, size: 9, font: fontRegular, color: gray });
+  
+  // Linea rossa
+  y -= 30;
+  page.drawLine({ start: { x: 50, y }, end: { x: 545, y }, thickness: 2, color: red });
+  
+  y -= 20;
+  // Nota legale
+  page.drawText("La presente proposta diventa vincolante per entrambe le parti con la firma digitale del Venditore.", { x: 50, y, size: 8, font: fontRegular, color: gray });
+  page.drawText("RealAIstate non e' un'agenzia immobiliare e non svolge attivita' di mediazione ai sensi della L. 39/1989.", { x: 50, y: y - 12, size: 8, font: fontRegular, color: gray });
+  
+  y -= 40;
+  
+  // Sezione Immobile
+  page.drawText("1 · IMMOBILE", { x: 50, y, size: 9, font: fontBold, color: red });
+  y -= 18;
+  page.drawText(`Indirizzo: ${immobile.indirizzo}`, { x: 50, y, size: 10, font: fontRegular, color: black });
+  y -= 14;
+  page.drawText(`Zona: ${immobile.zona}`, { x: 50, y, size: 10, font: fontRegular, color: black });
+  y -= 14;
+  page.drawText(`Prezzo richiesto: € ${immobile.prezzo.toLocaleString("it-IT")}`, { x: 50, y, size: 11, font: fontBold, color: black });
+  y -= 14;
+  page.drawText(`Superficie catastale: ${immobile.superficie} m²`, { x: 50, y, size: 10, font: fontRegular, color: black });
+  
+  y -= 30;
+  
+  // Sezione Compratore
+  page.drawText("2 · PROPONENTE (COMPRATORE)", { x: 50, y, size: 9, font: fontBold, color: red });
+  y -= 18;
+  page.drawText(`Nome: ${compratore_nome}`, { x: 50, y, size: 10, font: fontRegular, color: black });
+  y -= 14;
+  page.drawText(`Email: ${compratore_email}`, { x: 50, y, size: 10, font: fontRegular, color: black });
+  
+  y -= 30;
+  
+  // Sezione Venditore
+  page.drawText("3 · VENDITORE", { x: 50, y, size: 9, font: fontBold, color: red });
+  y -= 18;
+  page.drawText(`Nome: ${venditore_nome}`, { x: 50, y, size: 10, font: fontRegular, color: black });
+  y -= 14;
+  page.drawText(`Email: ${venditore_email}`, { x: 50, y, size: 10, font: fontRegular, color: black });
+  
+  y -= 30;
+  
+  // Sezione Proposta
+  page.drawText("4 · PROPOSTA ECONOMICA", { x: 50, y, size: 9, font: fontBold, color: red });
+  y -= 18;
   const diff = Number(importo) - immobile.prezzo;
   const perc = Math.round(Math.abs(diff) / immobile.prezzo * 100);
   const diffLabel = diff >= 0 ? `+${perc}% sopra prezzo` : `${perc}% sotto prezzo`;
-
-  return `<!DOCTYPE html>
-<html lang="it">
-<head>
-<meta charset="UTF-8">
-<style>
-  body { font-family: Arial, sans-serif; font-size: 10pt; color: #1a1a1a; padding: 40px; max-width: 800px; margin: 0 auto; }
-  .header { display: flex; justify-content: space-between; border-bottom: 2px solid #d93025; padding-bottom: 16px; margin-bottom: 24px; }
-  .logo { font-size: 18pt; font-weight: 700; }
-  .logo span { color: #d93025; }
-  .section { margin-bottom: 20px; }
-  .section-title { font-size: 8pt; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #d93025; border-bottom: 1px solid #eee; padding-bottom: 4px; margin-bottom: 10px; }
-  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .field label { font-size: 7pt; color: #888; display: block; margin-bottom: 2px; text-transform: uppercase; }
-  .field .val { border-bottom: 1px solid #ddd; padding-bottom: 2px; min-height: 18px; font-size: 10pt; }
-  .field .val.big { font-size: 13pt; font-weight: 700; }
-  .notice { background: #fff8f8; border-left: 3px solid #d93025; padding: 8px 12px; font-size: 8pt; color: #444; margin-bottom: 20px; }
-  .sig-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 20px; }
-  .sig-box { border: 1px solid #ddd; padding: 14px; }
-  .sig-line { border-bottom: 1px solid #999; height: 40px; margin-top: 12px; }
-  .footer { margin-top: 24px; border-top: 1px solid #eee; padding-top: 10px; font-size: 7.5pt; color: #aaa; display: flex; justify-content: space-between; }
-</style>
-</head>
-<body>
-<div class="header">
-  <div class="logo">REAL<span>AI</span>STATE</div>
-  <div style="text-align:right">
-    <div style="font-size:12pt;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;">Proposta d'Acquisto</div>
-    <div style="font-size:8pt;color:#666;">Data: ${oggi}</div>
-  </div>
-</div>
-
-<div class="notice">La presente proposta diventa contrattualmente vincolante per entrambe le parti al momento della firma digitale del Venditore. RealAIstate non è un'agenzia immobiliare e non svolge attività di mediazione ai sensi della L. 39/1989.</div>
-
-<div class="section">
-  <div class="section-title">1 · Immobile</div>
-  <div class="grid-2">
-    <div class="field"><label>Indirizzo</label><div class="val">${immobile.indirizzo}</div></div>
-    <div class="field"><label>Zona</label><div class="val">${immobile.zona}</div></div>
-    <div class="field"><label>Prezzo richiesto</label><div class="val big">€ ${immobile.prezzo.toLocaleString("it-IT")}</div></div>
-    <div class="field"><label>Superficie catastale</label><div class="val">${immobile.superficie} m²</div></div>
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-title">2 · Proponente (Compratore)</div>
-  <div class="grid-2">
-    <div class="field"><label>Nome e Cognome</label><div class="val">${compratore_nome}</div></div>
-    <div class="field"><label>Email</label><div class="val">${compratore_email}</div></div>
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-title">3 · Venditore</div>
-  <div class="grid-2">
-    <div class="field"><label>Nome e Cognome</label><div class="val">${venditore_nome}</div></div>
-    <div class="field"><label>Email</label><div class="val">${venditore_email}</div></div>
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-title">4 · Proposta economica</div>
-  <div class="grid-2">
-    <div class="field"><label>Importo offerto</label><div class="val big">€ ${Number(importo).toLocaleString("it-IT")}</div></div>
-    <div class="field"><label>Differenza rispetto al prezzo richiesto</label><div class="val">${diffLabel}</div></div>
-    <div class="field"><label>Condizioni</label><div class="val">${condizioni || "—"}</div></div>
-    <div class="field"><label>Data rogito proposta</label><div class="val">${data_rogito || "Da concordare"}</div></div>
-  </div>
-  ${note ? `<div class="field" style="margin-top:8px"><label>Note</label><div class="val">${note}</div></div>` : ""}
-</div>
-
-<div class="section" style="background:#f8f8f8;border:1px solid #e0e0e0;padding:12px;border-radius:3px;">
-  <div class="section-title">5 · Corrispettivo servizio RealAIstate</div>
-  <div class="grid-2">
-    <div class="field"><label>A carico del Compratore</label><div class="val" style="font-weight:700;">€ 2.000</div></div>
-    <div class="field"><label>A carico del Venditore</label><div class="val" style="font-weight:700;">€ 499</div></div>
-  </div>
-  <div style="font-size:7.5pt;color:#888;margin-top:8px;">Dovuto esclusivamente a transazione completata con rogito notarile.</div>
-</div>
-
-<div class="sig-grid">
-  <div class="sig-box">
-    <div style="font-size:7pt;color:#888;text-transform:uppercase;letter-spacing:0.1em;">Proponente (Compratore)</div>
-    <div style="font-size:10pt;font-weight:600;margin-top:4px;">${compratore_nome}</div>
-    <div style="font-size:8pt;color:#888;">Data: ${oggi}</div>
-    <div class="sig-line"></div>
-    <div style="font-size:7pt;color:#aaa;text-align:center;margin-top:4px;">Firma digitale</div>
-  </div>
-  <div class="sig-box">
-    <div style="font-size:7pt;color:#888;text-transform:uppercase;letter-spacing:0.1em;">Venditore — Accettazione</div>
-    <div style="font-size:10pt;font-weight:600;margin-top:4px;">${venditore_nome}</div>
-    <div style="font-size:8pt;color:#888;">Data: _______________</div>
-    <div class="sig-line"></div>
-    <div style="font-size:7pt;color:#aaa;text-align:center;margin-top:4px;">Firma digitale per accettazione</div>
-  </div>
-</div>
-
-<div class="footer">
-  <span>REALAISTATE · realaistate.ai · info@realaistate.ai</span>
-  <span>RealAIstate non è un'agenzia immobiliare</span>
-</div>
-</body>
-</html>`;
+  page.drawText(`Importo offerto: € ${Number(importo).toLocaleString("it-IT")} (${diffLabel})`, { x: 50, y, size: 11, font: fontBold, color: black });
+  y -= 14;
+  page.drawText(`Condizioni: ${condizioni || "—"}`, { x: 50, y, size: 10, font: fontRegular, color: black });
+  y -= 14;
+  page.drawText(`Data rogito proposta: ${data_rogito || "Da concordare"}`, { x: 50, y, size: 10, font: fontRegular, color: black });
+  if (note) {
+    y -= 14;
+    page.drawText(`Note: ${note}`, { x: 50, y, size: 10, font: fontRegular, color: black });
+  }
+  
+  y -= 30;
+  
+  // Fee RealAIstate
+  page.drawText("5 · CORRISPETTIVO REALAISTATE", { x: 50, y, size: 9, font: fontBold, color: red });
+  y -= 18;
+  page.drawText("A carico del Compratore: € 2.000", { x: 50, y, size: 10, font: fontRegular, color: black });
+  y -= 14;
+  page.drawText("A carico del Venditore: € 499", { x: 50, y, size: 10, font: fontRegular, color: black });
+  y -= 12;
+  page.drawText("Dovuto esclusivamente a transazione completata con rogito notarile.", { x: 50, y, size: 8, font: fontRegular, color: gray });
+  
+  y -= 50;
+  
+  // Firme
+  page.drawText("FIRME", { x: 50, y, size: 9, font: fontBold, color: red });
+  y -= 20;
+  
+  // Compratore
+  page.drawText("Proponente (Compratore)", { x: 50, y, size: 8, font: fontBold, color: gray });
+  y -= 14;
+  page.drawText(compratore_nome, { x: 50, y, size: 10, font: fontRegular, color: black });
+  y -= 40;
+  page.drawLine({ start: { x: 50, y }, end: { x: 260, y }, thickness: 1, color: rgb(0.6, 0.6, 0.6) });
+  page.drawText("Firma digitale FEA", { x: 50, y: y - 12, size: 7, font: fontRegular, color: gray });
+  
+  // Venditore
+  page.drawText("Venditore — Accettazione", { x: 300, y: y + 54, size: 8, font: fontBold, color: gray });
+  page.drawText(venditore_nome, { x: 300, y: y + 40, size: 10, font: fontRegular, color: black });
+  page.drawLine({ start: { x: 300, y }, end: { x: 545, y }, thickness: 1, color: rgb(0.6, 0.6, 0.6) });
+  page.drawText("Firma digitale FEA per accettazione", { x: 300, y: y - 12, size: 7, font: fontRegular, color: gray });
+  
+  // Footer
+  page.drawLine({ start: { x: 50, y: 40 }, end: { x: 545, y: 40 }, thickness: 1, color: rgb(0.9, 0.9, 0.9) });
+  page.drawText("REALAISTATE · realaistate.ai · info@realaistate.ai · RealAIstate non e' un'agenzia immobiliare", { x: 50, y: 25, size: 7, font: fontRegular, color: rgb(0.7, 0.7, 0.7) });
+  
+  const pdfBytes = await pdfDoc.save();
+  return Buffer.from(pdfBytes).toString("base64");
 }
