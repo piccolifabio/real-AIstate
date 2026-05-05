@@ -21,6 +21,8 @@ import ScusePage from "./ScusePage.jsx";
 import LoginPage from "./LoginPage.jsx";
 import ProtectedRoute from "./ProtectedRoute.jsx";
 import AccountPage from "./AccountPage.jsx";
+import Privacy from "./Privacy.jsx";
+import Termini from "./Termini.jsx";
 
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Serif+Display:ital@0;1&display=swap');
@@ -256,176 +258,14 @@ const styles = `
       }
 `;
 
-// ── PRIVACY PAGE ──
-function PrivacyPage() {
-  useEffect(() => { window.scrollTo(0, 0); }, []);
-  return (
-    <>
-      <NavBar />
-      <div className="legal-container">
-        <div className="legal-eyebrow">Documento legale</div>
-        <h1 className="legal-title">Privacy Policy</h1>
-        <div className="legal-date">Ultimo aggiornamento: aprile 2025</div>
-        <div className="legal-section">
-          <h2>Chi siamo</h2>
-          <p>RealAIstate è una piattaforma web per la compravendita immobiliare assistita da intelligenza artificiale, attualmente in fase di sviluppo e raccolta di early access.</p>
-          <div className="legal-highlight">
-            <p><strong>Titolare del trattamento:</strong> Fabio Piccoli<br /><strong>Email:</strong> <a href="mailto:privacy@realaistate.ai">privacy@realaistate.ai</a><br /><strong>Sito web:</strong> www.realaistate.ai</p>
-          </div>
-        </div>
-        <div className="legal-section">
-          <h2>Dati che raccogliamo</h2>
-          <p>Raccogliamo solo i dati strettamente necessari:</p>
-          <ul>
-            <li><strong>Indirizzo email</strong> — fornito volontariamente tramite il modulo di iscrizione alla lista d&apos;attesa early access</li>
-            <li><strong>Dati di navigazione</strong> — raccolti automaticamente tramite Google Analytics (IP anonimizzato, pagine visitate, durata sessione)</li>
-          </ul>
-        </div>
-        <div className="legal-section">
-          <h2>Come utilizziamo i tuoi dati</h2>
-          <ul>
-            <li>Gestire la lista d&apos;attesa early access e comunicare l&apos;apertura della piattaforma</li>
-            <li>Inviare aggiornamenti sul progresso del prodotto (solo con consenso)</li>
-            <li>Analizzare il traffico sul sito per migliorare l&apos;esperienza utente</li>
-          </ul>
-          <p>Non vendiamo, affittiamo o cediamo i tuoi dati a terze parti per finalità commerciali.</p>
-        </div>
-        <div className="legal-section">
-          <h2>Servizi di terze parti</h2>
-          <ul>
-            <li><strong>Brevo</strong> — gestione lista email. <a href="https://www.brevo.com/legal/privacypolicy/" target="_blank" rel="noopener noreferrer">Privacy policy Brevo</a></li>
-            <li><strong>Google Analytics</strong> — analisi traffico con IP anonimizzato. <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Privacy policy Google</a></li>
-            <li><strong>Vercel</strong> — hosting del sito. <a href="https://vercel.com/legal/privacy-policy" target="_blank" rel="noopener noreferrer">Privacy policy Vercel</a></li>
-          </ul>
-        </div>
-        <div className="legal-section">
-          <h2>I tuoi diritti (GDPR)</h2>
-          <ul>
-            <li>Accedere ai tuoi dati personali in nostro possesso</li>
-            <li>Richiedere la rettifica di dati inesatti</li>
-            <li>Richiedere la cancellazione dei tuoi dati</li>
-            <li>Opporti al trattamento dei tuoi dati</li>
-            <li>Revocare il consenso in qualsiasi momento</li>
-          </ul>
-          <p>Per esercitare i tuoi diritti: <a href="mailto:privacy@realaistate.ai">privacy@realaistate.ai</a>. Risponderemo entro 30 giorni.</p>
-        </div>
-        <div className="legal-section">
-          <h2>Contatti</h2>
-          <div className="legal-highlight">
-            <p><strong>Fabio Piccoli — RealAIstate</strong><br />Email: <a href="mailto:privacy@realaistate.ai">privacy@realaistate.ai</a></p>
-          </div>
-          <p>Hai il diritto di proporre reclamo al <a href="https://www.garanteprivacy.it" target="_blank" rel="noopener noreferrer">Garante per la Protezione dei Dati Personali</a>.</p>
-        </div>
-      </div>
-      <SiteFooter />
-    </>
-  );
-}
-
-// ── TERMINI PAGE ──
-function TerminiPage() {
-  useEffect(() => { window.scrollTo(0, 0); }, []);
-  return (
-    <>
-      <NavBar />
-      <div className="legal-container">
-        <div className="legal-eyebrow">Documento legale</div>
-        <h1 className="legal-title">Termini di Servizio</h1>
-        <div className="legal-date">Ultimo aggiornamento: aprile 2025</div>
-
-        <div className="legal-section">
-          <h2>1. Accettazione dei termini</h2>
-          <p>Accedendo a RealAIstate (realaistate.ai) accetti i presenti Termini di Servizio. Se non li accetti, ti invitiamo a non utilizzare il sito.</p>
-          <div className="legal-highlight">
-            <p><strong>RealAIstate è attualmente in fase beta.</strong> Il servizio è in sviluppo attivo. Alcune funzionalità potrebbero non essere disponibili o essere modificate senza preavviso.</p>
-          </div>
-        </div>
-
-        <div className="legal-section">
-          <h2>2. Descrizione del servizio</h2>
-          <p>RealAIstate è una piattaforma digitale che fornisce strumenti basati su intelligenza artificiale per supportare la compravendita immobiliare tra privati. Il servizio include:</p>
-          <ul>
-            <li>Valutazione automatica degli immobili tramite AI (Fair Price Score)</li>
-            <li>Analisi delle fotografie degli immobili</li>
-            <li>Generazione di descrizioni e annunci ottimizzati</li>
-            <li>Connessione con professionisti certificati (notai, periti, geometri)</li>
-            <li>Supporto alla negoziazione tramite strumenti AI</li>
-          </ul>
-        </div>
-
-        <div className="legal-section">
-          <h2>3. Natura informativa del servizio</h2>
-          <p>Le valutazioni, i punteggi e le analisi fornite dall&apos;AI di RealAIstate hanno natura <strong>esclusivamente informativa</strong> e non costituiscono:</p>
-          <ul>
-            <li>Consulenza professionale immobiliare ai sensi di legge</li>
-            <li>Perizia tecnica o stima ufficiale del valore dell&apos;immobile</li>
-            <li>Consulenza legale o fiscale</li>
-            <li>Garanzia sul prezzo di vendita o acquisto</li>
-          </ul>
-          <p>RealAIstate non è un&apos;agenzia immobiliare e non svolge attività di intermediazione ai sensi della Legge 39/1989. L&apos;utente è responsabile delle proprie decisioni di acquisto o vendita.</p>
-        </div>
-
-        <div className="legal-section">
-          <h2>4. Obblighi dell&apos;utente</h2>
-          <p>Utilizzando RealAIstate ti impegni a:</p>
-          <ul>
-            <li>Fornire informazioni veritiere e accurate sugli immobili</li>
-            <li>Non utilizzare il servizio per finalità illecite o fraudolente</li>
-            <li>Non pubblicare contenuti offensivi, discriminatori o lesivi di diritti di terzi</li>
-            <li>Non tentare di aggirare i sistemi di sicurezza della piattaforma</li>
-            <li>Rispettare la normativa vigente in materia di compravendita immobiliare</li>
-          </ul>
-        </div>
-
-        <div className="legal-section">
-          <h2>5. Limitazione di responsabilità</h2>
-          <p>RealAIstate non è responsabile per:</p>
-          <ul>
-            <li>Decisioni di acquisto o vendita prese sulla base delle analisi AI</li>
-            <li>Eventuali discrepanze tra il Fair Price Score e il valore reale di mercato</li>
-            <li>Il comportamento di terzi (acquirenti, venditori, professionisti) connessi tramite la piattaforma</li>
-            <li>Interruzioni del servizio dovute a manutenzione o cause tecniche</li>
-            <li>Perdite economiche derivanti dall&apos;utilizzo del servizio</li>
-          </ul>
-          <p>Il servizio è fornito "così com&apos;è" (as is), senza garanzie esplicite o implicite di risultato.</p>
-        </div>
-
-        <div className="legal-section">
-          <h2>6. Proprietà intellettuale</h2>
-          <p>Tutti i contenuti di RealAIstate — inclusi testi, grafica, codice, loghi e design — sono di proprietà di Fabio Piccoli / RealAIstate e sono protetti dalle leggi sul diritto d&apos;autore. È vietata la riproduzione senza autorizzazione scritta.</p>
-          <p>I contenuti caricati dagli utenti (foto, descrizioni) rimangono di proprietà dell&apos;utente. Caricandoli, l&apos;utente concede a RealAIstate una licenza non esclusiva per utilizzarli ai fini del servizio.</p>
-        </div>
-
-        <div className="legal-section">
-          <h2>7. Modifiche al servizio</h2>
-          <p>RealAIstate si riserva il diritto di modificare, sospendere o interrompere il servizio in qualsiasi momento, con o senza preavviso. In caso di modifiche sostanziali ai presenti Termini, gli utenti registrati saranno informati via email.</p>
-        </div>
-
-        <div className="legal-section">
-          <h2>8. Legge applicabile</h2>
-          <p>I presenti Termini sono regolati dalla legge italiana. Per qualsiasi controversia è competente il Foro di Milano.</p>
-        </div>
-
-        <div className="legal-section">
-          <h2>9. Contatti</h2>
-          <div className="legal-highlight">
-            <p><strong>Fabio Piccoli — RealAIstate</strong><br />Email: <a href="mailto:info@realaistate.ai">info@realaistate.ai</a><br />Sito web: www.realaistate.ai</p>
-          </div>
-        </div>
-      </div>
-      <SiteFooter />
-    </>
-  );
-}
-
 export default function App() {
   return (
     <>
       <style>{styles}</style>
       <Routes>
         <Route path="/" element={<HomePage />} />
-        <Route path="/privacy" element={<PrivacyPage />} />
-        <Route path="/termini" element={<TerminiPage />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/termini" element={<Termini />} />
         <Route path="/scuse" element={<ScusePage />} />
         <Route path="/compra/:id" element={<ImmobilePage />} />
         <Route path="/compra/:id/vendi" element={<ImmobileVenditore />} />
