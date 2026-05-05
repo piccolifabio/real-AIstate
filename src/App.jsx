@@ -23,6 +23,7 @@ import ProtectedRoute from "./ProtectedRoute.jsx";
 import AccountPage from "./AccountPage.jsx";
 import Privacy from "./Privacy.jsx";
 import Termini from "./Termini.jsx";
+import VenditoreDashboard from "./VenditoreDashboard.jsx";
 
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Serif+Display:ital@0;1&display=swap');
@@ -282,6 +283,7 @@ export default function App() {
         <Route path="/en" element={<HomeEN />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/account" element={<ProtectedRoute><AccountPage /></ProtectedRoute>} />
+        <Route path="/venditore" element={<ProtectedRoute><VenditoreDashboard /></ProtectedRoute>} />
       </Routes>
     </>
   );

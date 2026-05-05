@@ -31,7 +31,20 @@ export default function AccountPage() {
           <div style={{ fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(247,245,240,0.4)', marginBottom: '0.8rem' }}>Email</div>
           <div style={{ fontSize: '1rem', color: '#f7f5f0' }}>{user?.email}</div>
         </div>
-
+        
+<a href="/venditore" style={{
+  display: 'block', background: '#141414', border: '1px solid rgba(247,245,240,0.08)',
+  borderRadius: 3, padding: '2rem', marginBottom: '1rem', textDecoration: 'none',
+  transition: 'border-color 0.2s'
+}}
+onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(247,245,240,0.2)'}
+onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(247,245,240,0.08)'}
+>
+  <div style={{ fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#d93025', marginBottom: '0.8rem' }}>Dashboard Venditore</div>
+  <div style={{ fontSize: '0.9rem', color: 'rgba(247,245,240,0.6)', lineHeight: 1.7 }}>
+    Vedi le conversazioni sui tuoi immobili →
+  </div>
+</a>
         <div style={{ background: '#141414', border: '1px solid rgba(247,245,240,0.08)', borderRadius: 3, padding: '2rem', marginBottom: '2rem' }}>
           <div style={{ fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(247,245,240,0.4)', marginBottom: '0.8rem' }}>Prossimamente</div>
           <div style={{ fontSize: '0.9rem', color: 'rgba(247,245,240,0.4)', lineHeight: 1.7 }}>
