@@ -22,7 +22,6 @@ const formData = new FormData();
 const blob = new Blob([pdfBuffer], { type: "application/pdf" });
 formData.append("file", blob, "Proposta_Acquisto_RealAIstate.pdf");
 formData.append("nature", "signable_document");
-formData.append("content_type", "application/pdf");
 
 const uploadResponse = await fetch(`${YOUSIGN_BASE}/documents`, {
   method: "POST",
