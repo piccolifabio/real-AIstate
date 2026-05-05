@@ -1,5 +1,5 @@
 # RealAIstate — Stato del progetto
-Aggiornato: 04/05/2026
+Aggiornato: 05/05/2026
 
 ## Stack
 - Frontend: React + Vite, deploy su Vercel
@@ -23,27 +23,33 @@ Aggiornato: 04/05/2026
 - Blog live con 7 articoli
 
 ### Settimana 1 MVP ✅ — completata 04/05/2026
-- [x] Task 1: Supabase Auth — login e registrazione ✅
-- [x] Navbar dinamica: "Accesso" → "Il mio account" se loggato ✅
-- [x] CSS globale: reset unico, variabili centralizzate, footer corretto ✅
-- [x] Quality check CSS completo su tutte le pagine src/ ✅
-- [x] RLS abilitata su tabella chat_messages ✅
-- [x] Task 2: Pagine protette + ProtectedRoute + pagina /account ✅
-- [x] Task 3: Documenti con controllo accesso — lucchetto non loggati ✅
-- [x] Task 4: Chat con storico persistente su Supabase ✅
-- [x] Email conferma registrazione con template RealAIstate via Brevo ✅
-- [x] Blog: articolo Piano Casa 2026 aggiunto, griglia uniforme senza featured ✅
+- [x] Supabase Auth, navbar dinamica, CSS globale ✅
+- [x] Pagine protette + /account ✅
+- [x] Documenti con controllo accesso ✅
+- [x] Chat con storico persistente su Supabase ✅
+- [x] Email conferma registrazione via Brevo ✅
+
+### Settimana 2 ✅ — completata 05/05/2026
+- [x] Refactor App.jsx: HomePage, ScusePage, Privacy, Termini separati ✅
+- [x] Hover viola logo navbar su tutte le pagine ✅
+- [x] Navbar mobile fix — bottone porta a /login ✅
+- [x] Task 5: Notifiche email messaggi chat ✅
+- [x] Task 6: Dashboard venditore /venditore ✅
 
 ## File chiave
-- src/supabase.js — connessione Supabase (anon key eyJ...)
-- src/AuthContext.jsx — gestione sessione utente globale
-- src/LoginPage.jsx — pagina login/registrazione
-- src/ProtectedRoute.jsx — componente route protetta
-- src/AccountPage.jsx — pagina account utente con logout
-- src/index.css — CSS globale: reset, variabili, footer, standard padding
-- src/Immobile.jsx — scheda immobile con chat persistente
-- src/blog/articoli.js — contenuto articoli blog
-- src/BlogPage.jsx — lista articoli (aggiungere in cima all'array per ordine cronologico)
+- src/HomePage.jsx — home page con Nav e CTA
+- src/ScusePage.jsx — pagina scuse separata
+- src/Privacy.jsx — privacy policy
+- src/Termini.jsx — termini di servizio
+- src/VenditoreDashboard.jsx — dashboard conversazioni venditore
+- src/AccountPage.jsx — pagina account con link dashboard
+- src/supabase.js — connessione Supabase
+- src/AuthContext.jsx — gestione sessione
+- src/LoginPage.jsx — login/registrazione
+- src/ProtectedRoute.jsx — route protetta
+- src/index.css — CSS globale
+- src/blog/articoli.js — contenuto articoli
+- src/BlogPage.jsx — lista articoli (aggiungere in cima per ordine cronologico)
 
 ## Decisioni architetturali
 - Pagamenti: esclusi MVP v1, notaio partner come depositario
@@ -51,17 +57,34 @@ Aggiornato: 04/05/2026
 - Non loggati: prezzo, foto, descrizione, Fair Price Score + lucchetti documenti
 - Loggati: documenti pubblici scaricabili (APE, Visura, Planimetria) + chat con storico
 - Documenti sensibili (Atto di provenienza, delibere): su richiesta per tutti
+- Email moderazione: info@realaistate.ai prima dell'inoltro al venditore
 - Blog: aggiungere nuovo articolo in cima ad articoli.js e BlogPage.jsx
 - SRL: da aprire al primo commitment angel
 
+## Prossima sessione — Settimana 3
+
+### Task 8: Form proposta d'acquisto
+- Bottone "Fai una proposta" sulla scheda immobile (solo loggati)
+- Form: importo offerta, condizioni, data proposta rogito, note
+- Email automatica a info@realaistate.ai con tutti i dati
+- Venditore riceve notifica e può accettare/rifiutare dalla dashboard
+
+### Task 7: Contatta notaio (si sblocca dopo offerta accettata)
+- Flusso AI qualificante: hai un notaio di fiducia? (Sì/No)
+- Se sì → raccoglie dati notaio e invia briefing completo via email
+- Se no → propone notai certificati nella zona dell'immobile
+- Email automatica al notaio con: dati immobile, parti, documenti, istruzioni caparra
+
+### Task 9: Integrazione Yousign — firma digitale FEA
+- Firma digitale sulla proposta d'acquisto
+- Valida legalmente ai sensi dell'art. 1341-1342 c.c.
+
 ## Da fare post-MVP
 - ImmobileVenditore.jsx: refactor CSS e navbar
-- Termini.jsx: separare da App.jsx come file standalone
 - VendiForm.jsx: fix allineamento padding laterale
-- Google OAuth: aggiungere dopo email+password
+- Google OAuth
 - Memoria condivisa per immobile: AI risponde con risposte già date dal venditore
-
-## Prossima sessione — Settimana 2
-- Task 5: Notifiche email quando arriva un messaggio in chat
-- Task 6: Dashboard venditore — vede le conversazioni sui propri immobili
-- Task 7: Form contatto notaio con email automatica
+- Fair Price Score interattivo — chat AI che fa domande e restituisce:
+  1. Range di prezzo suggerito su dati OMI (modalità "quanto vale la mia casa?")
+  2. Fair Price Score motivato se il venditore ha già un prezzo in mente
+  Posizionamento: pagina /valuta o widget nella landing

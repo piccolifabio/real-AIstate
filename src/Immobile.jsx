@@ -275,6 +275,102 @@ const FOTO = [
 
 const deltaLabel = { higher: "▲ +5% vs questo", lower: "▼ -3% vs questo", similar: "≈ Allineato" };
 
+function PropostaModal({ immobile, user, onClose }) {
+  const [form, setForm] = useState({ importo: '', condizioni: '', data_rogito: '', note: '' })
+  const [status, setStatus] = useState('idle')
+
+  const handleSubmit = async () => {
+    if (!form.importo) return
+    setStatus('loading')
+    try {
+      await fetch("https://api.brevo.com/v3/smtp/email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "api-key": import.meta.env.VITE_BREVO_API_KEY,
+        },
+        body: JSON.stringify({
+          sender: { name: "RealAIstate", email: "info@realaistate.ai" },
+          to: [{ email: "info@realaistate.ai", name: "RealAIstate" }],
+          subject: `💰 Nuova proposta — ${immobile.indirizzo}`,
+          htmlContent: `
+            <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
+              <div style="background:#0a0a0a;padding:20px;">
+                <span style="font-size:22px;font-weight:700;color:#f7f5f0;">REAL</span><span style="font-size:22px;font-weight:700;color:#d93025;">AI</span><span style="font-size:22px;font-weight:700;color:#f7f5f0;">STATE</span>
+              </div>
+              <div style="padding:30px;background:#f9f9f9;">
+                <h2 style="color:#0a0a0a;">Nuova proposta d'acquisto</h2>
+                <p><strong>Immobile:</strong> ${immobile.indirizzo}</p>
+                <p><strong>Prezzo richiesto:</strong> €${immobile.prezzo.toLocaleString('it-IT')}</p>
+                <hr/>
+                <p><strong>Compratore:</strong> ${user.email}</p>
+                <p><strong>Importo offerto:</strong> €${Number(form.importo).toLocaleString('it-IT')}</p>
+                <p><strong>Condizioni:</strong> ${form.condizioni || 'Nessuna'}</p>
+                <p><strong>Data rogito proposta:</strong> ${form.data_rogito || 'Da concordare'}</p>
+                <p><strong>Note:</strong> ${form.note || 'Nessuna'}</p>
+                <hr/>
+                <p style="color:#d93025;font-weight:600;">Differenza: €${(immobile.prezzo - Number(form.importo)).toLocaleString('it-IT')} (${Math.round((1 - Number(form.importo)/immobile.prezzo)*100)}% sotto prezzo)</p>
+              </div>
+            </div>
+          `,
+        }),
+      })
+      setStatus('success')
+    } catch {
+      setStatus('error')
+    }
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+      <div style={{ background: '#141414', border: '1px solid rgba(247,245,240,0.08)', borderRadius: 4, padding: '2.5rem', width: '100%', maxWidth: '480px', position: 'relative' }}>
+        <button onClick={onClose} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', color: 'rgba(247,245,240,0.4)', fontSize: '1.2rem', cursor: 'pointer' }}>×</button>
+
+        {status === 'success' ? (
+          <div style={{ textAlign: 'center', padding: '2rem 0' }}>
+            <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>✓</div>
+            <h2 style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: '2rem', color: '#f7f5f0', marginBottom: '0.5rem' }}>Proposta inviata.</h2>
+            <p style={{ fontSize: '0.9rem', color: 'rgba(247,245,240,0.5)', lineHeight: 1.6, marginBottom: '1.5rem' }}>Ti contatteremo entro 24 ore con la risposta del venditore.</p>
+            <button onClick={onClose} style={{ background: '#d93025', border: 'none', color: 'white', padding: '0.9rem 2rem', borderRadius: 2, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: '0.85rem', fontWeight: 600 }}>Chiudi</button>
+          </div>
+        ) : (
+          <>
+            <div style={{ fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#d93025', marginBottom: '0.5rem' }}>Proposta d&apos;acquisto</div>
+            <h2 style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: '1.8rem', color: '#f7f5f0', marginBottom: '0.3rem', lineHeight: 1 }}>{immobile.titolo}</h2>
+            <p style={{ fontSize: '0.82rem', color: 'rgba(247,245,240,0.4)', marginBottom: '2rem' }}>Prezzo richiesto: €{immobile.prezzo.toLocaleString('it-IT')}</p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
+              <div>
+                <label style={{ fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(247,245,240,0.5)', display: 'block', marginBottom: '0.4rem' }}>Importo offerto (€) *</label>
+                <input type="number" placeholder="es. 380000" value={form.importo} onChange={e => setForm(f => ({...f, importo: e.target.value}))} style={{ width: '100%', padding: '0.85rem 1rem', background: 'rgba(247,245,240,0.04)', border: '1px solid rgba(247,245,240,0.1)', borderRadius: 2, color: '#f7f5f0', fontFamily: 'DM Sans, sans-serif', fontSize: '0.95rem', outline: 'none', boxSizing: 'border-box' }} />
+              </div>
+              <div>
+                <label style={{ fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(247,245,240,0.5)', display: 'block', marginBottom: '0.4rem' }}>Data rogito proposta</label>
+                <input type="date" value={form.data_rogito} onChange={e => setForm(f => ({...f, data_rogito: e.target.value}))} style={{ width: '100%', padding: '0.85rem 1rem', background: 'rgba(247,245,240,0.04)', border: '1px solid rgba(247,245,240,0.1)', borderRadius: 2, color: '#f7f5f0', fontFamily: 'DM Sans, sans-serif', fontSize: '0.95rem', outline: 'none', boxSizing: 'border-box' }} />
+              </div>
+              <div>
+                <label style={{ fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(247,245,240,0.5)', display: 'block', marginBottom: '0.4rem' }}>Condizioni</label>
+                <input type="text" placeholder="es. soggetta a mutuo, libera immediata..." value={form.condizioni} onChange={e => setForm(f => ({...f, condizioni: e.target.value}))} style={{ width: '100%', padding: '0.85rem 1rem', background: 'rgba(247,245,240,0.04)', border: '1px solid rgba(247,245,240,0.1)', borderRadius: 2, color: '#f7f5f0', fontFamily: 'DM Sans, sans-serif', fontSize: '0.95rem', outline: 'none', boxSizing: 'border-box' }} />
+              </div>
+              <div>
+                <label style={{ fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(247,245,240,0.5)', display: 'block', marginBottom: '0.4rem' }}>Note aggiuntive</label>
+                <textarea placeholder="Qualsiasi altra informazione..." value={form.note} onChange={e => setForm(f => ({...f, note: e.target.value}))} rows={3} style={{ width: '100%', padding: '0.85rem 1rem', background: 'rgba(247,245,240,0.04)', border: '1px solid rgba(247,245,240,0.1)', borderRadius: 2, color: '#f7f5f0', fontFamily: 'DM Sans, sans-serif', fontSize: '0.95rem', outline: 'none', resize: 'none', boxSizing: 'border-box' }} />
+              </div>
+            </div>
+
+            {status === 'error' && <div style={{ color: '#d93025', fontSize: '0.82rem', marginBottom: '1rem' }}>Qualcosa è andato storto. Riprova.</div>}
+
+            <button onClick={handleSubmit} disabled={!form.importo || status === 'loading'} style={{ width: '100%', padding: '1rem', background: '#2d6a4f', border: 'none', borderRadius: 2, color: 'white', fontFamily: 'DM Sans, sans-serif', fontSize: '0.85rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer' }}>
+              {status === 'loading' ? '...' : 'Invia proposta →'}
+            </button>
+            <p style={{ fontSize: '0.72rem', color: 'rgba(247,245,240,0.3)', marginTop: '0.8rem', textAlign: 'center' }}>Ti risponderemo entro 24 ore con la risposta del venditore.</p>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function StickyTooltip({ text }) {
   const [open, setOpen] = useState(false);
   return (
@@ -497,6 +593,7 @@ function AffordabilityChat({ immobile }) {
 export default function ImmobilePage() {
   const { user } = useAuth()
   const [saved, setSaved] = useState(false);
+  const [showProposta, setShowProposta] = useState(false)
   const [activeTab, setActiveTab] = useState("analisi");
   const [mapTab, setMapTab] = useState("streetview");
   const chatRef = useRef(null);
@@ -826,16 +923,30 @@ export default function ImmobilePage() {
             </div>
 
             <div className="sticky-cta">
-              <button className="btn-primary" onClick={scrollToChat}>Contatta il venditore →</button>
-              <button className="btn-secondary" onClick={() => setSaved(!saved)}>
-                {saved ? "♥ Salvato nella shortlist" : "♡ Aggiungi alla shortlist"}
-              </button>
-              <button className="btn-secondary" style={{ opacity: 0.5, cursor: "not-allowed" }} title="Prossimamente">⤢ Confronta con altri</button>
-            </div>
+  <button className="btn-primary" onClick={scrollToChat}>Contatta il venditore →</button>
+  {user ? (
+    <button className="btn-primary" style={{ background: '#2d6a4f' }} onClick={() => setShowProposta(true)}>
+      Fai una proposta →
+    </button>
+  ) : (
+    <a href="/login" className="btn-secondary">Accedi per fare una proposta</a>
+  )}
+  <button className="btn-secondary" onClick={() => setSaved(!saved)}>
+    {saved ? "♥ Salvato nella shortlist" : "♡ Aggiungi alla shortlist"}
+  </button>
+</div>
           </div>
         </div>
 
       </div>
+
+{showProposta && (
+  <PropostaModal
+    immobile={immobile}
+    user={user}
+    onClose={() => setShowProposta(false)}
+  />
+)}
 
       <SiteFooter />
     </>
