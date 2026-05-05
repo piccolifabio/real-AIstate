@@ -279,41 +279,21 @@ function PropostaModal({ immobile, user, onClose }) {
   const [form, setForm] = useState({ importo: '', condizioni: '', data_rogito: '', note: '' })
   const [status, setStatus] = useState('idle')
 
-  const handleSubmit = async () => {
+const handleSubmit = async () => {
     if (!form.importo) return
     setStatus('loading')
     try {
-      await fetch("https://api.brevo.com/v3/smtp/email", {
+      await fetch("/api/proposta-submit", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "api-key": import.meta.env.VITE_BREVO_API_KEY,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          sender: { name: "RealAIstate", email: "info@realaistate.ai" },
-          to: [{ email: "info@realaistate.ai", name: "RealAIstate" }],
-          subject: `💰 Nuova proposta — ${immobile.indirizzo}`,
-          htmlContent: `
-            <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
-              <div style="background:#0a0a0a;padding:20px;">
-                <span style="font-size:22px;font-weight:700;color:#f7f5f0;">REAL</span><span style="font-size:22px;font-weight:700;color:#d93025;">AI</span><span style="font-size:22px;font-weight:700;color:#f7f5f0;">STATE</span>
-              </div>
-              <div style="padding:30px;background:#f9f9f9;">
-                <h2 style="color:#0a0a0a;">Nuova proposta d'acquisto</h2>
-                <p><strong>Immobile:</strong> ${immobile.indirizzo}</p>
-                <p><strong>Prezzo richiesto:</strong> €${immobile.prezzo.toLocaleString('it-IT')}</p>
-                <hr/>
-                <p><strong>Compratore:</strong> ${user.email}</p>
-                <p><strong>Importo offerto:</strong> €${Number(form.importo).toLocaleString('it-IT')}</p>
-                <p><strong>Condizioni:</strong> ${form.condizioni || 'Nessuna'}</p>
-                <p><strong>Data rogito proposta:</strong> ${form.data_rogito || 'Da concordare'}</p>
-                <p><strong>Note:</strong> ${form.note || 'Nessuna'}</p>
-                <hr/>
-                <p style="color:#d93025;font-weight:600;">Differenza: €${(immobile.prezzo - Number(form.importo)).toLocaleString('it-IT')} (${Math.round((1 - Number(form.importo)/immobile.prezzo)*100)}% sotto prezzo)</p>
-              </div>
-            </div>
-          `,
-        }),
+          immobile,
+          user_email: user.email,
+          importo: form.importo,
+          condizioni: form.condizioni,
+          data_rogito: form.data_rogito,
+          note: form.note
+        })
       })
       setStatus('success')
     } catch {
