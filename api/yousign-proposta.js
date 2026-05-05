@@ -13,8 +13,7 @@ export default async function handler(req, res) {
 
   try {
     // 1. Crea il documento HTML compilato
-    const htmlContent = generateHTML({ compratore_email, compratore_nome, venditore_email, venditore_nome, immobile, importo, condizioni, data_rogito, note });
-    
+        
     // 2. Converti HTML in base64
    const base64Doc = await generatePDF({ compratore_nome, compratore_email, venditore_nome, venditore_email, immobile, importo, condizioni, data_rogito, note });
 
