@@ -78,17 +78,17 @@ const uploadResponse = await fetch(`${YOUSIGN_BASE}/documents`, {
       return res.status(500).json({ error: "Errore Yousign", detail: signatureData });
     }
 
-    // 2b. Aggiungi campi firma per ogni firmatario
+   // 2b. Aggiungi campi firma per ogni firmatario
     const signers = signatureData.signers;
     for (let i = 0; i < signers.length; i++) {
-      await fetch(`${YOUSIGN_BASE}/signature_requests/${signatureData.id}/signers/${signers[i].id}/fields`, {
+      const fieldResponse = await fetch(`${YOUSIGN_BASE}/signature_requests/${signatureData.id}/documents/${uploadData.id}/fields`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${YOUSIGN_API_KEY}`,
         },
         body: JSON.stringify({
-          document_id: uploadData.id,
+          signer_id: signers[i].id,
           type: "signature",
           page: 1,
           x: i === 0 ? 50 : 300,
@@ -97,6 +97,10 @@ const uploadResponse = await fetch(`${YOUSIGN_BASE}/documents`, {
           height: 50,
         }),
       });
+      const fieldData = await fieldResponse.json();
+      if (!fieldResponse.ok) {
+        return res.status(500).json({ error: `Errore campo firma firmatario ${i}`, detail: fieldData });
+      }
     }
 
     // 3. Attiva
