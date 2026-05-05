@@ -79,8 +79,9 @@ const uploadResponse = await fetch(`${YOUSIGN_BASE}/documents`, {
     }
 
     // 2b. Aggiungi campi firma per ogni firmatario
-    for (const signer of signatureData.signers) {
-      await fetch(`${YOUSIGN_BASE}/signature_requests/${signatureData.id}/signers/${signer.id}/fields`, {
+    const signers = signatureData.signers;
+    for (let i = 0; i < signers.length; i++) {
+      await fetch(`${YOUSIGN_BASE}/signature_requests/${signatureData.id}/signers/${signers[i].id}/fields`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -90,14 +91,14 @@ const uploadResponse = await fetch(`${YOUSIGN_BASE}/documents`, {
           document_id: uploadData.id,
           type: "signature",
           page: 1,
-          x: signer === signatureData.signers[0] ? 50 : 300,
+          x: i === 0 ? 50 : 300,
           y: 150,
           width: 200,
           height: 50,
         }),
       });
     }
-    
+
     // 3. Attiva
     const activateResponse = await fetch(`${YOUSIGN_BASE}/signature_requests/${signatureData.id}/activate`, {
       method: "POST",
