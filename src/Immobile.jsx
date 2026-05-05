@@ -340,6 +340,10 @@ const handleSubmit = async () => {
 
             {status === 'error' && <div style={{ color: '#d93025', fontSize: '0.82rem', marginBottom: '1rem' }}>Qualcosa è andato storto. Riprova.</div>}
 
+<div style={{ background: 'rgba(45,106,79,0.08)', border: '1px solid rgba(45,106,79,0.2)', borderRadius: 2, padding: '1rem', marginBottom: '1rem', fontSize: '0.78rem', color: 'rgba(247,245,240,0.6)', lineHeight: 1.6 }}>
+  <strong style={{ color: '#4ade80', display: 'block', marginBottom: '0.3rem' }}>ℹ️ Come funziona</strong>
+  Questa proposta non è legalmente vincolante. Il venditore la valuterà e ti risponderà entro 24 ore. Solo dopo l&apos;accettazione firmerete digitalmente il documento formale che impegna entrambe le parti.
+</div>
             <button onClick={handleSubmit} disabled={!form.importo || status === 'loading'} style={{ width: '100%', padding: '1rem', background: '#2d6a4f', border: 'none', borderRadius: 2, color: 'white', fontFamily: 'DM Sans, sans-serif', fontSize: '0.85rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer' }}>
               {status === 'loading' ? '...' : 'Invia proposta →'}
             </button>

@@ -34,8 +34,13 @@ export default async function handler(req, res) {
               <p><strong>Data rogito proposta:</strong> ${data_rogito || 'Da concordare'}</p>
               <p><strong>Note:</strong> ${note || 'Nessuna'}</p>
               <hr/>
-              <p style="color:#d93025;font-weight:600;">Differenza: €${(immobile.prezzo - Number(importo)).toLocaleString('it-IT')} (${Math.round((1 - Number(importo)/immobile.prezzo)*100)}% sotto prezzo)</p>
-            </div>
+${(() => {
+  const diff = Number(importo) - immobile.prezzo;
+  const perc = Math.round(Math.abs(diff) / immobile.prezzo * 100);
+  const colore = diff >= 0 ? '#2d6a4f' : '#d93025';
+  const label = diff >= 0 ? `+${perc}% sopra prezzo` : `${perc}% sotto prezzo`;
+  return `<p style="color:${colore};font-weight:600;">Differenza: €${diff >= 0 ? '+' : ''}${diff.toLocaleString('it-IT')} (${label})</p>`;
+})()}            </div>
           </div>
         `,
       }),
