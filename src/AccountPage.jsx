@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from './AuthContext'
 import { useNavigate } from 'react-router-dom'
+import { supabase } from './supabase'
 import NavBar from './NavBar.jsx'
 import SiteFooter from './SiteFooter.jsx'
 
@@ -15,14 +16,32 @@ export default function AccountPage() {
   const [savedFlash, setSavedFlash] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
 
+  // Le mie proposte
+  const [proposte, setProposte] = useState([])
+  const [loadingProposte, setLoadingProposte] = useState(true)
+
   useEffect(() => {
     setNameInput(currentFullName)
   }, [currentFullName])
 
-  // Se non ha un nome, apri direttamente in modalità edit
   useEffect(() => {
     if (user && !currentFullName) setEditing(true)
   }, [user, currentFullName])
+
+  // Load proposte dell'utente loggato (RLS filtra automaticamente per compratore_user_id = auth.uid())
+  useEffect(() => {
+    if (!user) return
+    const loadProposte = async () => {
+      const { data } = await supabase
+        .from('proposte')
+        .select('id, importo, condizioni, data_rogito, status, created_at, immobile_id, immobili(indirizzo)')
+        .order('created_at', { ascending: false })
+
+      if (data) setProposte(data)
+      setLoadingProposte(false)
+    }
+    loadProposte()
+  }, [user])
 
   const handleSignOut = async () => {
     await signOut()
@@ -45,6 +64,24 @@ export default function AccountPage() {
       setSavedFlash(true)
       setTimeout(() => setSavedFlash(false), 3000)
     }
+  }
+
+  // Helpers
+  const fmt = (n) => Number(n).toLocaleString('it-IT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })
+  const fmtData = (d) => new Date(d).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })
+
+  const badgeStatus = (status) => {
+    const map = {
+      pending:  { label: 'In attesa', bg: 'rgba(201,168,76,0.15)', color: '#c9a84c' },
+      accepted: { label: 'Accettata', bg: 'rgba(34,197,94,0.12)',  color: '#22c55e' },
+      rejected: { label: 'Rifiutata', bg: 'rgba(217,48,37,0.12)',  color: '#d93025' },
+    }
+    const s = map[status] || map.pending
+    return (
+      <span style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', background: s.bg, color: s.color, padding: '0.2rem 0.6rem', borderRadius: 2 }}>
+        {s.label}
+      </span>
+    )
   }
 
   return (
@@ -152,9 +189,10 @@ export default function AccountPage() {
           <div style={{ fontSize: '1rem', color: '#f7f5f0' }}>{user?.email}</div>
         </div>
 
+        {/* Link dashboard venditore */}
         <a href="/venditore" style={{
           display: 'block', background: '#141414', border: '1px solid rgba(247,245,240,0.08)',
-          borderRadius: 3, padding: '2rem', marginBottom: '1rem', textDecoration: 'none',
+          borderRadius: 3, padding: '2rem', marginBottom: '2.5rem', textDecoration: 'none',
           transition: 'border-color 0.2s'
         }}
           onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(247,245,240,0.2)'}
@@ -166,11 +204,68 @@ export default function AccountPage() {
           </div>
         </a>
 
-        <div style={{ background: '#141414', border: '1px solid rgba(247,245,240,0.08)', borderRadius: 3, padding: '2rem', marginBottom: '2rem' }}>
-          <div style={{ fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(247,245,240,0.4)', marginBottom: '0.8rem' }}>Prossimamente</div>
-          <div style={{ fontSize: '0.9rem', color: 'rgba(247,245,240,0.4)', lineHeight: 1.7 }}>
-            Le tue offerte, i tuoi immobili salvati e lo storico delle conversazioni saranno disponibili qui.
+        {/* ── SEZIONE: LE MIE PROPOSTE ─────────────────────────────────────────── */}
+        <div style={{ marginBottom: '2.5rem' }}>
+          <div style={{ fontSize: '0.7rem', fontWeight: 600, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#d93025', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+            <span style={{ width: 32, height: 1, background: '#d93025', display: 'inline-block' }} />
+            Le mie proposte
           </div>
+
+          {loadingProposte ? (
+            <div style={{ color: 'rgba(247,245,240,0.4)', fontSize: '0.9rem', padding: '1rem 0' }}>
+              Caricamento...
+            </div>
+          ) : proposte.length === 0 ? (
+            <div style={{ background: '#141414', border: '1px solid rgba(247,245,240,0.08)', borderRadius: 3, padding: '2rem', color: 'rgba(247,245,240,0.4)', fontSize: '0.9rem', textAlign: 'center' }}>
+              Non hai ancora inviato proposte d'acquisto.
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {proposte.map((p) => (
+                <div key={p.id} style={{ background: '#141414', border: '1px solid rgba(247,245,240,0.08)', borderRadius: 3, padding: '1.5rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem', gap: '1rem' }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: '0.92rem', fontWeight: 600, color: '#f7f5f0', marginBottom: '0.2rem' }}>
+                        {p.immobili?.indirizzo || `Immobile #${p.immobile_id}`}
+                      </div>
+                      <div style={{ fontSize: '0.72rem', color: 'rgba(247,245,240,0.4)' }}>
+                        Inviata il {fmtData(p.created_at)}
+                      </div>
+                    </div>
+                    {badgeStatus(p.status)}
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem' }}>
+                    <div style={{ background: 'rgba(247,245,240,0.04)', borderRadius: 2, padding: '0.7rem 0.9rem' }}>
+                      <div style={{ fontSize: '0.62rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(247,245,240,0.35)', marginBottom: '0.3rem' }}>Importo</div>
+                      <div style={{ fontSize: '1.05rem', fontFamily: 'Bebas Neue, sans-serif', color: '#f7f5f0', letterSpacing: '0.03em' }}>{fmt(p.importo)}</div>
+                    </div>
+                    <div style={{ background: 'rgba(247,245,240,0.04)', borderRadius: 2, padding: '0.7rem 0.9rem' }}>
+                      <div style={{ fontSize: '0.62rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(247,245,240,0.35)', marginBottom: '0.3rem' }}>Data rogito</div>
+                      <div style={{ fontSize: '0.85rem', color: '#f7f5f0', fontWeight: 600 }}>{p.data_rogito || '—'}</div>
+                    </div>
+                  </div>
+
+                  {p.condizioni && (
+                    <div style={{ marginTop: '0.9rem', fontSize: '0.78rem', color: 'rgba(247,245,240,0.5)', fontStyle: 'italic', lineHeight: 1.6, borderLeft: '2px solid rgba(247,245,240,0.12)', paddingLeft: '0.8rem' }}>
+                      {p.condizioni}
+                    </div>
+                  )}
+
+                  {p.status === 'pending' && (
+                    <div style={{ marginTop: '1rem', fontSize: '0.75rem', color: 'rgba(247,245,240,0.45)' }}>
+                      Il venditore ha 24h per rispondere. Riceverai una notifica via email.
+                    </div>
+                  )}
+                  {p.status === 'accepted' && (
+                    <div style={{ marginTop: '1rem', fontSize: '0.75rem', color: '#22c55e' }}>
+                      ✓ Proposta accettata. Controlla la tua casella per il documento da firmare.
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <button
