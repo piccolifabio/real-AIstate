@@ -609,7 +609,10 @@ export default function ImmobilePage() {
     chatRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  useEffect(() => { window.scrollTo(0, 0); }, []);
+  useEffect(() => {
+  const timer = setTimeout(() => window.scrollTo(0, 0), 300)
+  return () => clearTimeout(timer)
+}, [])
 
   const docsVerified = immobile.documenti.filter(d => d.verificato).length;
   const docsTotal = immobile.documenti.length;
