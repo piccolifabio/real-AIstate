@@ -533,9 +533,14 @@ function AffordabilityChat({ immobile }) {
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef(null);
 
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, loading]);
+  const isFirstRender = useRef(true);
+useEffect(() => {
+  if (isFirstRender.current) {
+    isFirstRender.current = false;
+    return;
+  }
+  bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+}, [messages, loading]);
 
   const send = async () => {
     if (!input.trim() || loading) return;
