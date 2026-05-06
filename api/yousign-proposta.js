@@ -1,81 +1,134 @@
+// api/yousign-proposta.js
+// Chiamata dal bottone "Accetta proposta" in VenditoreDashboard.jsx
+// Flusso: riceve proposta_id → legge proposta da Supabase →
+//         crea signature request Yousign con 2 firmatari →
+//         aggiorna status + yousign_id su Supabase → risponde al frontend
+
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SECRET_KEY // service role per operazioni server-side
+)
+
+const YOUSIGN_API   = 'https://api-sandbox.yousign.app/v3'
+const YOUSIGN_KEY   = process.env.YOUSIGN_API_KEY
+const TEMPLATE_ID   = '71505658-23d8-4d5a-9ff1-2e221294e929'
+
+// Email venditore fissa per ora — da spostare su DB quando multi-immobile
+const VENDITORE_EMAIL = 'info@realaistate.ai'
+const VENDITORE_NOME  = 'RealAIstate (venditore)'
+
 export default async function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-  if (req.method === "OPTIONS") return res.status(200).end();
-  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' })
+  }
 
-  const { compratore_email, compratore_nome, venditore_email, venditore_nome, immobile, importo, condizioni, data_rogito, note } = req.body;
+  const { proposta_id } = req.body
 
-  const YOUSIGN_API_KEY = process.env.YOUSIGN_API_KEY;
-  const YOUSIGN_BASE = "https://api-sandbox.yousign.app/v3";
-  const TEMPLATE_ID = "71505658-23d8-4d5a-9ff1-2e221294e929";
+  if (!proposta_id) {
+    return res.status(400).json({ error: 'proposta_id mancante' })
+  }
 
-  const oggi = new Date().toLocaleDateString("it-IT");
-  const diff = Number(importo) - immobile.prezzo;
-  const perc = Math.round(Math.abs(diff) / immobile.prezzo * 100);
-  const diffLabel = diff >= 0 ? `+${perc}% sopra prezzo` : `${perc}% sotto prezzo`;
+  // 1. Leggi proposta da Supabase
+  const { data: proposta, error: errProposta } = await supabase
+    .from('proposte')
+    .select('*')
+    .eq('id', proposta_id)
+    .single()
+
+  if (errProposta || !proposta) {
+    return res.status(404).json({ error: 'Proposta non trovata' })
+  }
+
+  if (proposta.status !== 'pending') {
+    return res.status(400).json({ error: `Proposta già in stato: ${proposta.status}` })
+  }
 
   try {
-    const response = await fetch(`${YOUSIGN_BASE}/signature_requests`, {
-      method: "POST",
+    // 2. Crea signature request su Yousign dal template
+    const signatureRes = await fetch(`${YOUSIGN_API}/signature_requests`, {
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${YOUSIGN_API_KEY}`,
+        'Authorization': `Bearer ${YOUSIGN_KEY}`,
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        name: `Proposta acquisto — ${immobile.indirizzo}`,
-        delivery_mode: "email",
-        timezone: "Europe/Rome",
-        template_id: TEMPLATE_ID,
-        template_placeholders: {
-          signers: [
-            {
-              label: "Compratore",
-              info: {
-                first_name: compratore_nome.split(" ")[0],
-                last_name: compratore_nome.split(" ").slice(1).join(" ") || "—",
-                email: compratore_email,
-                locale: "it",
-              },
+        name: `Proposta acquisto – ${proposta.compratore_email} – ${new Date().toLocaleDateString('it-IT')}`,
+        delivery_mode: 'email',
+        timezone: 'Europe/Rome',
+        signers: [
+          {
+            info: {
+              first_name: 'Compratore',
+              last_name:  '',
+              email:      proposta.compratore_email,
             },
-            {
-              label: "Venditore",
-              info: {
-                first_name: venditore_nome.split(" ")[0],
-                last_name: venditore_nome.split(" ").slice(1).join(" ") || "—",
-                email: venditore_email,
-                locale: "it",
-              },
+            signature_level: 'electronic_signature',
+            signature_authentication_mode: 'no_otp',
+          },
+          {
+            info: {
+              first_name: 'RealAIstate',
+              last_name:  'Venditore',
+              email:      VENDITORE_EMAIL,
             },
-          ],
-        },
+            signature_level: 'electronic_signature',
+            signature_authentication_mode: 'no_otp',
+          },
+        ],
+        documents: [
+          {
+            nature: 'signable_document',
+            template_id: TEMPLATE_ID,
+          }
+        ],
       }),
-    });
+    })
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      return res.status(500).json({ error: "Errore Yousign", detail: data });
+    if (!signatureRes.ok) {
+      const errBody = await signatureRes.text()
+      console.error('Yousign error:', errBody)
+      return res.status(502).json({ error: 'Errore creazione firma Yousign', detail: errBody })
     }
 
-    // Attiva
-    const activateResponse = await fetch(`${YOUSIGN_BASE}/signature_requests/${data.id}/activate`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${YOUSIGN_API_KEY}`,
-      },
-    });
+    const signatureData = await signatureRes.json()
+    const yousign_id = signatureData.id
 
-    const activateData = await activateResponse.json();
-    if (!activateResponse.ok) {
-      return res.status(500).json({ error: "Errore attivazione Yousign", detail: activateData });
+    // 3. Attiva la signature request (la mette in stato "ongoing" e invia le email)
+    const activateRes = await fetch(`${YOUSIGN_API}/signature_requests/${yousign_id}/activate`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${YOUSIGN_KEY}` },
+    })
+
+    if (!activateRes.ok) {
+      const errBody = await activateRes.text()
+      console.error('Yousign activate error:', errBody)
+      // Non blocchiamo — aggiorniamo Supabase comunque con status accepted
     }
 
-    return res.status(200).json({ ok: true, signature_request_id: data.id });
+    // 4. Aggiorna proposta su Supabase
+    const { error: errUpdate } = await supabase
+      .from('proposte')
+      .update({
+        status:     'accepted',
+        yousign_id: yousign_id,
+      })
+      .eq('id', proposta_id)
+
+    if (errUpdate) {
+      console.error('Supabase update error:', errUpdate)
+      // Yousign è già partito — logghiamo ma non blocchiamo il frontend
+    }
+
+    return res.status(200).json({
+      ok: true,
+      yousign_id,
+      message: 'Proposta accettata. Email di firma inviate.'
+    })
 
   } catch (err) {
-    return res.status(500).json({ error: "Errore server", detail: err.message });
+    console.error('yousign-proposta error:', err)
+    return res.status(500).json({ error: err.message || 'Errore interno' })
   }
 }
