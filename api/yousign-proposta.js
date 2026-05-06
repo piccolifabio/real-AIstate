@@ -61,7 +61,7 @@ export default async function handler(req, res) {
         template_placeholders: {
           signers: [
             {
-              role_name: 'Compratore',
+              label: 'Compratore',
               info: {
                 first_name: 'Compratore',
                 last_name:  'RealAIstate',
@@ -70,7 +70,7 @@ export default async function handler(req, res) {
               },
             },
             {
-              role_name: 'Venditore',
+              label: 'Venditore',
               info: {
                 first_name: 'Venditore',
                 last_name:  'RealAIstate',
