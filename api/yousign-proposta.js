@@ -53,33 +53,33 @@ export default async function handler(req, res) {
         'Authorization': `Bearer ${YOUSIGN_KEY}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
+  body: JSON.stringify({
         name: `Proposta acquisto – ${new Date().toLocaleDateString('it-IT')}`,
         delivery_mode: 'email',
         timezone: 'Europe/Rome',
-        signers: [
-          {
-            info: {
-              first_name: 'Compratore',
-              last_name:  'RealAIstate',
-              email:      proposta.compratore_email,
-              locale:     'it',
+        template_id: TEMPLATE_ID,
+        template_placeholders: {
+          signers: [
+            {
+              role_name: 'Compratore',
+              info: {
+                first_name: 'Compratore',
+                last_name:  'RealAIstate',
+                email:      proposta.compratore_email,
+                locale:     'it',
+              },
             },
-            signature_level: 'electronic_signature',
-            signature_authentication_mode: 'no_otp',
-          },
-          {
-            info: {
-              first_name: 'Venditore',
-              last_name:  'RealAIstate',
-              email:      VENDITORE_EMAIL,
-              locale:     'it',
+            {
+              role_name: 'Venditore',
+              info: {
+                first_name: 'Venditore',
+                last_name:  'RealAIstate',
+                email:      VENDITORE_EMAIL,
+                locale:     'it',
+              },
             },
-            signature_level: 'electronic_signature',
-            signature_authentication_mode: 'no_otp',
-          },
-        ],
-        documents: [TEMPLATE_ID],
+          ],
+        },
       }),
     })
 
