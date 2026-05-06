@@ -258,12 +258,15 @@ export default function VenditoreDashboard() {
                   <div key={p.id} style={{ background: '#141414', border: '1px solid rgba(247,245,240,0.08)', borderRadius: 3, padding: '1.75rem' }}>
 
                     {/* Header proposta */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem' }}>
+                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem' }}>
                       <div>
-                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#f7f5f0', marginBottom: '0.25rem' }}>
-                          {p.compratore_email || 'Compratore'}
+                        <div style={{ fontSize: '0.95rem', fontWeight: 600, color: '#f7f5f0', marginBottom: '0.2rem' }}>
+                          {p.compratore_nome || 'Compratore'}
                         </div>
-                        <div style={{ fontSize: '0.75rem', color: 'rgba(247,245,240,0.4)' }}>
+                        <div style={{ fontSize: '0.78rem', color: 'rgba(247,245,240,0.5)', marginBottom: '0.4rem' }}>
+                          {p.compratore_email}
+                        </div>
+                        <div style={{ fontSize: '0.72rem', color: 'rgba(247,245,240,0.35)' }}>
                           Ricevuta il {fmtData(p.created_at)}
                         </div>
                       </div>
