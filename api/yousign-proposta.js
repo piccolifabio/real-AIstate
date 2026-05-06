@@ -17,70 +17,38 @@ export default async function handler(req, res) {
   const diffLabel = diff >= 0 ? `+${perc}% sopra prezzo` : `${perc}% sotto prezzo`;
 
   try {
-    const response = await fetch(`${YOUSIGN_BASE}/signature_requests/from_template`, {
+    const response = await fetch(`${YOUSIGN_BASE}/signature_requests`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${YOUSIGN_API_KEY}`,
       },
       body: JSON.stringify({
-        template_id: TEMPLATE_ID,
         name: `Proposta acquisto — ${immobile.indirizzo}`,
         delivery_mode: "email",
         timezone: "Europe/Rome",
-        signers: [
-          {
-            role_name: "Compratore",
-            info: {
-              first_name: compratore_nome.split(" ")[0],
-              last_name: compratore_nome.split(" ").slice(1).join(" ") || "—",
-              email: compratore_email,
-              locale: "it",
+        template_id: TEMPLATE_ID,
+        template_placeholders: {
+          signers: [
+            {
+              role_name: "Compratore",
+              info: {
+                first_name: compratore_nome.split(" ")[0],
+                last_name: compratore_nome.split(" ").slice(1).join(" ") || "—",
+                email: compratore_email,
+                locale: "it",
+              },
             },
-          },
-          {
-            role_name: "Venditore",
-            info: {
-              first_name: venditore_nome.split(" ")[0],
-              last_name: venditore_nome.split(" ").slice(1).join(" ") || "—",
-              email: venditore_email,
-              locale: "it",
+            {
+              role_name: "Venditore",
+              info: {
+                first_name: venditore_nome.split(" ")[0],
+                last_name: venditore_nome.split(" ").slice(1).join(" ") || "—",
+                email: venditore_email,
+                locale: "it",
+              },
             },
-          },
-        ],
-        variables: {
-          INDIRIZZO: immobile.indirizzo,
-          COMUNE: immobile.zona,
-          SUPERFICIE: String(immobile.superficie),
-          PIANO: immobile.piano || "—",
-          LOCALI: String(immobile.locali || "—"),
-          CLASSE_ENERGETICA: immobile.classe_energetica || "—",
-          CAT_FOGLIO: "—",
-          CAT_PARTICELLA: "—",
-          CAT_SUBALTERNO: "—",
-          CAT_CATEGORIA: "—",
-          PREZZO_RICHIESTO: immobile.prezzo.toLocaleString("it-IT"),
-          COMPRATORE_NOME: compratore_nome,
-          COMPRATORE_CF: "—",
-          COMPRATORE_INDIRIZZO: "—",
-          COMPRATORE_EMAIL: compratore_email,
-          VENDITORE_NOME: venditore_nome,
-          VENDITORE_CF: "—",
-          VENDITORE_INDIRIZZO: "—",
-          VENDITORE_EMAIL: venditore_email,
-          IMPORTO_OFFERTO: Number(importo).toLocaleString("it-IT"),
-          MODALITA_PAGAMENTO: "—",
-          CONDIZIONI: condizioni || "—",
-          DATA_ROGITO: data_rogito || "Da concordare",
-          DATA_CONSEGNA: "—",
-          GIORNI_DEPOSITO: "7",
-          IMPORTO_DEPOSITO: "—",
-          SALDO_ROGITO: "—",
-          NOTE_LIBERE: note || "—",
-          DATA_PROPOSTA: oggi,
-          PERT1_DESC: "—", PERT1_FOGLIO: "—", PERT1_PARTICELLA: "—", PERT1_SUB: "—", PERT1_CAT: "—",
-          PERT2_DESC: "—", PERT2_FOGLIO: "—", PERT2_PARTICELLA: "—", PERT2_SUB: "—", PERT2_CAT: "—",
-          PERT3_DESC: "—", PERT3_FOGLIO: "—", PERT3_PARTICELLA: "—", PERT3_SUB: "—", PERT3_CAT: "—",
+          ],
         },
       }),
     });
