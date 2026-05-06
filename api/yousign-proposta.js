@@ -79,12 +79,7 @@ export default async function handler(req, res) {
             signature_authentication_mode: 'no_otp',
           },
         ],
-        documents: [
-          {
-            nature: 'signable_document',
-            template_id: TEMPLATE_ID,
-          }
-        ],
+        documents: [TEMPLATE_ID],
       }),
     })
 
