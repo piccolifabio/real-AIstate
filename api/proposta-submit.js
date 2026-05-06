@@ -8,7 +8,7 @@ export default async function handler(req, res) {
   const { immobile, user_email, user_id, importo, condizioni, data_rogito, note } = req.body;
 
   const SUPABASE_URL = process.env.SUPABASE_URL;
-  const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+  const SUPABASE_KEY = process.env.SUPABASE_SECRET_KEY;
 
   const diff = Number(importo) - immobile.prezzo;
   const perc = Math.round(Math.abs(diff) / immobile.prezzo * 100);
@@ -17,13 +17,13 @@ export default async function handler(req, res) {
 
   try {
     // 1. Salva proposta su Supabase
-    const supabaseRes = await fetch(`${SUPABASE_URL}/rest/v1/proposte`, {
+const supabaseRes = await fetch(`${SUPABASE_URL}/rest/v1/proposte`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "apikey": SUPABASE_KEY,
-        "Authorization": `Bearer ${SUPABASE_KEY}`,
-        "Prefer": "return=minimal",
+        "apikey": process.env.SUPABASE_SECRET_KEY,
+        "Authorization": `Bearer ${process.env.SUPABASE_SECRET_KEY}`,
+        "Prefer": "return=representation",
       },
       body: JSON.stringify({
         immobile_id: immobile.id,
