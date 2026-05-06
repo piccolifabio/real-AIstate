@@ -9,7 +9,6 @@ export default async function handler(req, res) {
 
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SUPABASE_KEY = process.env.SUPABASE_SECRET_KEY;
-  console.log("SUPABASE_KEY prefix:", SUPABASE_KEY?.substring(0, 20));
 
   const diff = Number(importo) - immobile.prezzo;
   const perc = Math.round(Math.abs(diff) / immobile.prezzo * 100);
@@ -18,12 +17,13 @@ export default async function handler(req, res) {
 
   try {
     // 1. Salva proposta su Supabase
-    await fetch(`${SUPABASE_URL}/rest/v1/proposte`, {
+    const supabaseRes = await fetch(`${SUPABASE_URL}/rest/v1/proposte`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "apikey": SUPABASE_KEY,
         "Authorization": `Bearer ${SUPABASE_KEY}`,
+        "Prefer": "return=minimal",
       },
       body: JSON.stringify({
         immobile_id: immobile.id,
@@ -36,6 +36,16 @@ export default async function handler(req, res) {
         status: 'pending',
       }),
     });
+
+    if (!supabaseRes.ok) {
+      const errText = await supabaseRes.text();
+      return res.status(500).json({ 
+        error: "Supabase error", 
+        detail: errText, 
+        key_prefix: SUPABASE_KEY?.substring(0, 15),
+        url: SUPABASE_URL
+      });
+    }
 
     // 2. Manda email a info@
     await fetch("https://api.brevo.com/v3/smtp/email", {
