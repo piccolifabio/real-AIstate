@@ -31,7 +31,7 @@ export default async function handler(req, res) {
         template_placeholders: {
           signers: [
             {
-              role: "Compratore",
+              label: "Compratore",
               info: {
                 first_name: compratore_nome.split(" ")[0],
                 last_name: compratore_nome.split(" ").slice(1).join(" ") || "—",
@@ -40,7 +40,7 @@ export default async function handler(req, res) {
               },
             },
             {
-              role: "Venditore",
+              label: "Venditore",
               info: {
                 first_name: venditore_nome.split(" ")[0],
                 last_name: venditore_nome.split(" ").slice(1).join(" ") || "—",
