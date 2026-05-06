@@ -278,23 +278,40 @@ const deltaLabel = { higher: "▲ +5% vs questo", lower: "▼ -3% vs questo", si
 function PropostaModal({ immobile, user, onClose }) {
   const [form, setForm] = useState({ importo: '', condizioni: '', data_rogito: '', note: '' })
   const [status, setStatus] = useState('idle')
+  const [error, setError] = useState('')
 
 const handleSubmit = async () => {
-    if (!form.importo) return
+    // Validazione
+    if (!form.importo || isNaN(Number(form.importo)) || Number(form.importo) <= 0) {
+      setError('Inserisci un importo valido')
+      return
+    }
+    if (!form.data_rogito) {
+      setError('Inserisci una data rogito')
+      return
+    }
+    const dataRogito = new Date(form.data_rogito)
+    const oggi = new Date()
+    oggi.setHours(0, 0, 0, 0)
+    if (dataRogito <= oggi) {
+      setError('La data rogito deve essere futura')
+      return
+    }
+    setError('')
     setStatus('loading')
     try {
       await fetch("/api/proposta-submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-  immobile,
-  user_email: user.email,
-  user_id: user.id,
-  importo: form.importo,
-  condizioni: form.condizioni,
-  data_rogito: form.data_rogito,
-  note: form.note
-})
+          immobile,
+          user_email: user.email,
+          user_id: user.id,
+          importo: form.importo,
+          condizioni: form.condizioni,
+          data_rogito: form.data_rogito,
+          note: form.note
+        })
       })
       setStatus('success')
     } catch {
@@ -323,7 +340,7 @@ const handleSubmit = async () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
               <div>
                 <label style={{ fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(247,245,240,0.5)', display: 'block', marginBottom: '0.4rem' }}>Importo offerto (€) *</label>
-                <input type="number" placeholder="es. 380000" value={form.importo} onChange={e => setForm(f => ({...f, importo: e.target.value}))} style={{ width: '100%', padding: '0.85rem 1rem', background: 'rgba(247,245,240,0.04)', border: '1px solid rgba(247,245,240,0.1)', borderRadius: 2, color: '#f7f5f0', fontFamily: 'DM Sans, sans-serif', fontSize: '0.95rem', outline: 'none', boxSizing: 'border-box' }} />
+<input type="number" min="1" step="1000" placeholder="es. 380000" value={form.importo} onChange={e => setForm(f => ({...f, importo: e.target.value}))} style={{ width: '100%', padding: '0.85rem 1rem', background: 'rgba(247,245,240,0.04)', border: '1px solid rgba(247,245,240,0.1)', borderRadius: 2, color: '#f7f5f0', fontFamily: 'DM Sans, sans-serif', fontSize: '0.95rem', outline: 'none', boxSizing: 'border-box' }} />
               </div>
               <div>
                 <label style={{ fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(247,245,240,0.5)', display: 'block', marginBottom: '0.4rem' }}>Data rogito proposta</label>
@@ -339,6 +356,7 @@ const handleSubmit = async () => {
               </div>
             </div>
 
+{error && <div style={{ color: '#d93025', fontSize: '0.82rem', marginBottom: '1rem' }}>{error}</div>}
             {status === 'error' && <div style={{ color: '#d93025', fontSize: '0.82rem', marginBottom: '1rem' }}>Qualcosa è andato storto. Riprova.</div>}
 
 <div style={{ background: 'rgba(45,106,79,0.08)', border: '1px solid rgba(45,106,79,0.2)', borderRadius: 2, padding: '1rem', marginBottom: '1rem', fontSize: '0.78rem', color: 'rgba(247,245,240,0.6)', lineHeight: 1.6 }}>
