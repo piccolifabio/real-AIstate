@@ -413,9 +413,14 @@ function AiChat({ user }) {
   loadHistory()
 }, [user])
   
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }, [messages, loading]);
+  const isFirstRenderChat = useRef(true);
+useEffect(() => {
+  if (isFirstRenderChat.current) {
+    isFirstRenderChat.current = false;
+    return;
+  }
+  bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}, [messages, loading]);
 
   const send = async () => {
     if (!input.trim() || loading) return;
