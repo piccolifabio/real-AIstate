@@ -8,16 +8,21 @@ export default function LoginPage() {
   const [mode, setMode] = useState('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [fullName, setFullName] = useState('')
   const [status, setStatus] = useState('idle')
   const [error, setError] = useState('')
 
   const handle = async () => {
     if (!email || !password) return
+    if (mode === 'register' && !fullName.trim()) {
+      setError('Inserisci il tuo nome e cognome')
+      return
+    }
     setStatus('loading')
     setError('')
     const { error } = mode === 'login'
       ? await signIn(email, password)
-      : await signUp(email, password)
+      : await signUp(email, password, fullName.trim())
     if (error) {
       setError(error.message)
       setStatus('idle')
@@ -30,6 +35,13 @@ export default function LoginPage() {
     }
   }
 
+  const inputStyle = {
+    width: '100%', padding: '0.9rem 1rem', marginBottom: '1rem',
+    background: 'transparent', border: '1px solid rgba(247,245,240,0.15)',
+    borderRadius: '2px', color: '#f7f5f0', fontSize: '0.9rem',
+    fontFamily: 'DM Sans, sans-serif', outline: 'none', boxSizing: 'border-box'
+  }
+
   return (
     <div style={{
       minHeight: '100vh', background: '#0a0a0a', display: 'flex',
@@ -39,16 +51,16 @@ export default function LoginPage() {
         background: '#141414', border: '1px solid rgba(247,245,240,0.08)',
         borderRadius: '4px', padding: '3rem', width: '100%', maxWidth: '420px'
       }}>
-<a href="/" style={{
-  fontFamily: 'Bebas Neue, sans-serif', fontSize: '1.6rem',
-  letterSpacing: '0.05em', color: '#f7f5f0', textDecoration: 'none',
-  marginBottom: '2rem', display: 'block', transition: 'color 0.2s'
-}}
-onMouseEnter={e => e.currentTarget.style.color = '#7c3aed'}
-onMouseLeave={e => e.currentTarget.style.color = '#f7f5f0'}
->
-  Real<span style={{ color: '#d93025' }}>AI</span>state
-</a>
+        <a href="/" style={{
+          fontFamily: 'Bebas Neue, sans-serif', fontSize: '1.6rem',
+          letterSpacing: '0.05em', color: '#f7f5f0', textDecoration: 'none',
+          marginBottom: '2rem', display: 'block', transition: 'color 0.2s'
+        }}
+          onMouseEnter={e => e.currentTarget.style.color = '#7c3aed'}
+          onMouseLeave={e => e.currentTarget.style.color = '#f7f5f0'}
+        >
+          Real<span style={{ color: '#d93025' }}>AI</span>state
+        </a>
         <h1 style={{
           fontFamily: 'Bebas Neue, sans-serif', fontSize: '2.5rem',
           color: '#f7f5f0', marginBottom: '0.5rem', lineHeight: 1
@@ -64,17 +76,23 @@ onMouseLeave={e => e.currentTarget.style.color = '#f7f5f0'}
           </div>
         ) : (
           <>
+            {mode === 'register' && (
+              <input
+                type="text"
+                placeholder="Nome e cognome"
+                value={fullName}
+                onChange={e => setFullName(e.target.value)}
+                autoComplete="name"
+                style={inputStyle}
+              />
+            )}
             <input
               type="email"
               placeholder="la-tua@email.it"
               value={email}
               onChange={e => setEmail(e.target.value)}
-              style={{
-                width: '100%', padding: '0.9rem 1rem', marginBottom: '1rem',
-                background: 'transparent', border: '1px solid rgba(247,245,240,0.15)',
-                borderRadius: '2px', color: '#f7f5f0', fontSize: '0.9rem',
-                fontFamily: 'DM Sans, sans-serif', outline: 'none', boxSizing: 'border-box'
-              }}
+              autoComplete="email"
+              style={inputStyle}
             />
             <input
               type="password"
@@ -82,12 +100,8 @@ onMouseLeave={e => e.currentTarget.style.color = '#f7f5f0'}
               value={password}
               onChange={e => setPassword(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handle()}
-              style={{
-                width: '100%', padding: '0.9rem 1rem', marginBottom: '1.5rem',
-                background: 'transparent', border: '1px solid rgba(247,245,240,0.15)',
-                borderRadius: '2px', color: '#f7f5f0', fontSize: '0.9rem',
-                fontFamily: 'DM Sans, sans-serif', outline: 'none', boxSizing: 'border-box'
-              }}
+              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+              style={{ ...inputStyle, marginBottom: '1.5rem' }}
             />
             {error && (
               <div style={{ color: '#d93025', fontSize: '0.82rem', marginBottom: '1rem' }}>
@@ -108,7 +122,7 @@ onMouseLeave={e => e.currentTarget.style.color = '#f7f5f0'}
             </button>
             <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
               <button
-                onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
+                onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError('') }}
                 style={{
                   background: 'none', border: 'none', color: 'rgba(247,245,240,0.4)',
                   fontSize: '0.82rem', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif'

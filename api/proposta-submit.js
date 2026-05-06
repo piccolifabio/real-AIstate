@@ -16,18 +16,39 @@ export default async function handler(req, res) {
   const label = diff >= 0 ? `+${perc}% sopra prezzo` : `${perc}% sotto prezzo`;
 
   try {
+    // 0. Leggi il nome completo dell'utente da Supabase Auth (autoritativo, non manipolabile da client)
+    let compratore_nome = null;
+    if (user_id) {
+      try {
+        const userRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${user_id}`, {
+          headers: {
+            "apikey": SUPABASE_KEY,
+            "Authorization": `Bearer ${SUPABASE_KEY}`,
+          },
+        });
+        if (userRes.ok) {
+          const userData = await userRes.json();
+          compratore_nome = userData?.user_metadata?.full_name || null;
+        }
+      } catch (e) {
+        // Non bloccante: se l'admin API fallisce salviamo la proposta senza nome
+        console.error("Errore lettura full_name:", e);
+      }
+    }
+
     // 1. Salva proposta su Supabase
-const supabaseRes = await fetch(`${SUPABASE_URL}/rest/v1/proposte`, {
+    const supabaseRes = await fetch(`${SUPABASE_URL}/rest/v1/proposte`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "apikey": process.env.SUPABASE_SECRET_KEY,
-        "Authorization": `Bearer ${process.env.SUPABASE_SECRET_KEY}`,
+        "apikey": SUPABASE_KEY,
+        "Authorization": `Bearer ${SUPABASE_KEY}`,
         "Prefer": "return=representation",
       },
       body: JSON.stringify({
         immobile_id: immobile.id,
         compratore_email: user_email,
+        compratore_nome: compratore_nome,
         compratore_user_id: user_id || null,
         importo: Number(importo),
         condizioni: condizioni || null,
@@ -39,9 +60,9 @@ const supabaseRes = await fetch(`${SUPABASE_URL}/rest/v1/proposte`, {
 
     if (!supabaseRes.ok) {
       const errText = await supabaseRes.text();
-      return res.status(500).json({ 
-        error: "Supabase error", 
-        detail: errText, 
+      return res.status(500).json({
+        error: "Supabase error",
+        detail: errText,
         key_prefix: SUPABASE_KEY?.substring(0, 15),
         url: SUPABASE_URL
       });
@@ -68,7 +89,7 @@ const supabaseRes = await fetch(`${SUPABASE_URL}/rest/v1/proposte`, {
               <p><strong>Immobile:</strong> ${immobile.indirizzo}</p>
               <p><strong>Prezzo richiesto:</strong> €${immobile.prezzo.toLocaleString('it-IT')}</p>
               <hr/>
-              <p><strong>Compratore:</strong> ${user_email}</p>
+              <p><strong>Compratore:</strong> ${compratore_nome ? `${compratore_nome} (${user_email})` : user_email}</p>
               <p><strong>Importo offerto:</strong> €${Number(importo).toLocaleString('it-IT')}</p>
               <p><strong>Condizioni:</strong> ${condizioni || 'Nessuna'}</p>
               <p><strong>Data rogito proposta:</strong> ${data_rogito || 'Da concordare'}</p>

@@ -20,12 +20,31 @@ export function AuthProvider({ children }) {
     return () => subscription.unsubscribe()
   }, [])
 
-  const signIn = (email, password) => supabase.auth.signInWithPassword({ email, password })
-  const signUp = (email, password) => supabase.auth.signUp({ email, password })
+  const signIn = (email, password) =>
+    supabase.auth.signInWithPassword({ email, password })
+
+  const signUp = (email, password, fullName) =>
+    supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { full_name: fullName }
+      }
+    })
+
   const signOut = () => supabase.auth.signOut()
 
+  // Aggiorna il nome dell'utente loggato (usato da AccountPage)
+  const updateFullName = async (fullName) => {
+    const { data, error } = await supabase.auth.updateUser({
+      data: { full_name: fullName }
+    })
+    if (data?.user) setUser(data.user)
+    return { data, error }
+  }
+
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut, updateFullName }}>
       {children}
     </AuthContext.Provider>
   )
