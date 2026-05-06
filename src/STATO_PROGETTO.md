@@ -7,6 +7,7 @@ Aggiornato: 05/05/2026
 - API serverless: Vercel functions (api/)
 - Email: Brevo (SMTP collegato a Supabase)
 - AI: Anthropic API
+- Firma digitale: Yousign (sandbox attivo, 40gg trial API)
 - Repo: github.com/piccolifabio/real-AIstate
 - Sito live: realaistate.ai
 
@@ -36,6 +37,19 @@ Aggiornato: 05/05/2026
 - [x] Task 5: Notifiche email messaggi chat ✅
 - [x] Task 6: Dashboard venditore /venditore ✅
 
+### Settimana 3 — in corso 05/05/2026
+- [x] Task 8: Form proposta d'acquisto con modal ✅
+- [x] Template proposta d'acquisto visibile nella sezione documenti ✅
+- [x] API serverless proposta-submit.js ✅
+- [x] Template HTML proposta d'acquisto completo (v2) con dati catastali, pertinenze, condizioni pagamento ✅
+- [x] Task 9: Integrazione Yousign — firma digitale FEA funzionante ✅
+  - PDF generato con pdf-lib
+  - Documento caricato su Yousign sandbox
+  - Signature request con due firmatari
+  - Campi firma posizionati sul documento
+  - Email inviata ai firmatari
+  - Firma digitale completata con successo in sandbox
+
 ## File chiave
 - src/HomePage.jsx — home page con Nav e CTA
 - src/ScusePage.jsx — pagina scuse separata
@@ -43,48 +57,38 @@ Aggiornato: 05/05/2026
 - src/Termini.jsx — termini di servizio
 - src/VenditoreDashboard.jsx — dashboard conversazioni venditore
 - src/AccountPage.jsx — pagina account con link dashboard
+- src/Immobile.jsx — scheda immobile con chat, documenti, proposta
 - src/supabase.js — connessione Supabase
 - src/AuthContext.jsx — gestione sessione
 - src/LoginPage.jsx — login/registrazione
 - src/ProtectedRoute.jsx — route protetta
 - src/index.css — CSS globale
 - src/blog/articoli.js — contenuto articoli
-- src/BlogPage.jsx — lista articoli (aggiungere in cima per ordine cronologico)
+- src/BlogPage.jsx — lista articoli
+- api/chat-immobile.js — chat AI con notifiche email
+- api/proposta-submit.js — email proposta d'acquisto
+- api/yousign-proposta.js — firma digitale FEA via Yousign
+- public/proposta_acquisto_template.html — template proposta visualizzabile
 
 ## Decisioni architetturali
 - Pagamenti: esclusi MVP v1, notaio partner come depositario
-- Firma: FEA via Yousign per offerta d'acquisto
+- Firma: FEA via Yousign — sandbox attivo, produzione quando prime transazioni
 - Non loggati: prezzo, foto, descrizione, Fair Price Score + lucchetti documenti
-- Loggati: documenti pubblici scaricabili (APE, Visura, Planimetria) + chat con storico
-- Documenti sensibili (Atto di provenienza, delibere): su richiesta per tutti
+- Loggati: documenti pubblici + chat con storico + proposta d'acquisto
+- Documenti sensibili: su richiesta
 - Email moderazione: info@realaistate.ai prima dell'inoltro al venditore
-- Blog: aggiungere nuovo articolo in cima ad articoli.js e BlogPage.jsx
+- Blog: aggiungere in cima ad articoli.js e BlogPage.jsx
 - SRL: da aprire al primo commitment angel
+- Yousign: sandbox per test, switch a produzione al primo commitment
 
-## Prossima sessione — Settimana 3
-
-### Task 8: Form proposta d'acquisto
-- Bottone "Fai una proposta" sulla scheda immobile (solo loggati)
-- Form: importo offerta, condizioni, data proposta rogito, note
-- Email automatica a info@realaistate.ai con tutti i dati
-- Venditore riceve notifica e può accettare/rifiutare dalla dashboard
-
-### Task 7: Contatta notaio (si sblocca dopo offerta accettata)
-- Flusso AI qualificante: hai un notaio di fiducia? (Sì/No)
-- Se sì → raccoglie dati notaio e invia briefing completo via email
-- Se no → propone notai certificati nella zona dell'immobile
-- Email automatica al notaio con: dati immobile, parti, documenti, istruzioni caparra
-
-### Task 9: Integrazione Yousign — firma digitale FEA
-- Firma digitale sulla proposta d'acquisto
-- Valida legalmente ai sensi dell'art. 1341-1342 c.c.
+## Prossima sessione
+- Collegare bottone "Accetta proposta" in dashboard venditore → chiama api/yousign-proposta.js
+- Creare tabella `proposte` su Supabase per salvare le proposte
+- Task 7: Contatta notaio (si sblocca dopo offerta accettata)
 
 ## Da fare post-MVP
 - ImmobileVenditore.jsx: refactor CSS e navbar
-- VendiForm.jsx: fix allineamento padding laterale
+- VendiForm.jsx: fix allineamento
 - Google OAuth
 - Memoria condivisa per immobile: AI risponde con risposte già date dal venditore
-- Fair Price Score interattivo — chat AI che fa domande e restituisce:
-  1. Range di prezzo suggerito su dati OMI (modalità "quanto vale la mia casa?")
-  2. Fair Price Score motivato se il venditore ha già un prezzo in mente
-  Posizionamento: pagina /valuta o widget nella landing
+- Fair Price Score interattivo — chat AI che restituisce range OMI o score motivato

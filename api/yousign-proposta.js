@@ -1,5 +1,3 @@
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
-
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
@@ -11,104 +9,94 @@ export default async function handler(req, res) {
 
   const YOUSIGN_API_KEY = process.env.YOUSIGN_API_KEY;
   const YOUSIGN_BASE = "https://api-sandbox.yousign.app/v3";
+  const TEMPLATE_ID = "71505658-23d8-4d5a-9ff1-2e221294e929";
+
+  const oggi = new Date().toLocaleDateString("it-IT");
+  const diff = Number(importo) - immobile.prezzo;
+  const perc = Math.round(Math.abs(diff) / immobile.prezzo * 100);
+  const diffLabel = diff >= 0 ? `+${perc}% sopra prezzo` : `${perc}% sotto prezzo`;
 
   try {
-    const base64Doc = await generatePDF({ compratore_nome, compratore_email, venditore_nome, venditore_email, immobile, importo, condizioni, data_rogito, note });
-
-   // 1. Carica il documento
-const pdfBuffer = Buffer.from(base64Doc, "base64");
-
-const formData = new FormData();
-const blob = new Blob([pdfBuffer], { type: "application/pdf" });
-formData.append("file", blob, "Proposta_Acquisto_RealAIstate.pdf");
-formData.append("nature", "signable_document");
-
-const uploadResponse = await fetch(`${YOUSIGN_BASE}/documents`, {
-  method: "POST",
-  headers: {
-    "Authorization": `Bearer ${YOUSIGN_API_KEY}`,
-  },
-  body: formData,
-});
-
-    const uploadData = await uploadResponse.json();
-    if (!uploadResponse.ok) {
-      return res.status(500).json({ error: "Errore upload documento", detail: uploadData });
-    }
-
-    // 2. Crea la signature request
-    const signatureResponse = await fetch(`${YOUSIGN_BASE}/signature_requests`, {
+    const response = await fetch(`${YOUSIGN_BASE}/signature_requests/from_template`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${YOUSIGN_API_KEY}`,
       },
       body: JSON.stringify({
+        template_id: TEMPLATE_ID,
         name: `Proposta acquisto — ${immobile.indirizzo}`,
         delivery_mode: "email",
         timezone: "Europe/Rome",
-        documents: [uploadData.id],
         signers: [
           {
+            role_name: "Compratore",
             info: {
               first_name: compratore_nome.split(" ")[0],
               last_name: compratore_nome.split(" ").slice(1).join(" ") || "—",
               email: compratore_email,
               locale: "it",
             },
-            signature_level: "electronic_signature",
-            signature_authentication_mode: "no_otp",
           },
           {
+            role_name: "Venditore",
             info: {
               first_name: venditore_nome.split(" ")[0],
               last_name: venditore_nome.split(" ").slice(1).join(" ") || "—",
               email: venditore_email,
               locale: "it",
             },
-            signature_level: "electronic_signature",
-            signature_authentication_mode: "no_otp",
           },
         ],
+        variables: {
+          INDIRIZZO: immobile.indirizzo,
+          COMUNE: immobile.zona,
+          SUPERFICIE: String(immobile.superficie),
+          PIANO: immobile.piano || "—",
+          LOCALI: String(immobile.locali || "—"),
+          CLASSE_ENERGETICA: immobile.classe_energetica || "—",
+          CAT_FOGLIO: "—",
+          CAT_PARTICELLA: "—",
+          CAT_SUBALTERNO: "—",
+          CAT_CATEGORIA: "—",
+          PREZZO_RICHIESTO: immobile.prezzo.toLocaleString("it-IT"),
+          COMPRATORE_NOME: compratore_nome,
+          COMPRATORE_CF: "—",
+          COMPRATORE_INDIRIZZO: "—",
+          COMPRATORE_EMAIL: compratore_email,
+          VENDITORE_NOME: venditore_nome,
+          VENDITORE_CF: "—",
+          VENDITORE_INDIRIZZO: "—",
+          VENDITORE_EMAIL: venditore_email,
+          IMPORTO_OFFERTO: Number(importo).toLocaleString("it-IT"),
+          MODALITA_PAGAMENTO: "—",
+          CONDIZIONI: condizioni || "—",
+          DATA_ROGITO: data_rogito || "Da concordare",
+          DATA_CONSEGNA: "—",
+          GIORNI_DEPOSITO: "7",
+          IMPORTO_DEPOSITO: "—",
+          SALDO_ROGITO: "—",
+          NOTE_LIBERE: note || "—",
+          DATA_PROPOSTA: oggi,
+          PERT1_DESC: "—", PERT1_FOGLIO: "—", PERT1_PARTICELLA: "—", PERT1_SUB: "—", PERT1_CAT: "—",
+          PERT2_DESC: "—", PERT2_FOGLIO: "—", PERT2_PARTICELLA: "—", PERT2_SUB: "—", PERT2_CAT: "—",
+          PERT3_DESC: "—", PERT3_FOGLIO: "—", PERT3_PARTICELLA: "—", PERT3_SUB: "—", PERT3_CAT: "—",
+        },
       }),
     });
 
-    const signatureData = await signatureResponse.json();
-    if (!signatureResponse.ok) {
-      return res.status(500).json({ error: "Errore Yousign", detail: signatureData });
+    const data = await response.json();
+
+    if (!response.ok) {
+      return res.status(500).json({ error: "Errore Yousign", detail: data });
     }
 
-   // 2b. Aggiungi campi firma per ogni firmatario
-    const signers = signatureData.signers;
-    for (let i = 0; i < signers.length; i++) {
-      const fieldResponse = await fetch(`${YOUSIGN_BASE}/signature_requests/${signatureData.id}/documents/${uploadData.id}/fields`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${YOUSIGN_API_KEY}`,
-        },
-        body: JSON.stringify({
-          signer_id: signers[i].id,
-          type: "signature",
-          page: 1,
-          x: i === 0 ? 50 : 300,
-          y: 150,
-          width: 200,
-          height: 50,
-        }),
-      });
-      const fieldData = await fieldResponse.json();
-      if (!fieldResponse.ok) {
-        return res.status(500).json({ error: `Errore campo firma firmatario ${i}`, detail: fieldData });
-      }
-    }
-
-    // 3. Attiva
-    const activateResponse = await fetch(`${YOUSIGN_BASE}/signature_requests/${signatureData.id}/activate`, {
+    // Attiva
+    const activateResponse = await fetch(`${YOUSIGN_BASE}/signature_requests/${data.id}/activate`, {
       method: "POST",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${YOUSIGN_API_KEY}` 
+        "Authorization": `Bearer ${YOUSIGN_API_KEY}`,
       },
     });
 
@@ -117,118 +105,9 @@ const uploadResponse = await fetch(`${YOUSIGN_BASE}/documents`, {
       return res.status(500).json({ error: "Errore attivazione Yousign", detail: activateData });
     }
 
-    return res.status(200).json({ ok: true, signature_request_id: signatureData.id });
+    return res.status(200).json({ ok: true, signature_request_id: data.id });
 
   } catch (err) {
     return res.status(500).json({ error: "Errore server", detail: err.message });
   }
-}
-
-async function generatePDF({ compratore_nome, compratore_email, venditore_nome, venditore_email, immobile, importo, condizioni, data_rogito, note }) {
-  const pdfDoc = await PDFDocument.create();
-  const page = pdfDoc.addPage([595, 842]);
-  const { height } = page.getSize();
-
-  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-  const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
-
-  const red = rgb(0.85, 0.19, 0.15);
-  const black = rgb(0.1, 0.1, 0.1);
-  const gray = rgb(0.4, 0.4, 0.4);
-
-  let y = height - 50;
-
-  // Logo
-  page.drawText("REAL", { x: 50, y, size: 22, font: fontBold, color: black });
-  page.drawText("AI", { x: 96, y, size: 22, font: fontBold, color: red });
-  page.drawText("STATE", { x: 118, y, size: 22, font: fontBold, color: black });
-
-  // Titolo
-  page.drawText("PROPOSTA D'ACQUISTO", { x: 350, y, size: 13, font: fontBold, color: black });
-  page.drawText(`Data: ${new Date().toLocaleDateString("it-IT")}`, { x: 350, y: y - 16, size: 9, font: fontRegular, color: gray });
-
-  y -= 30;
-  page.drawLine({ start: { x: 50, y }, end: { x: 545, y }, thickness: 2, color: red });
-
-  y -= 20;
-  page.drawText("La presente proposta diventa vincolante con la firma digitale del Venditore.", { x: 50, y, size: 8, font: fontRegular, color: gray });
-  page.drawText("RealAIstate non e' un'agenzia immobiliare ai sensi della L. 39/1989.", { x: 50, y: y - 12, size: 8, font: fontRegular, color: gray });
-
-  y -= 40;
-
-  page.drawText("1 · IMMOBILE", { x: 50, y, size: 9, font: fontBold, color: red });
-  y -= 18;
-  page.drawText(`Indirizzo: ${immobile.indirizzo}`, { x: 50, y, size: 10, font: fontRegular, color: black });
-  y -= 14;
-  page.drawText(`Zona: ${immobile.zona}`, { x: 50, y, size: 10, font: fontRegular, color: black });
-  y -= 14;
-  page.drawText(`Prezzo richiesto: EUR ${immobile.prezzo.toLocaleString("it-IT")}`, { x: 50, y, size: 11, font: fontBold, color: black });
-  y -= 14;
-  page.drawText(`Superficie catastale: ${immobile.superficie} mq`, { x: 50, y, size: 10, font: fontRegular, color: black });
-
-  y -= 30;
-
-  page.drawText("2 · PROPONENTE (COMPRATORE)", { x: 50, y, size: 9, font: fontBold, color: red });
-  y -= 18;
-  page.drawText(`Nome: ${compratore_nome}`, { x: 50, y, size: 10, font: fontRegular, color: black });
-  y -= 14;
-  page.drawText(`Email: ${compratore_email}`, { x: 50, y, size: 10, font: fontRegular, color: black });
-
-  y -= 30;
-
-  page.drawText("3 · VENDITORE", { x: 50, y, size: 9, font: fontBold, color: red });
-  y -= 18;
-  page.drawText(`Nome: ${venditore_nome}`, { x: 50, y, size: 10, font: fontRegular, color: black });
-  y -= 14;
-  page.drawText(`Email: ${venditore_email}`, { x: 50, y, size: 10, font: fontRegular, color: black });
-
-  y -= 30;
-
-  page.drawText("4 · PROPOSTA ECONOMICA", { x: 50, y, size: 9, font: fontBold, color: red });
-  y -= 18;
-  const diff = Number(importo) - immobile.prezzo;
-  const perc = Math.round(Math.abs(diff) / immobile.prezzo * 100);
-  const diffLabel = diff >= 0 ? `+${perc}% sopra prezzo` : `${perc}% sotto prezzo`;
-  page.drawText(`Importo offerto: EUR ${Number(importo).toLocaleString("it-IT")} (${diffLabel})`, { x: 50, y, size: 11, font: fontBold, color: black });
-  y -= 14;
-  page.drawText(`Condizioni: ${condizioni || "—"}`, { x: 50, y, size: 10, font: fontRegular, color: black });
-  y -= 14;
-  page.drawText(`Data rogito proposta: ${data_rogito || "Da concordare"}`, { x: 50, y, size: 10, font: fontRegular, color: black });
-  if (note) {
-    y -= 14;
-    page.drawText(`Note: ${note}`, { x: 50, y, size: 10, font: fontRegular, color: black });
-  }
-
-  y -= 30;
-
-  page.drawText("5 · CORRISPETTIVO REALAISTATE", { x: 50, y, size: 9, font: fontBold, color: red });
-  y -= 18;
-  page.drawText("A carico del Compratore: EUR 2.000", { x: 50, y, size: 10, font: fontRegular, color: black });
-  y -= 14;
-  page.drawText("A carico del Venditore: EUR 499", { x: 50, y, size: 10, font: fontRegular, color: black });
-  y -= 12;
-  page.drawText("Dovuto esclusivamente a transazione completata con rogito notarile.", { x: 50, y, size: 8, font: fontRegular, color: gray });
-
-  y -= 50;
-
-  page.drawText("FIRME", { x: 50, y, size: 9, font: fontBold, color: red });
-  y -= 20;
-
-  page.drawText("Proponente (Compratore)", { x: 50, y, size: 8, font: fontBold, color: gray });
-  y -= 14;
-  page.drawText(compratore_nome, { x: 50, y, size: 10, font: fontRegular, color: black });
-  y -= 40;
-  page.drawLine({ start: { x: 50, y }, end: { x: 260, y }, thickness: 1, color: rgb(0.6, 0.6, 0.6) });
-  page.drawText("Firma digitale FEA", { x: 50, y: y - 12, size: 7, font: fontRegular, color: gray });
-
-  page.drawText("Venditore — Accettazione", { x: 300, y: y + 54, size: 8, font: fontBold, color: gray });
-  page.drawText(venditore_nome, { x: 300, y: y + 40, size: 10, font: fontRegular, color: black });
-  page.drawLine({ start: { x: 300, y }, end: { x: 545, y }, thickness: 1, color: rgb(0.6, 0.6, 0.6) });
-  page.drawText("Firma digitale FEA per accettazione", { x: 300, y: y - 12, size: 7, font: fontRegular, color: gray });
-
-  page.drawLine({ start: { x: 50, y: 40 }, end: { x: 545, y: 40 }, thickness: 1, color: rgb(0.9, 0.9, 0.9) });
-  page.drawText("REALAISTATE · realaistate.ai · info@realaistate.ai", { x: 50, y: 25, size: 7, font: fontRegular, color: rgb(0.7, 0.7, 0.7) });
-
-  const pdfBytes = await pdfDoc.save();
-  return Buffer.from(pdfBytes).toString("base64");
 }
