@@ -54,24 +54,26 @@ export default async function handler(req, res) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        name: `Proposta acquisto – ${proposta.compratore_email} – ${new Date().toLocaleDateString('it-IT')}`,
+        name: `Proposta acquisto – ${new Date().toLocaleDateString('it-IT')}`,
         delivery_mode: 'email',
         timezone: 'Europe/Rome',
         signers: [
           {
             info: {
               first_name: 'Compratore',
-              last_name:  '',
+              last_name:  'RealAIstate',
               email:      proposta.compratore_email,
+              locale:     'it',
             },
             signature_level: 'electronic_signature',
             signature_authentication_mode: 'no_otp',
           },
           {
             info: {
-              first_name: 'RealAIstate',
-              last_name:  'Venditore',
+              first_name: 'Venditore',
+              last_name:  'RealAIstate',
               email:      VENDITORE_EMAIL,
+              locale:     'it',
             },
             signature_level: 'electronic_signature',
             signature_authentication_mode: 'no_otp',
