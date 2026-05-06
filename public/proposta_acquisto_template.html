@@ -72,7 +72,8 @@
   .footer-logo span { color: #d93025; }
   .footer-info { font-size: 7.5pt; color: #aaa; text-align: right; line-height: 1.5; }
 
-  @media print { body { padding: 20px; } }
+ @page { size: A4 portrait; margin: 15mm; }
+  @media print { body { padding: 0; max-width: 100%; } }
 </style>
 </head>
 <body>

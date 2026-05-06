@@ -287,13 +287,14 @@ const handleSubmit = async () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          immobile,
-          user_email: user.email,
-          importo: form.importo,
-          condizioni: form.condizioni,
-          data_rogito: form.data_rogito,
-          note: form.note
-        })
+  immobile,
+  user_email: user.email,
+  user_id: user.id,
+  importo: form.importo,
+  condizioni: form.condizioni,
+  data_rogito: form.data_rogito,
+  note: form.note
+})
       })
       setStatus('success')
     } catch {
