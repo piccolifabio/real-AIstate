@@ -413,12 +413,7 @@ function AiChat({ user }) {
   loadHistory()
 }, [user])
   
-  const isFirstRenderChat = useRef(true);
-useEffect(() => {
-  if (isFirstRenderChat.current) {
-    isFirstRenderChat.current = false;
-    return;
-  }
+  useEffect(() => {
   bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }, [messages, loading]);
 
@@ -538,12 +533,7 @@ function AffordabilityChat({ immobile }) {
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef(null);
 
-  const isFirstRender = useRef(true);
-useEffect(() => {
-  if (isFirstRender.current) {
-    isFirstRender.current = false;
-    return;
-  }
+    useEffect(() => {
   bottomRef.current?.scrollIntoView({ behavior: "smooth" });
 }, [messages, loading]);
 
@@ -619,10 +609,7 @@ export default function ImmobilePage() {
     chatRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  useEffect(() => {
-  const timer = setTimeout(() => window.scrollTo(0, 0), 300)
-  return () => clearTimeout(timer)
-}, [])
+  useEffect(() => { window.scrollTo(0, 0); }, []);
 
   const docsVerified = immobile.documenti.filter(d => d.verificato).length;
   const docsTotal = immobile.documenti.length;
