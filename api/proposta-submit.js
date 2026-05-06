@@ -9,6 +9,7 @@ export default async function handler(req, res) {
 
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SUPABASE_KEY = process.env.SUPABASE_SECRET_KEY;
+  console.log("SUPABASE_KEY prefix:", SUPABASE_KEY?.substring(0, 20));
 
   const diff = Number(importo) - immobile.prezzo;
   const perc = Math.round(Math.abs(diff) / immobile.prezzo * 100);
