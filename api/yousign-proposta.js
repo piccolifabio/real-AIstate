@@ -1,7 +1,7 @@
 // api/yousign-proposta.js
 // Chiamata dal bottone "Accetta proposta" in VenditoreDashboard.jsx
 // Flusso: riceve proposta_id → legge proposta da Supabase →
-//         crea signature request Yousign con 2 firmatari →
+//         crea signature request Yousign con 2 firmatari (nomi dinamici) →
 //         aggiorna status + yousign_id su Supabase → risponde al frontend
 
 import { createClient } from '@supabase/supabase-js'
@@ -15,9 +15,9 @@ const YOUSIGN_API   = 'https://api-sandbox.yousign.app/v3'
 const YOUSIGN_KEY   = process.env.YOUSIGN_API_KEY
 const TEMPLATE_ID   = '71505658-23d8-4d5a-9ff1-2e221294e929'
 
-// Email venditore fissa per ora — da spostare su DB quando multi-immobile
+// Venditore fisso per ora — da spostare su tabella venditori quando multi-immobile
 const VENDITORE_EMAIL = 'info@realaistate.ai'
-const VENDITORE_NOME  = 'RealAIstate (venditore)'
+const VENDITORE_NOME  = 'Fabio Piccoli'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -45,15 +45,24 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: `Proposta già in stato: ${proposta.status}` })
   }
 
+  // 2. Split nome / cognome (Yousign richiede first_name e last_name separati)
+  const compratoreParts = (proposta.compratore_nome || 'Compratore').trim().split(/\s+/)
+  const compratoreFirst = compratoreParts[0]
+  const compratoreLast  = compratoreParts.slice(1).join(' ') || '—'
+
+  const venditoreParts = VENDITORE_NOME.trim().split(/\s+/)
+  const venditoreFirst = venditoreParts[0]
+  const venditoreLast  = venditoreParts.slice(1).join(' ') || '—'
+
   try {
-    // 2. Crea signature request su Yousign dal template
+    // 3. Crea signature request su Yousign dal template
     const signatureRes = await fetch(`${YOUSIGN_API}/signature_requests`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${YOUSIGN_KEY}`,
         'Content-Type': 'application/json',
       },
-  body: JSON.stringify({
+      body: JSON.stringify({
         name: `Proposta acquisto – ${new Date().toLocaleDateString('it-IT')}`,
         delivery_mode: 'email',
         timezone: 'Europe/Rome',
@@ -63,8 +72,8 @@ export default async function handler(req, res) {
             {
               label: 'Compratore',
               info: {
-                first_name: 'Compratore',
-                last_name:  'RealAIstate',
+                first_name: compratoreFirst,
+                last_name:  compratoreLast,
                 email:      proposta.compratore_email,
                 locale:     'it',
               },
@@ -72,8 +81,8 @@ export default async function handler(req, res) {
             {
               label: 'Venditore',
               info: {
-                first_name: 'Venditore',
-                last_name:  'RealAIstate',
+                first_name: venditoreFirst,
+                last_name:  venditoreLast,
                 email:      VENDITORE_EMAIL,
                 locale:     'it',
               },
@@ -92,7 +101,7 @@ export default async function handler(req, res) {
     const signatureData = await signatureRes.json()
     const yousign_id = signatureData.id
 
-    // 3. Attiva la signature request (la mette in stato "ongoing" e invia le email)
+    // 4. Attiva la signature request (la mette in stato "ongoing" e invia le email)
     const activateRes = await fetch(`${YOUSIGN_API}/signature_requests/${yousign_id}/activate`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${YOUSIGN_KEY}` },
@@ -104,7 +113,7 @@ export default async function handler(req, res) {
       // Non blocchiamo — aggiorniamo Supabase comunque con status accepted
     }
 
-    // 4. Aggiorna proposta su Supabase
+    // 5. Aggiorna proposta su Supabase
     const { error: errUpdate } = await supabase
       .from('proposte')
       .update({
