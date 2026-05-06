@@ -413,8 +413,12 @@ function AiChat({ user }) {
   loadHistory()
 }, [user])
   
-  useEffect(() => {
-  bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+ const prevLenChat = useRef(0);
+useEffect(() => {
+  if (messages.length > prevLenChat.current) {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+  prevLenChat.current = messages.length;
 }, [messages, loading]);
 
   const send = async () => {
@@ -533,8 +537,12 @@ function AffordabilityChat({ immobile }) {
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef(null);
 
-    useEffect(() => {
-  bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+   const prevLenAfford = useRef(0);
+useEffect(() => {
+  if (messages.length > prevLenAfford.current) {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }
+  prevLenAfford.current = messages.length;
 }, [messages, loading]);
 
   const send = async () => {
