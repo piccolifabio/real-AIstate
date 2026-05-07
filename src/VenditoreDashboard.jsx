@@ -105,7 +105,37 @@ export default function VenditoreDashboard() {
     if (data) setMessaggi(data)
   }
 
-  // ── Cambia status immobile (draft → published, published → archived) ───────
+// ── Richiedi pubblicazione (draft → pending_review, via API) ───────────────
+  const richiediPubblicazione = async (immobileId) => {
+    setAggiornandoImmobile(immobileId)
+    setFeedbackImmobile(null)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) throw new Error('Sessione scaduta')
+
+      const res = await fetch('/api/richiedi-pubblicazione', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ immobile_id: immobileId })
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || 'Errore server')
+
+      setMieiImmobili(prev => prev.map(i =>
+        i.id === immobileId ? { ...i, status: 'pending_review' } : i
+      ))
+      setFeedbackImmobile({ tipo: 'ok', testo: 'Richiesta inviata. Verifichiamo i dati e ti scriviamo entro 24 ore.' })
+    } catch (err) {
+      setFeedbackImmobile({ tipo: 'err', testo: `Errore: ${err.message}` })
+    } finally {
+      setAggiornandoImmobile(null)
+    }
+  }
+
+  // ── Archivia / Ripubblica (cambia status direttamente — RLS lo permette) ──
   const cambiaStatusImmobile = async (immobileId, nuovoStatus) => {
     setAggiornandoImmobile(immobileId)
     setFeedbackImmobile(null)
@@ -118,11 +148,9 @@ export default function VenditoreDashboard() {
       setMieiImmobili(prev => prev.map(i =>
         i.id === immobileId ? { ...i, status: nuovoStatus } : i
       ))
-      const messaggio = nuovoStatus === 'published'
-        ? 'Immobile pubblicato. Ora è visibile a tutti.'
-        : nuovoStatus === 'archived'
-          ? 'Immobile archiviato. Non è più visibile pubblicamente.'
-          : 'Immobile aggiornato.'
+      const messaggio = nuovoStatus === 'archived'
+        ? 'Immobile archiviato. Non è più visibile pubblicamente.'
+        : 'Immobile aggiornato.'
       setFeedbackImmobile({ tipo: 'ok', testo: messaggio })
     } catch (err) {
       setFeedbackImmobile({ tipo: 'err', testo: `Errore: ${err.message}` })
@@ -184,12 +212,13 @@ export default function VenditoreDashboard() {
     )
   }
 
-  const badgeImmobileStatus = (status) => {
+const badgeImmobileStatus = (status) => {
     const map = {
-      draft:     { label: 'Bozza',       bg: 'rgba(201,168,76,0.15)',  color: '#c9a84c' },
-      published: { label: 'Pubblicato',  bg: 'rgba(34,197,94,0.12)',   color: '#22c55e' },
-      sold:      { label: 'Venduto',     bg: 'rgba(124,58,237,0.15)',  color: '#a78bfa' },
-      archived:  { label: 'Archiviato',  bg: 'rgba(247,245,240,0.06)', color: 'rgba(247,245,240,0.5)' },
+      draft:          { label: 'Bozza',         bg: 'rgba(201,168,76,0.15)',  color: '#c9a84c' },
+      pending_review: { label: 'In revisione',  bg: 'rgba(59,130,246,0.15)',  color: '#60a5fa' },
+      published:      { label: 'Pubblicato',    bg: 'rgba(34,197,94,0.12)',   color: '#22c55e' },
+      sold:           { label: 'Venduto',       bg: 'rgba(124,58,237,0.15)',  color: '#a78bfa' },
+      archived:       { label: 'Archiviato',    bg: 'rgba(247,245,240,0.06)', color: 'rgba(247,245,240,0.5)' },
     }
     const s = map[status] || map.draft
     return (
@@ -369,7 +398,7 @@ export default function VenditoreDashboard() {
 
                         {immobile.status === 'draft' && (
                           <button
-                            onClick={() => cambiaStatusImmobile(immobile.id, 'published')}
+                            onClick={() => richiediPubblicazione(immobile.id)}
                             disabled={aggiornandoImmobile === immobile.id}
                             style={{
                               background: aggiornandoImmobile === immobile.id ? 'rgba(217,48,37,0.4)' : '#d93025',
@@ -385,8 +414,14 @@ export default function VenditoreDashboard() {
                               textTransform: 'uppercase',
                             }}
                           >
-                            {aggiornandoImmobile === immobile.id ? 'Pubblicazione...' : 'Pubblica'}
+                            {aggiornandoImmobile === immobile.id ? 'Invio...' : 'Richiedi pubblicazione'}
                           </button>
+                        )}
+
+                        {immobile.status === 'pending_review' && (
+                          <div style={{ fontSize: '0.78rem', color: '#60a5fa', fontStyle: 'italic', padding: '0.6rem 0' }}>
+                            In revisione — ti scriviamo entro 24 ore
+                          </div>
                         )}
 
                         {immobile.status === 'published' && (
