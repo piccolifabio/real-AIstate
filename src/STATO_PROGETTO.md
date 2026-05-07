@@ -1,5 +1,5 @@
 # RealAIstate — Stato del progetto
-Aggiornato: 07/05/2026 sera
+Aggiornato: 07/05/2026 sera (chiusura giornata)
 
 ## Stack
 - Frontend: React + Vite, deploy su Vercel
@@ -71,7 +71,7 @@ Aggiornato: 07/05/2026 sera
 - [x] Form "Vendi casa" reale ✅
   - Schema `immobili` esteso con campi MVP (tipologia, piano, vani/camere/bagni,
     superficie_calpestabile, anno_costruzione, classe_energetica, stato_immobile,
-    foto jsonb, descrizione, status enum draft/published/sold/archived)
+    foto jsonb, descrizione, status enum draft/pending_review/published/sold/archived)
   - Fix `id` senza default → sequence `immobili_id_seq` agganciata
   - RLS `immobili` ripulite: 4 policy pulite (public_read su published, owner_read,
     owner_insert, owner_update). Rimosse legacy `Immobili pubblici in lettura`
@@ -82,15 +82,31 @@ Aggiornato: 07/05/2026 sera
     salva sia in `venditori` (lead completo) sia in `immobili` (draft) con
     `venditore_user_id` corretto. Ritorna `immobile_id` al client.
   - Success screen porta a `/venditore` (era home)
+- [x] Dashboard venditore: tab "I miei immobili" ✅
+  - Default tab cambiata a immobili (era conversazioni)
+  - Card per ogni immobile con thumbnail, indirizzo, prezzo, badge status
+  - Bottoni dinamici per stato: draft→Richiedi pubblicazione,
+    pending_review→messaggio in attesa, published→Archivia, archived→Ripubblica
+  - Update status via Supabase con RLS owner_update che valida ownership
+- [x] Review interno pre-pubblicazione ✅
+  - Nuovo status `pending_review` aggiunto al check constraint
+  - RLS owner_update stretto: il venditore può solo navigare tra
+    draft/pending_review/archived, NON può settare published direttamente
+  - Bottone "Pubblica" → "Richiedi pubblicazione" (chiama API server)
+  - Nuova `api/richiedi-pubblicazione.js`: ownership check, update status,
+    email a info@ con dati + foto per review, email conferma al venditore
+  - Approvazione manuale via Supabase (UPDATE status='published') — automatable
+    in futuro con pagina /admin
 
 ## File chiave
 - src/HomePage.jsx — home page con Nav e CTA
 - src/ScusePage.jsx — pagina scuse separata
 - src/Privacy.jsx — privacy policy
 - src/Termini.jsx — termini di servizio
-- src/VenditoreDashboard.jsx — dashboard venditore (gated, multi-immobile-ready)
+- src/VenditoreDashboard.jsx — dashboard venditore con tab immobili/conversazioni/proposte,
+  bottoni richiesta pubblicazione e archiviazione
 - src/AccountPage.jsx — account con nome modificabile + sezione "Le mie proposte"
-- src/Immobile.jsx — scheda immobile con chat, documenti, proposta (ANCORA HARDCODED)
+- src/Immobile.jsx — scheda immobile con chat, documenti, proposta (ANCORA HARDCODED su Capecelatro — prossimo task: refactor)
 - src/LoginPage.jsx — login/registrazione (con campo nome + Conferma email in signup)
 - src/VendiForm.jsx — form 5 step con auth gate, salva immobile draft + lead venditore
 - src/AuthContext.jsx — gestione sessione + signUp con full_name + updateFullName
@@ -103,6 +119,8 @@ Aggiornato: 07/05/2026 sera
 - api/proposta-submit.js — salvataggio + email A (compratore) + email B (info@ + venditore)
 - api/yousign-proposta.js — firma digitale FEA via Yousign (con JWT auth + ownership check + ordered_signers)
 - api/vendi-submit.js — form venditore: scrive in venditori + immobili (draft), JWT-authenticated
+- api/richiedi-pubblicazione.js — venditore richiede review per pubblicazione,
+  status va a pending_review e parte mail a info@ + conferma al venditore
 - public/proposta_acquisto_template.html — template proposta visualizzabile e caricato su Yousign
 - public/llms.txt — descriptor per AI agent (aggiornato 07/05)
 
@@ -111,7 +129,8 @@ Aggiornato: 07/05/2026 sera
 - proposte — proposte d'acquisto (status: pending/accepted/rejected, yousign_id, compratore_nome)
 - immobili — id (sequence), indirizzo, zona, prezzo, superficie, tipologia, piano,
   superficie_calpestabile, vani, camere, bagni, anno_costruzione, classe_energetica,
-  stato_immobile, foto (jsonb), descrizione, status (draft/published/sold/archived),
+  stato_immobile, foto (jsonb), descrizione,
+  status (draft/pending_review/published/sold/archived),
   venditore_user_id (FK auth.users), created_at. RLS attive con 4 policy.
 - scuse — scuse dalla pagina /scuse
 - venditori — form venditori (lead completo onboarding, ~30 campi)
@@ -136,9 +155,16 @@ Aggiornato: 07/05/2026 sera
 - **Separazione `venditori` vs `immobili`**: `venditori` = lead onboarding completo
   (~30 campi: pertinenze, riscaldamento, ecc.), `immobili` = ciò che serve a
   scheda pubblica e relazioni con proposte/chat. Vivono in parallelo, JOIN se servono.
-- **Status immobile**: nuovi inserimenti vanno in `draft`. Per pubblicare oggi
-  serve UPDATE manuale a `published` su Supabase (post-validazione Fabio).
-  Bottone "Pubblica" in dashboard venditore = task aperto.
+- **Workflow status immobile**:
+  - `draft` → creato dal form, modificabile dal venditore
+  - `pending_review` → venditore ha richiesto pubblicazione, in attesa review Fabio
+  - `published` → approvato, visibile pubblicamente (transizione SOLO via admin/Fabio)
+  - `archived` → tolto dalla home dal venditore (può ripubblicare)
+  - `sold` → venduto (transizione futura via webhook Yousign post-rogito?)
+- **RLS owner_update stretta**: il venditore può portare il suo immobile tra
+  draft/pending_review/archived ma NON può settare `published` o `sold`.
+  Quei due status passano solo dal backend admin (service_role) o da
+  UPDATE manuale Fabio su Supabase.
 
 ## Memo tecnici (gotchas già imparati — non ripetere errori)
 - **Yousign `template_placeholders.signers[].label`**: case-sensitive, deve
@@ -190,6 +216,10 @@ Aggiornato: 07/05/2026 sera
 - **`.env.local` in formato semplice**: `KEY=value` senza `<>`, senza spazi
   iniziali, senza virgolette. Le env VITE_* sono lette dal client; quelle
   senza prefisso solo dal backend.
+- **Strategia branch per task multi-step**: per task piccoli (singolo file,
+  singola sera) push diretto su main è ok. Per task con stati intermedi
+  rotti (refactor che dura giorni, modifiche multi-file) creare branch
+  dedicato `feat/nome-task`. Mergiare in main solo a fine task testato.
 
 ## Switch Yousign sandbox → production (quando si farà)
 Triggerato da: risposta commerciale Yousign che sblocca API production
@@ -213,16 +243,19 @@ documenti che possono essere firmati senza conseguenze, o usare account email
 intestati a sé stesso.
 
 ## Prossima sessione
-- **Verificare dashboard venditore**: il nuovo immobile draft creato da
-  /vendi deve apparire in /venditore. Verificare la query in
-  VenditoreDashboard.jsx — probabilmente filtra solo `id=1` o solo published.
-- **Refactor Immobile.jsx**: leggere dati immobile da DB invece di hardcoded.
-  Sblocca scheda dinamica per ogni nuovo immobile pubblicato. PROMOSSO da
-  post-MVP a Prossima sessione perché è il prerequisito per il flusso end-to-end.
+- **Refactor Immobile.jsx** (TASK PRINCIPALE, ~2-3h): leggere dati immobile da
+  DB invece di hardcoded. Sblocca scheda dinamica per ogni nuovo immobile
+  pubblicato. Da fare su branch `feat/immobile-dinamico`. Sotto-step:
+  - Route `/immobile/:id` (verificare se già configurata in App.jsx)
+  - Fetch immobile da Supabase con gestione loading/not-found/access-denied
+  - Galleria foto da `foto[]` jsonb caricate da Supabase Storage
+  - Owner-only badge "Bozza/In revisione" se utente loggato è il venditore
+  - Fair Price Score: placeholder "Calcolo in corso" (calcolo AI dinamico è task post-MVP)
+  - Verificare chat AI: passa `immobile_id` correttamente al backend
+  - Bottone proposta d'acquisto invariato
 - **Listing dinamico**: la pagina `/listing` deve leggere
-  `immobili WHERE status='published'` invece di essere statica.
-- **Bottone "Pubblica" in dashboard venditore**: porta un immobile da `draft`
-  a `published`. Trigger lato venditore (con review interna prima? da decidere).
+  `immobili WHERE status='published'` invece di essere statica. Da fare DOPO
+  il refactor Immobile.jsx (le card del listing linkano alla scheda).
 - Task 7: Contatta notaio (chat AI qualificante + email automatica)
 - Switch Yousign production se arriva risposta commerciale
 
@@ -234,6 +267,8 @@ intestati a sé stesso.
 - Fair Price Score interattivo — chat AI che restituisce range OMI o score motivato
 - **Fair Price Score AI dinamico**: oggi hardcoded su Capecelatro. Per un
   immobile nuovo l'AI deve calcolare lo score da dati OMI + caratteristiche.
+- **Pagina /admin**: lista immobili pending_review con bottoni approva/rifiuta
+  che fanno UPDATE status (oggi manualmente via Supabase UI).
 - **Generazione PDF dinamica della proposta** (PDFShift): necessaria col secondo immobile
 - **Webhook Yousign** per aggiornare status='signed' su Supabase a firma completata
 - **Redirect post-login**: se utente clicca link CTA email mentre non è loggato,
@@ -255,3 +290,5 @@ intestati a sé stesso.
   (oggi solo via webmail privateemail.com).
 - **Fix warning React keys** in VendiForm.jsx stepper (warning console:
   "Each child in a list should have a unique key prop"). Cosmetico.
+- **Webhook Yousign per status='sold'**: a rogito firmato, transitare
+  l'immobile da published a sold automaticamente.
