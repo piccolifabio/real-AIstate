@@ -1,29 +1,21 @@
 # RealAIstate — Stato del progetto
-Aggiornato: 06/05/2026 — fine giornata
+Aggiornato: 07/05/2026 sera
 
 ## Stack
 - Frontend: React + Vite, deploy su Vercel
 - Backend: Supabase (auth + database + storage)
 - API serverless: Vercel functions (api/)
 - Email transazionali: Brevo (SMTP collegato a Supabase Auth + email custom)
+- Email casella business: Namecheap Private Email (info@realaistate.ai)
 - AI: Anthropic API
-- Firma digitale: Yousign sandbox (passaggio a production previsto)
+- Firma digitale: Yousign — sandbox attiva, production trial Pro 12gg ma API production bloccate (in attesa risposta commerciale)
 - Repo: github.com/piccolifabio/real-AIstate
 - Sito live: realaistate.ai
 
-## ⚠️ Stato critico aperto
-**Yousign sandbox: delivery email instabile (06/05/2026 sera).**
-Codice nostro testato e corretto (Vercel logs: 3 chiamate Yousign tutte 201/200/204).
-Sintomi osservati:
-- Stato `signature_request` ha mostrato regressione da `ongoing` a `draft` senza nostra azione
-- Email a volte arrivano a uno solo dei due firmatari, a volte a nessuno
-- Comportamento intermittente nello stesso pomeriggio (prima funzionante, poi rotto)
-- Cambiare a `ordered_signers: true` non ha risolto
-
-**Decisione**: NON si toccherà il codice né si farà workaround. Si attribuisce a sandbox non-prod-grade.
-**Prossimo passo**: domani mattina (07/05/2026) prima cosa testare:
-1. Sandbox Yousign — se funziona di nuovo era blip
-2. Se ancora rotto → switch a Yousign production (offerta trial 13gg gratis sull'account)
+## ⏳ In attesa
+- **Risposta Yousign** (email inviata 07/05 mattina da info@realaistate.ai al
+  contatto commerciale) — chiediamo accesso API production durante trial Pro
+  per verificare se delivery email funziona in production come dovrebbe.
 
 ## Completato
 
@@ -61,25 +53,35 @@ Sintomi osservati:
 - [x] Fix scroll pagina immobile — si apre in cima ✅
 - [x] Task 10: Bottone "Accetta proposta" in dashboard venditore ✅
 - [x] Task 11: Refactor architetturale + sicurezza + email transazionali ✅
-  - Nome utente in signup (auth.users.user_metadata.full_name)
-  - Modificabile su /account (card "Nome e cognome")
-  - Tabella `immobili` con `venditore_user_id` (FK a auth.users)
-  - FK proposte.immobile_id → immobili.id (con tipi allineati a bigint)
-  - Policy RLS pulite:
-    * Compratore vede solo sue proposte (compratore_user_id = auth.uid())
-    * Venditore vede solo proposte sui suoi immobili (via JOIN immobili.venditore_user_id)
-    * Venditore può aggiornare status (per bottone "Rifiuta")
-    * Immobili: SELECT pubblico, UPDATE solo venditore proprietario
-  - Dashboard venditore gated: empty state se utente non ha immobili in vendita
-  - Backend yousign-proposta verifica JWT chiamante + ownership immobile
-  - Email transazionali Brevo (design dark coerente):
-    * Compratore: "Proposta inviata" con riepilogo + banner 24h + CTA /account
-    * Venditore: "Nuova proposta" inviata sia a info@ sia all'email del venditore reale
-  - Sezione "Le mie proposte" su /account (con join immobili per indirizzo)
-  - Yousign signers con nomi e email dinamici (no più hardcoded info@/Compratore/Venditore)
-  - Site URL Supabase Auth configurato a realaistate.ai (no più localhost nei link)
-  - Custom SMTP Brevo su Supabase Auth (no più rate limit 3-4/ora)
-  - ordered_signers: true (compratore prima, venditore dopo)
+
+### Settimana 4 ✅ — completata 07/05/2026
+- [x] Setup infrastruttura email business ✅
+  - Acquistato Namecheap Private Email Pro (€25,49/anno primo anno, poi €35)
+  - Casella info@realaistate.ai autonoma su privateemail.com (10GB)
+  - 2 caselle aggiuntive disponibili (20GB residui da allocare)
+  - DNS configurati: SPF (privateemail + brevo), DKIM, DMARC
+  - Mail Settings Namecheap: Email Forwarding → Private Email
+  - Verificato: Brevo continua a inviare correttamente (test E2E proposta superato)
+  - Verificato: invio da info@ a Hotmail funzionante (post-greylisting iniziale)
+- [x] Email a Yousign per richiedere API production durante trial ✅
+- [x] llms.txt aggiornato con feature MVP attuali ✅
+- [x] UX double-check email in signup: campo "Conferma email" in mode register
+      con validazione case-insensitive, paste disabilitato, reset su switch
+      login↔register ✅
+- [x] Form "Vendi casa" reale ✅
+  - Schema `immobili` esteso con campi MVP (tipologia, piano, vani/camere/bagni,
+    superficie_calpestabile, anno_costruzione, classe_energetica, stato_immobile,
+    foto jsonb, descrizione, status enum draft/published/sold/archived)
+  - Fix `id` senza default → sequence `immobili_id_seq` agganciata
+  - RLS `immobili` ripulite: 4 policy pulite (public_read su published, owner_read,
+    owner_insert, owner_update). Rimosse legacy `Immobili pubblici in lettura`
+    (USING true, bug sicurezza) e `Venditore modifica suo immobile` (duplicata)
+  - Auth gate su `/vendi`: utente sloggato vede pre-onboarding con CTA login,
+    loggato vede form 5 step
+  - `api/vendi-submit.js` ora estrae JWT, identifica utente via `auth/v1/user`,
+    salva sia in `venditori` (lead completo) sia in `immobili` (draft) con
+    `venditore_user_id` corretto. Ritorna `immobile_id` al client.
+  - Success screen porta a `/venditore` (era home)
 
 ## File chiave
 - src/HomePage.jsx — home page con Nav e CTA
@@ -88,8 +90,9 @@ Sintomi osservati:
 - src/Termini.jsx — termini di servizio
 - src/VenditoreDashboard.jsx — dashboard venditore (gated, multi-immobile-ready)
 - src/AccountPage.jsx — account con nome modificabile + sezione "Le mie proposte"
-- src/Immobile.jsx — scheda immobile con chat, documenti, proposta
-- src/LoginPage.jsx — login/registrazione (con campo nome in signup)
+- src/Immobile.jsx — scheda immobile con chat, documenti, proposta (ANCORA HARDCODED)
+- src/LoginPage.jsx — login/registrazione (con campo nome + Conferma email in signup)
+- src/VendiForm.jsx — form 5 step con auth gate, salva immobile draft + lead venditore
 - src/AuthContext.jsx — gestione sessione + signUp con full_name + updateFullName
 - src/supabase.js — connessione Supabase
 - src/ProtectedRoute.jsx — route protetta
@@ -99,15 +102,19 @@ Sintomi osservati:
 - api/chat-immobile.js — chat AI con notifiche email
 - api/proposta-submit.js — salvataggio + email A (compratore) + email B (info@ + venditore)
 - api/yousign-proposta.js — firma digitale FEA via Yousign (con JWT auth + ownership check + ordered_signers)
-- api/vendi-submit.js — form venditore
+- api/vendi-submit.js — form venditore: scrive in venditori + immobili (draft), JWT-authenticated
 - public/proposta_acquisto_template.html — template proposta visualizzabile e caricato su Yousign
+- public/llms.txt — descriptor per AI agent (aggiornato 07/05)
 
 ## Supabase tabelle
 - chat_messages — messaggi chat (user_id, immobile_id, sessione_id, mittente, testo)
 - proposte — proposte d'acquisto (status: pending/accepted/rejected, yousign_id, compratore_nome)
-- immobili — id, indirizzo, zona, prezzo, superficie, venditore_user_id (FK auth.users)
+- immobili — id (sequence), indirizzo, zona, prezzo, superficie, tipologia, piano,
+  superficie_calpestabile, vani, camere, bagni, anno_costruzione, classe_energetica,
+  stato_immobile, foto (jsonb), descrizione, status (draft/published/sold/archived),
+  venditore_user_id (FK auth.users), created_at. RLS attive con 4 policy.
 - scuse — scuse dalla pagina /scuse
-- venditori — form venditori
+- venditori — form venditori (lead completo onboarding, ~30 campi)
 
 ## Decisioni architetturali
 - Pagamenti: esclusi MVP v1, notaio partner come depositario
@@ -115,13 +122,23 @@ Sintomi osservati:
 - Non loggati: prezzo, foto, descrizione, Fair Price Score + lucchetti documenti
 - Loggati: documenti pubblici + chat con storico + proposta d'acquisto
 - Documenti sensibili: su richiesta
-- info@realaistate.ai: notifiche operative del prodotto (proposte ricevute, alert)
+- info@realaistate.ai: ora casella autonoma Private Email — usata per
+  comunicazioni operative manuali (es. trattative B2B con Yousign, partner)
+  oltre che destinatario notifiche prodotto
 - email venditore reale (auth.users): documenti che richiedono azione personale (firma Yousign)
 - Fee: €2.000 compratore + €499 venditore — dovute solo a rogito completato
 - MAI riferimento a intermediazione immobiliare nel documento proposta
 - Blog: aggiungere in cima ad articoli.js e BlogPage.jsx
 - SRL: da aprire al primo commitment angel
 - Policy RLS hardcoded su email: VIETATE. Sempre via venditore_user_id ↔ auth.uid().
+- DMARC policy: per ora `p=none` (monitoring). Stringere a `quarantine` poi
+  `reject` solo dopo settimane di osservazione che SPF+DKIM funzionano.
+- **Separazione `venditori` vs `immobili`**: `venditori` = lead onboarding completo
+  (~30 campi: pertinenze, riscaldamento, ecc.), `immobili` = ciò che serve a
+  scheda pubblica e relazioni con proposte/chat. Vivono in parallelo, JOIN se servono.
+- **Status immobile**: nuovi inserimenti vanno in `draft`. Per pubblicare oggi
+  serve UPDATE manuale a `published` su Supabase (post-validazione Fabio).
+  Bottone "Pubblica" in dashboard venditore = task aperto.
 
 ## Memo tecnici (gotchas già imparati — non ripetere errori)
 - **Yousign `template_placeholders.signers[].label`**: case-sensitive, deve
@@ -130,8 +147,8 @@ Sintomi osservati:
 - **Yousign documents riutilizzo**: un `document_id` da `POST /documents` è
   legato a UNA sola signature request. Per riusarlo serve nuovo upload.
   Il `template_id` invece è riutilizzabile N volte (Yousign clona internamente).
-- **Yousign sandbox: delivery email instabile** (vedi sezione "Stato critico").
-  Non aggiungere workaround complessi nel codice. Aspettare/passare a production.
+- **Yousign sandbox: delivery email instabile** (06/05/2026). In production
+  trial il problema potrebbe non esistere ma API production bloccate.
 - **Vercel + html-pdf-node**: non gira (Puppeteer/Chromium ~250MB > 50MB).
   Usare API esterna tipo PDFShift quando serve PDF dinamico.
 - **PostgREST schema cache**: dopo ALTER TABLE / ADD CONSTRAINT, eseguire
@@ -149,14 +166,39 @@ Sintomi osservati:
   pienamente supportato) o email dedicate.
 - **Credenziali in chat**: MAI condividere API keys, password, service role,
   SMTP credentials in chat. Le si tengono solo in env vars / dashboard.
+- **Outlook greylisting prima email**: la prima email da un sender nuovo
+  (es. info@realaistate.ai appena attivata su Private Email) può ritardare
+  10-30 min o non arrivare. Le successive entrano normalmente.
+- **DNS propagation MX**: cambio MX records può impiegare 5-60 min globalmente.
+  Usare mxtoolbox.com per verificare (non solo `dig` locale).
+- **SPF un solo record per dominio**: se aggiungi sender (es. Brevo + Private
+  Email), li metti tutti nello stesso record con `include:` multipli, non
+  due record separati. Più di un SPF = errore di validazione.
+- **Vercel API routes in dev locale**: `npm run dev` (Vite) NON serve le API
+  in `api/`. Per testare le API in locale serve `vercel dev` — ma su Windows
+  cerca yarn al build iniziale. Workaround: `npm i -g yarn`. Nella maggior
+  parte dei casi è più semplice testare direttamente sul preview Vercel del
+  branch invece di combattere con vercel dev in locale.
+- **Schema `immobili.id bigint`**: necessita default tramite sequence per
+  insert dinamici. Pattern: `CREATE SEQUENCE ... OWNED BY ...; ALTER TABLE
+  ... SET DEFAULT nextval(...)`. Senza default l'INSERT fallisce silently.
+- **RLS legacy con `USING (true)`**: pattern velenoso, visto in `Immobili
+  pubblici in lettura`. Bypassa qualunque filtro applicativo. Sempre `qual`
+  esplicito (es. `status = 'published'`). Audit periodico delle policy.
+- **Vercel preview deployment protection**: su free plan i preview richiedono
+  login Vercel. OK se sviluppi da solo, da gestire quando arrivano collaboratori.
+- **`.env.local` in formato semplice**: `KEY=value` senza `<>`, senza spazi
+  iniziali, senza virgolette. Le env VITE_* sono lette dal client; quelle
+  senza prefisso solo dal backend.
 
 ## Switch Yousign sandbox → production (quando si farà)
-Da fare se domani sandbox è ancora rotto, oppure al primo commitment angel.
+Triggerato da: risposta commerciale Yousign che sblocca API production
+durante trial OPPURE primo commitment angel.
 Tempo stimato: 60-90 minuti.
 Steps:
 1. Login su Yousign **production** (account separato da sandbox)
 2. Verificare offerta trial 13gg gratis attiva
-3. Configurare dominio sender (DNS SPF/DKIM su realaistate.ai) — 30-60 min
+3. Configurare dominio sender (DNS SPF/DKIM su realaistate.ai) — già fatto ✅
 4. Generare nuova API key production
 5. Ricaricare template `Proposta d'Acquisto RealAIstate` (sandbox e prod sono separati)
    - Riposizionare fields firma
@@ -170,11 +212,19 @@ Steps:
 documenti che possono essere firmati senza conseguenze, o usare account email
 intestati a sé stesso.
 
-## Prossima sessione (07/05/2026)
-1. **Test Yousign sandbox** — se funziona, era blip. Se rotto, valutare switch production.
-2. llms.txt aggiornato con stato attuale prodotto
-3. Task 7: Contatta notaio (chat AI qualificante + email automatica)
-4. UX double-check email in form signup (per evitare typo come "+nme01@")
+## Prossima sessione
+- **Verificare dashboard venditore**: il nuovo immobile draft creato da
+  /vendi deve apparire in /venditore. Verificare la query in
+  VenditoreDashboard.jsx — probabilmente filtra solo `id=1` o solo published.
+- **Refactor Immobile.jsx**: leggere dati immobile da DB invece di hardcoded.
+  Sblocca scheda dinamica per ogni nuovo immobile pubblicato. PROMOSSO da
+  post-MVP a Prossima sessione perché è il prerequisito per il flusso end-to-end.
+- **Listing dinamico**: la pagina `/listing` deve leggere
+  `immobili WHERE status='published'` invece di essere statica.
+- **Bottone "Pubblica" in dashboard venditore**: porta un immobile da `draft`
+  a `published`. Trigger lato venditore (con review interna prima? da decidere).
+- Task 7: Contatta notaio (chat AI qualificante + email automatica)
+- Switch Yousign production se arriva risposta commerciale
 
 ## Da fare post-MVP
 - ImmobileVenditore.jsx: refactor CSS e navbar
@@ -182,33 +232,26 @@ intestati a sé stesso.
 - Google OAuth
 - Memoria condivisa per immobile: AI risponde con risposte già date dal venditore
 - Fair Price Score interattivo — chat AI che restituisce range OMI o score motivato
+- **Fair Price Score AI dinamico**: oggi hardcoded su Capecelatro. Per un
+  immobile nuovo l'AI deve calcolare lo score da dati OMI + caratteristiche.
 - **Generazione PDF dinamica della proposta** (PDFShift): necessaria col secondo immobile
-- **Refactor Immobile.jsx**: leggere dati immobile da DB invece di hardcoded
 - **Webhook Yousign** per aggiornare status='signed' su Supabase a firma completata
 - **Redirect post-login**: se utente clicca link CTA email mentre non è loggato,
   dopo login deve tornare alla destination, non alla home (oggi va alla home)
-- **Form "Vendi casa" reale**: oggi /vendi raccoglie info ma non crea record
-  in `immobili`. Serve flusso che: salva immobile in DB, associa
-  venditore_user_id all'utente loggato, abilita policy INSERT su immobili.
-- **Validazione form proposta/signup**: doppio campo email per evitare typo;
-  tutti i form transazionali dovrebbero averla.
+- **Validazione form /vendi**: doppio campo email anche nel form venditore
+  (è l'ultimo flusso pubblico dove l'email è digitata a mano da utente non
+  loggato — anche se ora il form è gated, i campi nome/email/telefono sono
+  ancora ribattuti dall'utente in step 4 e potrebbero divergere dall'account).
+- **Estrazione zona da indirizzo**: oggi `immobili.zona` è NULL al submit.
+  Idealmente derivata via geocoding o LLM dall'indirizzo completo.
+- **Pre-popolazione campi contatti in /vendi**: nome/email dell'utente loggato
+  potrebbero essere pre-compilati dal profilo Supabase invece che ribattuti.
 - **Link firma diretto in dashboard venditore** (opzione C non implementata):
   salvare i `signature_link` Yousign in `proposte` come jsonb e mostrarli come
   bottone "Apri pagina firma" — utile come fallback quando email non arriva.
-
-## Bilancio giornata 06/05/2026
-**Quello che ha funzionato:**
-- Refactor architetturale serio in mezza giornata: tabella immobili, RLS pulita,
-  gating dashboard, JWT backend, email transazionali con design custom,
-  sezione "Le mie proposte", custom SMTP Brevo, FK + tipi allineati
-- Pipeline end-to-end testata almeno una volta con successo (compratore ha
-  ricevuto, ha firmato — la prima signature request del pomeriggio)
-
-**Quello che è rimasto aperto:**
-- Yousign sandbox delivery instabile (non risolvibile dal nostro lato)
-
-**Lezioni:**
-- Quando codice + payload + log indicano "tutto a posto" ma il sintomo persiste,
-  il problema è esterno. Smettere di cercare bug nel proprio codice.
-- Le decisioni di switch ambiente (sandbox→production) si prendono lucidi,
-  non a fine giornata su un bug intermittente.
+- **Stringere DMARC policy** da `p=none` a `p=quarantine` poi `p=reject` dopo
+  alcune settimane di osservazione email transazionali.
+- **Configurare client email mobile** (IMAP/SMTP) per leggere info@ da iPhone
+  (oggi solo via webmail privateemail.com).
+- **Fix warning React keys** in VendiForm.jsx stepper (warning console:
+  "Each child in a list should have a unique key prop"). Cosmetico.
