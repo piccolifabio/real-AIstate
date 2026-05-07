@@ -7,7 +7,7 @@ import SiteFooter from './SiteFooter.jsx'
 export default function VenditoreDashboard() {
   const { user } = useAuth()
 
-  const [tab, setTab] = useState('conversazioni')
+  const [tab, setTab] = useState('immobili')
 
   // I miei immobili (gating)
   const [mieiImmobili, setMieiImmobili] = useState(null) // null = ancora in caricamento, [] = nessuno
@@ -25,13 +25,17 @@ export default function VenditoreDashboard() {
   const [accettando, setAccettando] = useState(null)
   const [feedbackMsg, setFeedbackMsg] = useState(null)
 
+  // --- Azioni su immobili (pubblica/archivia) ---
+  const [aggiornandoImmobile, setAggiornandoImmobile] = useState(null)
+  const [feedbackImmobile, setFeedbackImmobile] = useState(null)
+
   // ── Load miei immobili (gating) ─────────────────────────────────────────────
   useEffect(() => {
     if (!user) return
     const load = async () => {
       const { data } = await supabase
         .from('immobili')
-        .select('id, indirizzo, zona')
+        .select('id, indirizzo, zona, prezzo, status, tipologia, foto')
         .eq('venditore_user_id', user.id)
         .order('id', { ascending: true })
       setMieiImmobili(data || [])
@@ -101,6 +105,32 @@ export default function VenditoreDashboard() {
     if (data) setMessaggi(data)
   }
 
+  // ── Cambia status immobile (draft → published, published → archived) ───────
+  const cambiaStatusImmobile = async (immobileId, nuovoStatus) => {
+    setAggiornandoImmobile(immobileId)
+    setFeedbackImmobile(null)
+    try {
+      const { error } = await supabase
+        .from('immobili')
+        .update({ status: nuovoStatus })
+        .eq('id', immobileId)
+      if (error) throw error
+      setMieiImmobili(prev => prev.map(i =>
+        i.id === immobileId ? { ...i, status: nuovoStatus } : i
+      ))
+      const messaggio = nuovoStatus === 'published'
+        ? 'Immobile pubblicato. Ora è visibile a tutti.'
+        : nuovoStatus === 'archived'
+          ? 'Immobile archiviato. Non è più visibile pubblicamente.'
+          : 'Immobile aggiornato.'
+      setFeedbackImmobile({ tipo: 'ok', testo: messaggio })
+    } catch (err) {
+      setFeedbackImmobile({ tipo: 'err', testo: `Errore: ${err.message}` })
+    } finally {
+      setAggiornandoImmobile(null)
+    }
+  }
+
   // ── Accetta proposta → Yousign + Supabase (con JWT auth) ────────────────────
   const accettaProposta = async (proposta) => {
     setAccettando(proposta.id)
@@ -154,7 +184,22 @@ export default function VenditoreDashboard() {
     )
   }
 
-  const fmt = (n) => Number(n).toLocaleString('it-IT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })
+  const badgeImmobileStatus = (status) => {
+    const map = {
+      draft:     { label: 'Bozza',       bg: 'rgba(201,168,76,0.15)',  color: '#c9a84c' },
+      published: { label: 'Pubblicato',  bg: 'rgba(34,197,94,0.12)',   color: '#22c55e' },
+      sold:      { label: 'Venduto',     bg: 'rgba(124,58,237,0.15)',  color: '#a78bfa' },
+      archived:  { label: 'Archiviato',  bg: 'rgba(247,245,240,0.06)', color: 'rgba(247,245,240,0.5)' },
+    }
+    const s = map[status] || map.draft
+    return (
+      <span style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', background: s.bg, color: s.color, padding: '0.25rem 0.7rem', borderRadius: 2 }}>
+        {s.label}
+      </span>
+    )
+  }
+
+  const fmt = (n) => n != null ? Number(n).toLocaleString('it-IT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }) : '—'
   const fmtData = (d) => new Date(d).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })
 
   // ── Render: caricamento gating ──────────────────────────────────────────────
@@ -235,6 +280,7 @@ export default function VenditoreDashboard() {
         {/* Tab switcher */}
         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2.5rem', borderBottom: '1px solid rgba(247,245,240,0.08)', paddingBottom: '0' }}>
           {[
+            { key: 'immobili',      label: `I miei immobili (${mieiImmobili.length})` },
             { key: 'conversazioni', label: `Conversazioni${sessioni.length ? ` (${sessioni.length})` : ''}` },
             { key: 'proposte',      label: `Proposte${proposte.length ? ` (${proposte.length})` : ''}` },
           ].map(t => (
@@ -260,6 +306,134 @@ export default function VenditoreDashboard() {
             </button>
           ))}
         </div>
+
+        {/* ── TAB: I MIEI IMMOBILI ── */}
+        {tab === 'immobili' && (
+          <>
+            {feedbackImmobile && (
+              <div style={{ background: feedbackImmobile.tipo === 'ok' ? 'rgba(34,197,94,0.1)' : 'rgba(217,48,37,0.1)', border: `1px solid ${feedbackImmobile.tipo === 'ok' ? 'rgba(34,197,94,0.3)' : 'rgba(217,48,37,0.3)'}`, borderRadius: 3, padding: '1rem 1.25rem', marginBottom: '1.5rem', fontSize: '0.85rem', color: feedbackImmobile.tipo === 'ok' ? '#22c55e' : '#d93025', lineHeight: 1.5 }}>
+                {feedbackImmobile.tipo === 'ok' ? '✓ ' : '✗ '}{feedbackImmobile.testo}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {mieiImmobili.map((immobile) => {
+                const primaFoto = Array.isArray(immobile.foto) && immobile.foto.length > 0 ? immobile.foto[0] : null
+                const fotoUrl = primaFoto
+                  ? `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/documenti-venditori/${primaFoto}`
+                  : null
+
+                return (
+                  <div key={immobile.id} style={{ background: '#141414', border: '1px solid rgba(247,245,240,0.08)', borderRadius: 3, padding: '1.75rem', display: 'flex', gap: '1.5rem', alignItems: 'flex-start' }}>
+
+                    {/* Thumbnail */}
+                    <div style={{ width: 120, height: 120, flexShrink: 0, background: 'rgba(247,245,240,0.04)', borderRadius: 2, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {fotoUrl ? (
+                        <img src={fotoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <div style={{ fontSize: '0.7rem', color: 'rgba(247,245,240,0.25)', textAlign: 'center', padding: '0.5rem' }}>Nessuna foto</div>
+                      )}
+                    </div>
+
+                    {/* Contenuto */}
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.6rem' }}>
+                        <div>
+                          <div style={{ fontSize: '0.7rem', color: 'rgba(247,245,240,0.4)', marginBottom: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                            {immobile.tipologia || 'Immobile'}
+                          </div>
+                          <div style={{ fontSize: '1.05rem', fontWeight: 600, color: '#f7f5f0', marginBottom: '0.3rem' }}>
+                            {immobile.indirizzo}
+                          </div>
+                          {immobile.zona && (
+                            <div style={{ fontSize: '0.78rem', color: 'rgba(247,245,240,0.5)' }}>
+                              {immobile.zona}
+                            </div>
+                          )}
+                        </div>
+                        {badgeImmobileStatus(immobile.status)}
+                      </div>
+
+                      <div style={{ fontSize: '1.15rem', fontFamily: 'Bebas Neue, sans-serif', color: '#f7f5f0', letterSpacing: '0.03em', marginBottom: '1.25rem' }}>
+                        {fmt(immobile.prezzo)}
+                      </div>
+
+                      {/* Azioni */}
+                      <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                        <a
+                          href={`/immobile/${immobile.id}`}
+                          style={{ background: 'transparent', border: '1px solid rgba(247,245,240,0.15)', color: 'rgba(247,245,240,0.7)', padding: '0.6rem 1.2rem', borderRadius: 2, textDecoration: 'none', fontSize: '0.78rem', fontFamily: 'DM Sans, sans-serif', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}
+                        >
+                          Apri scheda →
+                        </a>
+
+                        {immobile.status === 'draft' && (
+                          <button
+                            onClick={() => cambiaStatusImmobile(immobile.id, 'published')}
+                            disabled={aggiornandoImmobile === immobile.id}
+                            style={{
+                              background: aggiornandoImmobile === immobile.id ? 'rgba(217,48,37,0.4)' : '#d93025',
+                              color: '#f7f5f0',
+                              border: 'none',
+                              padding: '0.6rem 1.4rem',
+                              borderRadius: 2,
+                              cursor: aggiornandoImmobile === immobile.id ? 'not-allowed' : 'pointer',
+                              fontSize: '0.78rem',
+                              fontWeight: 700,
+                              fontFamily: 'DM Sans, sans-serif',
+                              letterSpacing: '0.05em',
+                              textTransform: 'uppercase',
+                            }}
+                          >
+                            {aggiornandoImmobile === immobile.id ? 'Pubblicazione...' : 'Pubblica'}
+                          </button>
+                        )}
+
+                        {immobile.status === 'published' && (
+                          <button
+                            onClick={() => cambiaStatusImmobile(immobile.id, 'archived')}
+                            disabled={aggiornandoImmobile === immobile.id}
+                            style={{
+                              background: 'transparent',
+                              color: 'rgba(247,245,240,0.5)',
+                              border: '1px solid rgba(247,245,240,0.15)',
+                              padding: '0.6rem 1.2rem',
+                              borderRadius: 2,
+                              cursor: aggiornandoImmobile === immobile.id ? 'not-allowed' : 'pointer',
+                              fontSize: '0.78rem',
+                              fontFamily: 'DM Sans, sans-serif',
+                            }}
+                          >
+                            {aggiornandoImmobile === immobile.id ? 'Archiviazione...' : 'Archivia'}
+                          </button>
+                        )}
+
+                        {immobile.status === 'archived' && (
+                          <button
+                            onClick={() => cambiaStatusImmobile(immobile.id, 'published')}
+                            disabled={aggiornandoImmobile === immobile.id}
+                            style={{
+                              background: 'transparent',
+                              color: 'rgba(247,245,240,0.7)',
+                              border: '1px solid rgba(247,245,240,0.15)',
+                              padding: '0.6rem 1.2rem',
+                              borderRadius: 2,
+                              cursor: aggiornandoImmobile === immobile.id ? 'not-allowed' : 'pointer',
+                              fontSize: '0.78rem',
+                              fontFamily: 'DM Sans, sans-serif',
+                            }}
+                          >
+                            {aggiornandoImmobile === immobile.id ? '...' : 'Ripubblica'}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </>
+        )}
 
         {/* ── TAB: CONVERSAZIONI ── */}
         {tab === 'conversazioni' && (
