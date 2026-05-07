@@ -390,7 +390,7 @@ const badgeImmobileStatus = (status) => {
                       {/* Azioni */}
                       <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                         <a
-                          href={`/immobile/${immobile.id}`}
+                          href={`/immobili/${immobile.id}`}
                           style={{ background: 'transparent', border: '1px solid rgba(247,245,240,0.15)', color: 'rgba(247,245,240,0.7)', padding: '0.6rem 1.2rem', borderRadius: 2, textDecoration: 'none', fontSize: '0.78rem', fontFamily: 'DM Sans, sans-serif', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}
                         >
                           Apri scheda →

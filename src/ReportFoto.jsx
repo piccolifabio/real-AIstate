@@ -151,7 +151,7 @@ export default function ReportFotoPage() {
       <style>{styles}</style>
       <nav className="nav">
         <a href="/" className="nav-logo">Real<span>AI</span>state</a>
-        <a href="/immobile/1/vendi" className="nav-back">← Torna alla tua scheda</a>
+        <a href="/immobili/1/vendi" className="nav-back">← Torna alla tua scheda</a>
       </nav>
 
       <div className="hero">

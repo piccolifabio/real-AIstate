@@ -77,7 +77,7 @@ const immobiliFittizi = [
 function PropCardReal({ imm }) {
   const cover = imm.foto?.[0];
   const titolo = imm.titolo || `Immobile · ${imm.zona || ""}`;
-  const link = `/compra/${imm.id}`;
+  const link = `/immobili/${imm.id}`;
 
   return (
     <a href={link} style={{ textDecoration: "none" }}>

@@ -311,7 +311,7 @@ export default function ComeFunziona() {
               </>
             ) : (
               <>
-                <a href="/immobile/1" className="cf-btn-red">Vedi un esempio →</a>
+                <a href="/immobili/1" className="cf-btn-red">Vedi un esempio →</a>
                 <a href="/faq" className="cf-btn-outline">Hai domande? Leggi le FAQ</a>
               </>
             )}

@@ -268,9 +268,11 @@ export default function App() {
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/termini" element={<Termini />} />
         <Route path="/scuse" element={<ScusePage />} />
+        <Route path="/immobili/:id" element={<ImmobilePage />} />
+        <Route path="/immobili/:id/vendi" element={<ImmobileVenditore />} />
         <Route path="/compra/:id" element={<ImmobilePage />} />
         <Route path="/compra/:id/vendi" element={<ImmobileVenditore />} />
-        <Route path="/immobile/:id/report-foto" element={<ReportFotoPage />} />
+        <Route path="/immobili/:id/report-foto" element={<ReportFotoPage />} />
         <Route path="/metodologia" element={<MetodologiaPage />} />
         <Route path="/admin" element={<AdminPage />} />
         <Route path="/vendi" element={<VendiForm />} />

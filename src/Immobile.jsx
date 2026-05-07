@@ -262,18 +262,6 @@ const initialMessages = [
   }
 ];
 
-const FOTO_BASE = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/immobili/1/pub`;
-const FOTO = [
-  "soggiorno1.jpg",
-  "soggiorno2.jpg",
-  "soggiornoecucina1.jpg",
-  "stanzaletto.jpg",
-  "studio.jpg",
-  "terrazzo.jpg",
-  "bagno.jpg",
-  "corridoio.jpg",
-];
-
 const deltaLabel = { higher: "▲ +5% vs questo", lower: "▼ -3% vs questo", similar: "≈ Allineato" };
 
 function PropostaModal({ immobile, user, onClose }) {
@@ -281,8 +269,7 @@ function PropostaModal({ immobile, user, onClose }) {
   const [status, setStatus] = useState('idle')
   const [error, setError] = useState('')
 
-const handleSubmit = async () => {
-    // Validazione
+  const handleSubmit = async () => {
     if (!form.importo || isNaN(Number(form.importo)) || Number(form.importo) <= 0) {
       setError('Inserisci un importo valido')
       return
@@ -341,7 +328,7 @@ const handleSubmit = async () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
               <div>
                 <label style={{ fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(247,245,240,0.5)', display: 'block', marginBottom: '0.4rem' }}>Importo offerto (€) *</label>
-<input type="number" min="1" step="1000" placeholder="es. 380000" value={form.importo} onChange={e => setForm(f => ({...f, importo: e.target.value}))} style={{ width: '100%', padding: '0.85rem 1rem', background: 'rgba(247,245,240,0.04)', border: '1px solid rgba(247,245,240,0.1)', borderRadius: 2, color: '#f7f5f0', fontFamily: 'DM Sans, sans-serif', fontSize: '0.95rem', outline: 'none', boxSizing: 'border-box' }} />
+                <input type="number" min="1" step="1000" placeholder="es. 380000" value={form.importo} onChange={e => setForm(f => ({...f, importo: e.target.value}))} style={{ width: '100%', padding: '0.85rem 1rem', background: 'rgba(247,245,240,0.04)', border: '1px solid rgba(247,245,240,0.1)', borderRadius: 2, color: '#f7f5f0', fontFamily: 'DM Sans, sans-serif', fontSize: '0.95rem', outline: 'none', boxSizing: 'border-box' }} />
               </div>
               <div>
                 <label style={{ fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(247,245,240,0.5)', display: 'block', marginBottom: '0.4rem' }}>Data rogito proposta</label>
@@ -357,16 +344,16 @@ const handleSubmit = async () => {
               </div>
             </div>
 
-{error && <div style={{ color: '#d93025', fontSize: '0.82rem', marginBottom: '1rem' }}>{error}</div>}
+            {error && <div style={{ color: '#d93025', fontSize: '0.82rem', marginBottom: '1rem' }}>{error}</div>}
             {status === 'error' && <div style={{ color: '#d93025', fontSize: '0.82rem', marginBottom: '1rem' }}>Qualcosa è andato storto. Riprova.</div>}
 
-<div style={{ background: 'rgba(45,106,79,0.08)', border: '1px solid rgba(45,106,79,0.2)', borderRadius: 2, padding: '1rem', marginBottom: '1rem', fontSize: '0.78rem', color: 'rgba(247,245,240,0.6)', lineHeight: 1.6 }}>
-  <strong style={{ color: '#4ade80', display: 'block', marginBottom: '0.3rem' }}>ℹ️ Come funziona</strong>
-  Questa proposta diventa vincolante solo dopo la firma digitale di entrambe le parti. Il venditore la valuterà e ti risponderà entro 24 ore.{' '}
-  <a href="/proposta_acquisto_template.html" target="_blank" rel="noopener noreferrer" style={{ color: '#4ade80', fontWeight: 600 }}>
-    Visualizza il documento che firmerai →
-  </a>
-</div>
+            <div style={{ background: 'rgba(45,106,79,0.08)', border: '1px solid rgba(45,106,79,0.2)', borderRadius: 2, padding: '1rem', marginBottom: '1rem', fontSize: '0.78rem', color: 'rgba(247,245,240,0.6)', lineHeight: 1.6 }}>
+              <strong style={{ color: '#4ade80', display: 'block', marginBottom: '0.3rem' }}>ℹ️ Come funziona</strong>
+              Questa proposta diventa vincolante solo dopo la firma digitale di entrambe le parti. Il venditore la valuterà e ti risponderà entro 24 ore.{' '}
+              <a href="/proposta_acquisto_template.html" target="_blank" rel="noopener noreferrer" style={{ color: '#4ade80', fontWeight: 600 }}>
+                Visualizza il documento che firmerai →
+              </a>
+            </div>
             <button onClick={handleSubmit} disabled={!form.importo || status === 'loading'} style={{ width: '100%', padding: '1rem', background: '#2d6a4f', border: 'none', borderRadius: 2, color: 'white', fontFamily: 'DM Sans, sans-serif', fontSize: '0.85rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer' }}>
               {status === 'loading' ? '...' : 'Invia proposta →'}
             </button>
@@ -393,34 +380,36 @@ function AiChat({ user, immobileId, immobile }) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [sessioneId] = useState(() => `sess_${Date.now()}_${Math.random().toString(36).slice(2)}`);
+  const bottomRef = useRef(null);
+  const prevLenChat = useRef(0);
+
   useEffect(() => {
-  if (!user) return
-  const loadHistory = async () => {
-    const { data } = await supabase
-      .from('chat_messages')
-      .select('*')
-      .eq('immobile_id', immobileId)
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: true })
-    
-    if (data && data.length > 0) {
-      setMessages(data.map(m => ({
-        role: m.mittente === 'compratore' ? 'user' : 'ai',
-        text: m.testo,
-        note: null
-      })))
+    if (!user) return
+    const loadHistory = async () => {
+      const { data } = await supabase
+        .from('chat_messages')
+        .select('*')
+        .eq('immobile_id', immobileId)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: true })
+
+      if (data && data.length > 0) {
+        setMessages(data.map(m => ({
+          role: m.mittente === 'compratore' ? 'user' : 'ai',
+          text: m.testo,
+          note: null
+        })))
+      }
     }
-  }
-  loadHistory()
-}, [user])
-  
- const prevLenChat = useRef(0);
-useEffect(() => {
-  if (messages.length > prevLenChat.current) {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }
-  prevLenChat.current = messages.length;
-}, [messages, loading]);
+    loadHistory()
+  }, [user, immobileId])
+
+  useEffect(() => {
+    if (messages.length > prevLenChat.current) {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+    prevLenChat.current = messages.length;
+  }, [messages, loading]);
 
   const send = async () => {
     if (!input.trim() || loading) return;
@@ -500,11 +489,8 @@ useEffect(() => {
     setLoading(false);
   };
 
-  const bottomRef = useRef(null);
-
   return (
     <div className="chat-box">
-
       <div className="chat-messages">
         {messages.map((m, i) => (
           <div className={`chat-msg ${m.role}`} key={i}>
@@ -550,14 +536,14 @@ function AffordabilityChat({ immobile }) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef(null);
+  const prevLenAfford = useRef(0);
 
-   const prevLenAfford = useRef(0);
-useEffect(() => {
-  if (messages.length > prevLenAfford.current) {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }
-  prevLenAfford.current = messages.length;
-}, [messages, loading]);
+  useEffect(() => {
+    if (messages.length > prevLenAfford.current) {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+    prevLenAfford.current = messages.length;
+  }, [messages, loading]);
 
   const send = async () => {
     if (!input.trim() || loading) return;
@@ -623,17 +609,15 @@ export default function ImmobilePage() {
   const { user } = useAuth()
   const [saved, setSaved] = useState(false);
   const [showProposta, setShowProposta] = useState(false)
-  const [activeTab, setActiveTab] = useState("analisi");
-  const [mapTab, setMapTab] = useState("streetview");
-  const chatRef = useRef(null);
+   const chatRef = useRef(null);
   const [activePhoto, setActivePhoto] = useState(0);
 
   // Stati per fetch immobile dal DB
   const [immobileDb, setImmobileDb] = useState(null);
   const [loadingImmobile, setLoadingImmobile] = useState(true);
-  const [errorImmobile, setErrorImmobile] = useState(null);
+
   // Costruisce l'oggetto immobile usando dati DB con fallback hardcoded
-  // per i campi non ancora presenti in tabella (ai_summary, comparabili, ecc.)
+  // per i campi non ancora presenti in tabella (comparabili, documenti, ecc.)
   const immobile = {
     ...IMMOBILE_FALLBACK,
     ...(immobileDb && {
@@ -644,7 +628,7 @@ export default function ImmobilePage() {
       prezzo: immobileDb.prezzo ?? IMMOBILE_FALLBACK.prezzo,
       superficie_catastale: immobileDb.superficie ?? IMMOBILE_FALLBACK.superficie_catastale,
       superficie_calpestabile: immobileDb.superficie_calpestabile ?? IMMOBILE_FALLBACK.superficie_calpestabile,
-      locali: immobileDb.vani ?? IMMOBILE_FALLBACK.locali,
+      locali: immobileDb.locali ?? IMMOBILE_FALLBACK.locali,
       bagni: immobileDb.bagni ?? IMMOBILE_FALLBACK.bagni,
       piano: immobileDb.piano ?? IMMOBILE_FALLBACK.piano,
       classe_energetica: immobileDb.classe_energetica ?? IMMOBILE_FALLBACK.classe_energetica,
@@ -653,7 +637,7 @@ export default function ImmobilePage() {
       descrizione: immobileDb.descrizione ?? IMMOBILE_FALLBACK.descrizione,
       stato_immobile: immobileDb.stato_immobile ?? IMMOBILE_FALLBACK.stato_immobile,
       tipologia: immobileDb.tipologia ?? IMMOBILE_FALLBACK.tipologia,
-            ascensore: immobileDb.ascensore ?? IMMOBILE_FALLBACK.ascensore,
+      ascensore: immobileDb.ascensore ?? IMMOBILE_FALLBACK.ascensore,
       garage: immobileDb.garage ?? IMMOBILE_FALLBACK.garage,
       terrazzo: immobileDb.terrazzo ?? IMMOBILE_FALLBACK.terrazzo,
       giardino_condominiale: immobileDb.giardino_condominiale ?? IMMOBILE_FALLBACK.giardino_condominiale,
@@ -661,6 +645,10 @@ export default function ImmobilePage() {
       riscaldamento: immobileDb.riscaldamento ?? IMMOBILE_FALLBACK.riscaldamento,
       acqua_calda: immobileDb.acqua_calda ?? IMMOBILE_FALLBACK.acqua_calda,
       disponibilita_rogito: immobileDb.disponibilita_rogito ?? IMMOBILE_FALLBACK.disponibilita_rogito,
+      foto: immobileDb.foto ?? null,
+      scores: {
+        prezzo: immobileDb.fair_price_score ?? IMMOBILE_FALLBACK.scores.prezzo,
+      },
       ai_summary: immobileDb.ai_summary ?? IMMOBILE_FALLBACK.ai_summary,
       punti_forza: immobileDb.punti_forza ?? IMMOBILE_FALLBACK.punti_forza,
       domande: immobileDb.domande_consigliate ?? IMMOBILE_FALLBACK.domande,
@@ -672,22 +660,13 @@ export default function ImmobilePage() {
     const fetchImmobile = async () => {
       if (!immobileId) return;
       setLoadingImmobile(true);
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('immobili')
         .select('*')
         .eq('id', immobileId)
         .eq('status', 'published')
         .maybeSingle();
-
-      console.log('[Immobile fetch]', { immobileId, data, error });
-
-      if (error) {
-        setErrorImmobile(error.message);
-      } else if (!data) {
-        setErrorImmobile('Immobile non trovato');
-      } else {
-        setImmobileDb(data);
-      }
+      if (data) setImmobileDb(data);
       setLoadingImmobile(false);
     };
     fetchImmobile();
@@ -699,21 +678,70 @@ export default function ImmobilePage() {
 
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
+  // Sezioni AI-generate al submit di /vendi: mostriamo solo se popolate in DB.
+  const haAiSummary = !!immobileDb?.ai_summary;
+  const haPuntiForza = Array.isArray(immobileDb?.punti_forza) && immobileDb.punti_forza.length > 0;
+  const haDomande = Array.isArray(immobileDb?.domande_consigliate) && immobileDb.domande_consigliate.length > 0;
+  // Documenti e comparabili sono ancora hardcoded nel fallback (non esistono come colonne DB).
+  // Per ora visibili solo su Capecelatro; futuro task dedicato.
+  const haDocumenti = immobileDb?.id === 1;
+  const haComparabili = immobileDb?.id === 1;
+
   const docsVerified = immobile.documenti.filter(d => d.verificato).length;
   const docsTotal = immobile.documenti.length;
   const allVerified = docsVerified === docsTotal;
 
+  // Indirizzo per mappa/Street View link
+  const indirizzoMappa = `${immobile.indirizzo}${immobile.zona ? ', ' + immobile.zona : ''}`;
+  const queryMappa = encodeURIComponent(indirizzoMappa);
+  const googleKey = import.meta.env.VITE_GOOGLE_MAPS_KEY;
+
+  // Immobile non trovato o non pubblicato
+  if (!loadingImmobile && !immobileDb) {
+    return (
+      <>
+        <NavBar />
+        <div style={{ minHeight: "70vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "3rem", textAlign: "center" }}>
+          <div style={{ fontFamily: "Bebas Neue, sans-serif", fontSize: "3rem", color: "var(--white)", marginBottom: "1rem" }}>
+            Immobile non disponibile.
+          </div>
+          <div style={{ fontSize: "0.95rem", color: "rgba(247,245,240,0.5)", marginBottom: "2rem", maxWidth: "480px", lineHeight: 1.6 }}>
+            L'annuncio che cerchi non è più pubblico, è stato rimosso, oppure non esiste.
+          </div>
+          <a href="/compra" style={{ background: "var(--red)", color: "white", padding: "0.9rem 1.8rem", borderRadius: 2, textDecoration: "none", fontSize: "0.85rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+            Vedi tutti gli immobili →
+          </a>
+        </div>
+        <SiteFooter />
+      </>
+    );
+  }
+
+  // Foto array
+  const fotoArr = Array.isArray(immobile.foto) && immobile.foto.length > 0 ? immobile.foto : [];
+  const cover = fotoArr[activePhoto] || fotoArr[0];
+  const thumb1 = fotoArr[1] || fotoArr[0];
+  const thumb2 = fotoArr[2] || fotoArr[0];
+
   return (
     <>
       <style>{styles}</style>
-
-      {/* NAV */}
       <NavBar />
 
       {/* GALLERY */}
       <div className="gallery">
-        <div className="gallery-main" onClick={() => setActivePhoto((activePhoto + 1) % FOTO.length)}>
-          <img src={`${FOTO_BASE}/${FOTO[activePhoto]}`} alt={FOTO[activePhoto]} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+        <div className="gallery-main" onClick={() => fotoArr.length > 0 && setActivePhoto((activePhoto + 1) % fotoArr.length)}>
+          {cover ? (
+            <img src={cover} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+          ) : (
+            <div className="gallery-placeholder">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <path d="M21 15l-5-5L5 21"/>
+              </svg>
+            </div>
+          )}
           <div className="gallery-badge">
             {allVerified
               ? <span className="badge badge-verified">✓ Immobile Verificato</span>
@@ -722,13 +750,15 @@ export default function ImmobilePage() {
             <span className="badge badge-score">Fair Price {immobile.scores.prezzo}/100</span>
             <span className="badge badge-new">Nuovo</span>
           </div>
-          <div className="gallery-count">{activePhoto + 1} / {FOTO.length} foto</div>
+          {fotoArr.length > 0 && (
+            <div className="gallery-count">{activePhoto + 1} / {fotoArr.length} foto</div>
+          )}
         </div>
-        <div className="gallery-thumb" onClick={() => setActivePhoto(1)}>
-          <img src={`${FOTO_BASE}/${FOTO[1]}`} alt={FOTO[1]} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+        <div className="gallery-thumb" onClick={() => fotoArr.length > 1 && setActivePhoto(1)}>
+          {thumb1 && <img src={thumb1} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />}
         </div>
-        <div className="gallery-thumb" onClick={() => setActivePhoto(2)}>
-          <img src={`${FOTO_BASE}/${FOTO[2]}`} alt={FOTO[2]} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+        <div className="gallery-thumb" onClick={() => fotoArr.length > 2 && setActivePhoto(2)}>
+          {thumb2 && <img src={thumb2} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />}
         </div>
       </div>
 
@@ -760,7 +790,7 @@ export default function ImmobilePage() {
             </div>
           </div>
 
-        {/* DESCRIZIONE */}
+          {/* DESCRIZIONE */}
           {immobile.descrizione && (
             <div style={{ marginBottom: "2rem", paddingBottom: "2rem", borderBottom: "1px solid var(--border)" }}>
               <h2 className="section-title" style={{ marginBottom: "1rem" }}>Descrizione</h2>
@@ -781,160 +811,158 @@ export default function ImmobilePage() {
           )}
 
           {/* AI PANEL */}
-          <div className="ai-panel">
-            <div className="ai-panel-header">
-              <div className="ai-label"><div className="ai-dot" /> Analisi AI</div>
-              <div style={{ fontSize: "0.7rem", color: "var(--muted)", letterSpacing: "0.06em" }}>Aggiornata oggi</div>
-            </div>
+          {haAiSummary && (
+            <div className="ai-panel">
+              <div className="ai-panel-header">
+                <div className="ai-label"><div className="ai-dot" /> Analisi AI</div>
+                <div style={{ fontSize: "0.7rem", color: "var(--muted)", letterSpacing: "0.06em" }}>Aggiornata oggi</div>
+              </div>
 
-            <div className="ai-summary">{immobile.ai_summary}</div>
+              <div className="ai-summary">{immobile.ai_summary}</div>
 
-            <div style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", background: "rgba(45,106,79,0.12)", border: "1px solid rgba(45,106,79,0.25)", borderRadius: "2px", padding: "0.4rem 0.9rem", marginBottom: "1.5rem" }}>
-              <span style={{ color: "var(--green-light)", fontSize: "0.7rem", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase" }}>✓ Validato da dati OMI — Agenzia delle Entrate · Zona D24 · 2° sem. 2025</span>
-              <a href="/metodologia" style={{ color: "var(--gold)", fontSize: "0.7rem", textDecoration: "none", borderLeft: "1px solid rgba(247,245,240,0.1)", paddingLeft: "0.5rem", marginLeft: "0.2rem" }}>Come calcoliamo →</a>
-            </div>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", background: "rgba(45,106,79,0.12)", border: "1px solid rgba(45,106,79,0.25)", borderRadius: "2px", padding: "0.4rem 0.9rem", marginBottom: "1.5rem" }}>
+                <span style={{ color: "var(--green-light)", fontSize: "0.7rem", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase" }}>✓ Validato da dati OMI — Agenzia delle Entrate · Zona D24 · 2° sem. 2025</span>
+                <a href="/metodologia" style={{ color: "var(--gold)", fontSize: "0.7rem", textDecoration: "none", borderLeft: "1px solid rgba(247,245,240,0.1)", paddingLeft: "0.5rem", marginLeft: "0.2rem" }}>Come calcoliamo →</a>
+              </div>
 
-            <div className="ai-scores">
-              {[
-                { label: "Fair Price Score", val: immobile.scores.prezzo, cls: "green", color: "#4ade80" },
-              ].map(s => (
-                <div className="score-card" key={s.label}>
-                  <div className={`score-num ${s.cls}`}>{s.val}</div>
-                  <div className="score-label">{s.label}</div>
+              <div className="ai-scores">
+                <div className="score-card">
+                  <div className="score-num green">{immobile.scores.prezzo}</div>
+                  <div className="score-label">Fair Price Score</div>
                   <div className="score-bar-wrap">
-                    <div className="score-bar-fill" style={{ width: `${s.val}%`, background: s.color }} />
+                    <div className="score-bar-fill" style={{ width: `${immobile.scores.prezzo}%`, background: "#4ade80" }} />
                   </div>
+                </div>
+              </div>
+
+              {haPuntiForza && (
+                <div className="ai-grid">
+                  <div className="ai-section" style={{ gridColumn: "1 / -1" }}>
+                    <div className="ai-section-title">✓ Punti di forza</div>
+                    {immobile.punti_forza.map((p, i) => (
+                      <div className="ai-item" key={i}>
+                        <span className="ai-item-icon" style={{ color: "#4ade80" }}>→</span>
+                        <span>{p}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* QUESTIONS */}
+          {haDomande && (
+            <div className="questions-section">
+              <h2 className="section-title">Domande consigliate per la visita</h2>
+              <div style={{ fontSize: "0.82rem", color: "var(--muted)", marginBottom: "0.5rem" }}>
+                Generate dall'AI analizzando l&apos;annuncio.
+              </div>
+              <div style={{ fontSize: "0.82rem", color: "var(--green-light)", marginBottom: "1.5rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                <span>✓</span>
+                <span>Il venditore le ha ricevute e si è preparato. Nessuna sorpresa per nessuno.</span>
+              </div>
+              {immobile.domande.map((q, i) => (
+                <div className="question-item" key={i}>
+                  <div className="question-num">0{i + 1}</div>
+                  <div className="question-text">{q}</div>
                 </div>
               ))}
             </div>
-
-            <div className="ai-grid">
-              <div className="ai-section" style={{ gridColumn: "1 / -1" }}>
-                <div className="ai-section-title">✓ Punti di forza</div>
-                {immobile.punti_forza.map((p, i) => (
-                  <div className="ai-item" key={i}>
-                    <span className="ai-item-icon" style={{ color: "#4ade80" }}>→</span>
-                    <span>{p}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* QUESTIONS */}
-          <div className="questions-section">
-            <h2 className="section-title">Domande consigliate per la visita</h2>
-            <div style={{ fontSize: "0.82rem", color: "var(--muted)", marginBottom: "0.5rem" }}>
-              Generate dall'AI analizzando l&apos;annuncio.
-            </div>
-            <div style={{ fontSize: "0.82rem", color: "var(--green-light)", marginBottom: "1.5rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
-              <span>✓</span>
-              <span>Il venditore le ha ricevute e si è preparato. Nessuna sorpresa per nessuno.</span>
-            </div>
-            {immobile.domande.map((q, i) => (
-              <div className="question-item" key={i}>
-                <div className="question-num">0{i + 1}</div>
-                <div className="question-text">{q}</div>
-              </div>
-            ))}
-          </div>
+          )}
 
           {/* DOCUMENTS */}
-<div className="docs-section">
-  <h2 className="section-title">Documenti</h2>
-  <div style={{ fontSize: "0.82rem", color: "var(--muted)", marginBottom: "1rem" }}>
-    {docsVerified} su {docsTotal} documenti verificati.
-    {!allVerified && <span style={{ color: "var(--gold)" }}> Il venditore ha 30 giorni per completare la documentazione.</span>}
-  </div>
-  {!user && (
-  <div style={{ background: "rgba(217,48,37,0.08)", border: "1px solid rgba(217,48,37,0.2)", borderRadius: 3, padding: "1.2rem 1.5rem", marginBottom: "1rem", display: "flex", alignItems: "center", gap: "1rem" }}>
-    <span style={{ fontSize: "1.2rem" }}>🔒</span>
-    <div>
-      <div style={{ fontSize: "0.82rem", fontWeight: 600, color: "#f7f5f0", marginBottom: "0.3rem" }}>Accedi per scaricare i documenti</div>
-      <div style={{ fontSize: "0.78rem", color: "rgba(247,245,240,0.5)" }}>
-        Registrati gratuitamente per accedere a planimetria, visura catastale e APE.{" "}
-        <a href="/login" style={{ color: "var(--red)", textDecoration: "none", fontWeight: 600 }}>Accedi →</a>
-      </div>
-    </div>
-  </div>
-)}
-<div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 2, padding: "1rem", marginBottom: "1rem", display: "flex", alignItems: "center", gap: "0.8rem" }}>
-  <div style={{ width: 36, height: 36, borderRadius: 2, background: "rgba(217,48,37,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1rem", flexShrink: 0 }}>📄</div>
-  <div style={{ flex: 1 }}>
-    <div style={{ fontSize: "0.82rem", fontWeight: 500, color: "var(--white)", marginBottom: "0.2rem" }}>Template Proposta d'Acquisto</div>
-    <div style={{ fontSize: "0.68rem", letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--green-light)" }}>Disponibile</div>
-<a href="/proposta_acquisto_template.html" target="_blank" rel="noopener noreferrer" style={{ fontSize: "0.7rem", color: "var(--red)", fontWeight: 600, textDecoration: "none", display: "block", marginTop: "0.3rem" }}>↓ Visualizza documento</a>
-  </div>
-</div>
-  <div className="docs-grid">
-    {immobile.documenti.map((doc, i) => {
-      const pubblico = ["Visura Catastale", "Planimetria Catastale", "APE — Classe Energetica C"].includes(doc.nome)
-      return (
-        <div className="doc-item" key={i}>
-          <div className={`doc-icon ${doc.verificato ? "verified" : "missing"}`}>
-            {doc.verificato ? "✓" : "✗"}
-          </div>
-          <div className="doc-info">
-            <div className="doc-name">{doc.nome}</div>
-            <div className={`doc-status ${doc.verificato ? "ok" : "ko"}`}>
-              {doc.verificato ? "Verificato" : "Mancante"}
-            </div>
-            {doc.verificato && (
-              pubblico ? (
-                user ? (
-                  <div style={{ fontSize: "0.7rem", color: "var(--red)", marginTop: "0.3rem", cursor: "pointer", fontWeight: 600 }}>
-                    ↓ Scarica
+          {haDocumenti && (
+            <div className="docs-section">
+              <h2 className="section-title">Documenti</h2>
+              <div style={{ fontSize: "0.82rem", color: "var(--muted)", marginBottom: "1rem" }}>
+                {docsVerified} su {docsTotal} documenti verificati.
+                {!allVerified && <span style={{ color: "var(--gold)" }}> Il venditore ha 30 giorni per completare la documentazione.</span>}
+              </div>
+              {!user && (
+                <div style={{ background: "rgba(217,48,37,0.08)", border: "1px solid rgba(217,48,37,0.2)", borderRadius: 3, padding: "1.2rem 1.5rem", marginBottom: "1rem", display: "flex", alignItems: "center", gap: "1rem" }}>
+                  <span style={{ fontSize: "1.2rem" }}>🔒</span>
+                  <div>
+                    <div style={{ fontSize: "0.82rem", fontWeight: 600, color: "#f7f5f0", marginBottom: "0.3rem" }}>Accedi per scaricare i documenti</div>
+                    <div style={{ fontSize: "0.78rem", color: "rgba(247,245,240,0.5)" }}>
+                      Registrati gratuitamente per accedere a planimetria, visura catastale e APE.{" "}
+                      <a href="/login" style={{ color: "var(--red)", textDecoration: "none", fontWeight: 600 }}>Accedi →</a>
+                    </div>
                   </div>
-                ) : (
-                  <div style={{ fontSize: "0.7rem", color: "var(--muted)", marginTop: "0.3rem" }}>
-                    🔒 Accedi per scaricare
-                  </div>
-                )
-              ) : (
-                <div style={{ fontSize: "0.7rem", color: "var(--muted)", marginTop: "0.3rem" }}>
-                  Su richiesta
                 </div>
-              )
-            )}
-          </div>
-        </div>
-      )
-    })}
-  </div>
-</div>
-
-          {/* MAP & STREET VIEW */}
-          <div className="map-section">
-            <h2 className="section-title">Posizione e Street View</h2>
-            <div style={{ fontSize: "0.82rem", color: "var(--muted)", marginBottom: "1rem" }}>
-              Via Alfonso Capecelatro, 51 · Milano · San Siro
-            </div>
-            <div className="map-container">
-              <div style={{ background: "var(--warm)", borderBottom: "1px solid var(--border)" }}>
-                <div className="map-tabs">
-                  <button className={`map-tab ${mapTab === "streetview" ? "active" : ""}`} onClick={() => setMapTab("streetview")}>📷 Street View</button>
-                  <button className={`map-tab ${mapTab === "mappa" ? "active" : ""}`} onClick={() => setMapTab("mappa")}>🗺 Mappa</button>
+              )}
+              <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 2, padding: "1rem", marginBottom: "1rem", display: "flex", alignItems: "center", gap: "0.8rem" }}>
+                <div style={{ width: 36, height: 36, borderRadius: 2, background: "rgba(217,48,37,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1rem", flexShrink: 0 }}>📄</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: "0.82rem", fontWeight: 500, color: "var(--white)", marginBottom: "0.2rem" }}>Template Proposta d'Acquisto</div>
+                  <div style={{ fontSize: "0.68rem", letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--green-light)" }}>Disponibile</div>
+                  <a href="/proposta_acquisto_template.html" target="_blank" rel="noopener noreferrer" style={{ fontSize: "0.7rem", color: "var(--red)", fontWeight: 600, textDecoration: "none", display: "block", marginTop: "0.3rem" }}>↓ Visualizza documento</a>
                 </div>
               </div>
-              {mapTab === "streetview" ? (
-                <iframe
-                  className="map-frame"
-                  src="https://www.google.com/maps/embed?pb=!4v1775988656589!6m8!1m7!1sDG_9D_LELR8eSKQj9bghTA!2m2!1d45.47161747952469!2d9.12922276417182!3f227.02966046055374!4f-2.0427435132226037!5f0.7820865974627469"
-                  allowFullScreen
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  title="Street View Via Capecelatro 51 Milano"
-                />
-              ) : (
-                <iframe
-                  className="map-frame"
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2799.5!2d9.1369!3d45.4654!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4786c3b3b3b3b3b3%3A0x4786c3b3b3b3b3b3!2sVia%20Alfonso%20Capecelatro%2C%2051%2C%2020148%20Milano%20MI!5e0!3m2!1sit!2sit!4v1700000000000"
-                  allowFullScreen
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  title="Mappa Via Capecelatro 51 Milano"
-                />
-              )}
+              <div className="docs-grid">
+                {immobile.documenti.map((doc, i) => {
+                  const pubblico = ["Visura Catastale", "Planimetria Catastale", "APE — Classe Energetica C"].includes(doc.nome)
+                  return (
+                    <div className="doc-item" key={i}>
+                      <div className={`doc-icon ${doc.verificato ? "verified" : "missing"}`}>
+                        {doc.verificato ? "✓" : "✗"}
+                      </div>
+                      <div className="doc-info">
+                        <div className="doc-name">{doc.nome}</div>
+                        <div className={`doc-status ${doc.verificato ? "ok" : "ko"}`}>
+                          {doc.verificato ? "Verificato" : "Mancante"}
+                        </div>
+                        {doc.verificato && (
+                          pubblico ? (
+                            user ? (
+                              <div style={{ fontSize: "0.7rem", color: "var(--red)", marginTop: "0.3rem", cursor: "pointer", fontWeight: 600 }}>
+                                ↓ Scarica
+                              </div>
+                            ) : (
+                              <div style={{ fontSize: "0.7rem", color: "var(--muted)", marginTop: "0.3rem" }}>
+                                🔒 Accedi per scaricare
+                              </div>
+                            )
+                          ) : (
+                            <div style={{ fontSize: "0.7rem", color: "var(--muted)", marginTop: "0.3rem" }}>
+                              Su richiesta
+                            </div>
+                          )
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* MAP */}
+          <div className="map-section">
+            <h2 className="section-title">Posizione</h2>
+            <div style={{ fontSize: "0.82rem", color: "var(--muted)", marginBottom: "0.5rem" }}>
+              {immobile.indirizzo}{immobile.zona ? ` · ${immobile.zona}` : ""}
+            </div>
+            <div style={{ fontSize: "0.78rem", color: "rgba(247,245,240,0.5)", marginBottom: "1rem" }}>
+              <a
+                href={`https://www.google.com/maps/place/?q=${queryMappa}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: "var(--red)", textDecoration: "none", fontWeight: 600 }}
+              >
+                Apri in Google Maps →
+              </a>
+              <span style={{ marginLeft: "0.6rem" }}>(Street View disponibile cliccando il pegman 🚶)</span>
+            </div>
+            <div className="map-container">
+              <iframe
+                className="map-frame"
+                src={`https://www.google.com/maps/embed/v1/place?key=${googleKey}&q=${queryMappa}&zoom=17`}
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                title={`Mappa ${indirizzoMappa}`}
+              />
             </div>
           </div>
 
@@ -948,7 +976,7 @@ export default function ImmobilePage() {
               <span>✦</span>
               <span>Ogni messaggio è revisionato dall&apos;AI prima di essere consegnato. Nessuna sorpresa, nessuna tensione.</span>
             </div>
-           <AiChat user={user} immobileId={immobile.id} immobile={immobile} />
+            <AiChat user={user} immobileId={immobile.id} immobile={immobile} />
           </div>
 
           {/* AFFORDABILITY */}
@@ -961,25 +989,27 @@ export default function ImmobilePage() {
           </div>
 
           {/* COMPARABLES */}
-          <div className="comps-section">
-            <h2 className="section-title">Immobili comparabili</h2>
-            <div style={{ fontSize: "0.82rem", color: "var(--muted)", marginBottom: "1rem" }}>
-              Selezionati dall&apos;AI nella stessa zona, metratura simile, stesso numero di locali.
-            </div>
-            {immobile.comparabili.map((c, i) => (
-              <div className="comp-item" key={i}>
-                <div>
-                  <div className="comp-addr">{c.indirizzo}</div>
-                  <div className="comp-specs">{c.mq} m² · {c.locali} locali</div>
-                  <span className={`comp-delta ${c.delta}`}>{deltaLabel[c.delta]}</span>
-                </div>
-                <div>
-                  <div className="comp-price">€ {c.prezzo.toLocaleString("it-IT")}</div>
-                  <div className="comp-sqm">€ {Math.round(c.prezzo / c.mq).toLocaleString("it-IT")}/m²</div>
-                </div>
+          {haComparabili && (
+            <div className="comps-section">
+              <h2 className="section-title">Immobili comparabili</h2>
+              <div style={{ fontSize: "0.82rem", color: "var(--muted)", marginBottom: "1rem" }}>
+                Selezionati dall&apos;AI nella stessa zona, metratura simile, stesso numero di locali.
               </div>
-            ))}
-          </div>
+              {immobile.comparabili.map((c, i) => (
+                <div className="comp-item" key={i}>
+                  <div>
+                    <div className="comp-addr">{c.indirizzo}</div>
+                    <div className="comp-specs">{c.mq} m² · {c.locali} locali</div>
+                    <span className={`comp-delta ${c.delta}`}>{deltaLabel[c.delta]}</span>
+                  </div>
+                  <div>
+                    <div className="comp-price">€ {c.prezzo.toLocaleString("it-IT")}</div>
+                    <div className="comp-sqm">€ {Math.round(c.prezzo / c.mq).toLocaleString("it-IT")}/m²</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
         </div>
 
@@ -994,13 +1024,10 @@ export default function ImmobilePage() {
               {[
                 ["Sup. catastale", `${immobile.superficie_catastale} m²`, "Registrata al catasto — nessuna sorpresa 😊"],
                 ["Sup. calpestabile", `${immobile.superficie_calpestabile} m²`, "Quello che calpesti davvero, senza muri 😊"],
-                ["Garage", "20 m²", null],
                 ["Locali", immobile.locali, null],
                 ["Bagni", immobile.bagni, null],
                 ["Piano", immobile.piano, null],
                 ["Ascensore", immobile.ascensore ? "Sì" : "No", null],
-                ["Terrazzino", "Privato", null],
-                ["Giardino", "Condominiale", null],
                 ["Riscaldamento", immobile.riscaldamento, null],
                 ["Acqua calda", immobile.acqua_calda, null],
                 ["Classe energetica", `Cl. ${immobile.classe_energetica}`, null],
@@ -1019,42 +1046,44 @@ export default function ImmobilePage() {
               ))}
             </div>
 
-            <div className="verified-box">
-              <div className="verified-box-title">
-                {allVerified ? "✓ Immobile Verificato" : `⚠ ${docsVerified}/${docsTotal} Documenti`}
+            {haDocumenti && (
+              <div className="verified-box">
+                <div className="verified-box-title">
+                  {allVerified ? "✓ Immobile Verificato" : `⚠ ${docsVerified}/${docsTotal} Documenti`}
+                </div>
+                <div className="verified-box-text">
+                  {allVerified
+                    ? "Tutti i documenti sono stati caricati e verificati. Nessuna sorpresa."
+                    : "Documentazione parziale. Il venditore ha 30 giorni per completarla."}
+                </div>
               </div>
-              <div className="verified-box-text">
-                {allVerified
-                  ? "Tutti i documenti sono stati caricati e verificati. Nessuna sorpresa."
-                  : "Documentazione parziale. Il venditore ha 30 giorni per completarla."}
-              </div>
-            </div>
+            )}
 
             <div className="sticky-cta">
-  <button className="btn-primary" onClick={scrollToChat}>Contatta il venditore →</button>
-  {user ? (
-    <button className="btn-primary" style={{ background: '#2d6a4f' }} onClick={() => setShowProposta(true)}>
-      Fai una proposta →
-    </button>
-  ) : (
-    <a href="/login" className="btn-secondary">Accedi per fare una proposta</a>
-  )}
-  <button className="btn-secondary" onClick={() => setSaved(!saved)}>
-    {saved ? "♥ Salvato nella shortlist" : "♡ Aggiungi alla shortlist"}
-  </button>
-</div>
+              <button className="btn-primary" onClick={scrollToChat}>Contatta il venditore →</button>
+              {user ? (
+                <button className="btn-primary" style={{ background: '#2d6a4f' }} onClick={() => setShowProposta(true)}>
+                  Fai una proposta →
+                </button>
+              ) : (
+                <a href="/login" className="btn-secondary">Accedi per fare una proposta</a>
+              )}
+              <button className="btn-secondary" onClick={() => setSaved(!saved)}>
+                {saved ? "♥ Salvato nella shortlist" : "♡ Aggiungi alla shortlist"}
+              </button>
+            </div>
           </div>
         </div>
 
       </div>
 
-{showProposta && (
-  <PropostaModal
-    immobile={immobile}
-    user={user}
-    onClose={() => setShowProposta(false)}
-  />
-)}
+      {showProposta && (
+        <PropostaModal
+          immobile={immobile}
+          user={user}
+          onClose={() => setShowProposta(false)}
+        />
+      )}
 
       <SiteFooter />
     </>

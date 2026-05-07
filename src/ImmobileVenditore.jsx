@@ -405,7 +405,7 @@ export default function ImmobileVenditore() {
                   <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "2.4rem", color: "#fb923c", lineHeight: 1 }}>58<span style={{ fontSize: "1.2rem", color: "var(--muted)" }}>/100</span></div>
                   <div style={{ fontSize: "0.78rem", color: "#fb923c", marginTop: "0.2rem" }}>Pubblicabile — ma lascia €€€ sul tavolo</div>
                 </div>
-                <a href="/immobile/1/report-foto" style={{ background: "var(--red)", color: "white", padding: "0.7rem 1.2rem", borderRadius: "2px", fontSize: "0.8rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", textDecoration: "none", whiteSpace: "nowrap" }}>
+                <a href="/immobili/1/report-foto" style={{ background: "var(--red)", color: "white", padding: "0.7rem 1.2rem", borderRadius: "2px", fontSize: "0.8rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", textDecoration: "none", whiteSpace: "nowrap" }}>
                   Vedi report completo →
                 </a>
               </div>
