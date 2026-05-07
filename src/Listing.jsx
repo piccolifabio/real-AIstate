@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import NavBar from "./NavBar.jsx";
 import SiteFooter from "./SiteFooter.jsx";
+import { supabase } from "./supabase.js";
 
 const styles = `
   .listing-page { min-height: 100vh; }
@@ -60,24 +61,6 @@ const styles = `
     .filter-count { margin-left: 0; width: 100%; }
   }
 `;
-const FOTO_BASE = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/immobili/1/pub`;
-
-const immobiliReali = [
-  {
-    id: 1,
-    titolo: "Appartamento con garage e terrazzino",
-    zona: "Milano · San Siro",
-    indirizzo: "Via Alfonso Capecelatro, 51",
-    prezzo: 400000,
-    superficie: 69,
-    locali: 2,
-    bagni: 1,
-    piano: "2°",
-    score: 88,
-    foto: `${FOTO_BASE}/soggiorno1.jpg`,
-    link: "/compra/1",
-  },
-];
 
 const immobiliFittizi = [
   { titolo: "Trilocale luminoso con balcone", zona: "Milano · Navigli", indirizzo: "Via Vigevano, 18", prezzo: 485000, superficie: 82, locali: 3, bagni: 2, piano: "3°" },
@@ -92,18 +75,31 @@ const immobiliFittizi = [
 ];
 
 function PropCardReal({ imm }) {
+  const cover = imm.foto?.[0];
+  const titolo = imm.titolo || `Immobile · ${imm.zona || ""}`;
+  const link = `/compra/${imm.id}`;
+
   return (
-    <a href={imm.link} style={{ textDecoration: "none" }}>
+    <a href={link} style={{ textDecoration: "none" }}>
       <div className="prop-card real">
         <div className="prop-card-img">
-          <img src={imm.foto} alt={imm.titolo} />
+          {cover ? (
+            <img src={cover} alt={titolo} />
+          ) : (
+            <div className="prop-card-img-placeholder">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
+                <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+                <path d="M21 15l-5-5L5 21"/>
+              </svg>
+            </div>
+          )}
           <div className="prop-card-badges">
             <span className="prop-badge prop-badge-green">✓ Verificato</span>
           </div>
         </div>
         <div className="prop-card-body">
           <div className="prop-card-location">📍 {imm.zona}</div>
-          <div className="prop-card-title">{imm.titolo}</div>
+          <div className="prop-card-title">{titolo}</div>
           <div className="prop-card-address">{imm.indirizzo}</div>
           <div className="prop-card-specs">
             <div className="prop-card-spec"><strong>{imm.superficie} m²</strong></div>
@@ -117,7 +113,9 @@ function PropCardReal({ imm }) {
               <div className="prop-card-sqm">€ {Math.round(imm.prezzo / imm.superficie).toLocaleString("it-IT")} / m²</div>
             </div>
             <div className="prop-card-score">
-              <div className="prop-card-score-num">{imm.score}</div>
+              <div className="prop-card-score-num" style={!imm.fair_price_score ? { color: "var(--muted)" } : undefined}>
+                {imm.fair_price_score ?? "—"}
+              </div>
               <div className="prop-card-score-label">Fair Price</div>
             </div>
           </div>
@@ -168,7 +166,29 @@ function PropCardFake({ imm }) {
 
 export default function ListingPage() {
   const [città, setCittà] = useState("tutte");
+  const [immobiliReali, setImmobiliReali] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => { window.scrollTo(0, 0); }, []);
+
+  useEffect(() => {
+    async function fetchImmobili() {
+      const { data, error } = await supabase
+        .from("immobili")
+        .select("id, titolo, indirizzo, zona, prezzo, superficie, locali, bagni, piano, foto, fair_price_score")
+        .eq("status", "published")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Errore fetch immobili:", error);
+        setImmobiliReali([]);
+      } else {
+        setImmobiliReali(data || []);
+      }
+      setLoading(false);
+    }
+    fetchImmobili();
+  }, []);
 
   const tutteLeCittà = ["tutte", "Milano", "Verona"];
   const fittiziFiltrati = città === "tutte"
@@ -192,7 +212,7 @@ export default function ListingPage() {
               ))}
             </select>
             <div className="filter-count">
-              {1 + fittiziFiltrati.length} immobili
+              {loading ? "Carico…" : `${immobiliReali.length + fittiziFiltrati.length} immobili`}
             </div>
           </div>
         </div>
@@ -200,7 +220,17 @@ export default function ListingPage() {
         <div className="listing-content">
           <div className="listing-section-label">Disponibile ora</div>
           <div className="listing-grid">
-            {immobiliReali.map(i => <PropCardReal key={i.id} imm={i} />)}
+            {loading ? (
+              <div style={{ color: "var(--muted)", fontSize: "0.85rem", gridColumn: "1 / -1" }}>
+                Carico immobili…
+              </div>
+            ) : immobiliReali.length === 0 ? (
+              <div style={{ color: "var(--muted)", fontSize: "0.85rem", gridColumn: "1 / -1" }}>
+                Nessun immobile disponibile al momento.
+              </div>
+            ) : (
+              immobiliReali.map(i => <PropCardReal key={i.id} imm={i} />)
+            )}
           </div>
 
           <div className="listing-section-label">In arrivo</div>
