@@ -197,7 +197,7 @@ const styles = `
   }
 `;
 
-const immobile = {
+const IMMOBILE_FALLBACK = {
   id: 1,
   titolo: "Appartamento con garage e terrazzino",
   zona: "Milano · San Siro",
@@ -619,6 +619,24 @@ export default function ImmobilePage() {
   const [immobileDb, setImmobileDb] = useState(null);
   const [loadingImmobile, setLoadingImmobile] = useState(true);
   const [errorImmobile, setErrorImmobile] = useState(null);
+  // Costruisce l'oggetto immobile usando dati DB con fallback hardcoded
+  // per i campi non ancora presenti in tabella (ai_summary, comparabili, ecc.)
+  const immobile = {
+    ...IMMOBILE_FALLBACK,
+    ...(immobileDb && {
+      id: immobileDb.id,
+      indirizzo: immobileDb.indirizzo ?? IMMOBILE_FALLBACK.indirizzo,
+      zona: immobileDb.zona ?? IMMOBILE_FALLBACK.zona,
+      prezzo: immobileDb.prezzo ?? IMMOBILE_FALLBACK.prezzo,
+      superficie_catastale: immobileDb.superficie ?? IMMOBILE_FALLBACK.superficie_catastale,
+      superficie_calpestabile: immobileDb.superficie_calpestabile ?? IMMOBILE_FALLBACK.superficie_calpestabile,
+      locali: immobileDb.vani ?? IMMOBILE_FALLBACK.locali,
+      bagni: immobileDb.bagni ?? IMMOBILE_FALLBACK.bagni,
+      piano: immobileDb.piano ?? IMMOBILE_FALLBACK.piano,
+      classe_energetica: immobileDb.classe_energetica ?? IMMOBILE_FALLBACK.classe_energetica,
+      anno_costruzione: immobileDb.anno_costruzione ?? IMMOBILE_FALLBACK.anno_costruzione,
+    }),
+  };
 
   // Fetch immobile da Supabase
   useEffect(() => {
