@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { useParams } from "react-router-dom";
 import { useAuth } from "./AuthContext";
 import { supabase } from "./supabase";
 import NavBar from "./NavBar.jsx";
@@ -605,6 +606,7 @@ useEffect(() => {
 }
 
 export default function ImmobilePage() {
+  const { id: immobileId } = useParams();
   const { user } = useAuth()
   const [saved, setSaved] = useState(false);
   const [showProposta, setShowProposta] = useState(false)
@@ -612,6 +614,37 @@ export default function ImmobilePage() {
   const [mapTab, setMapTab] = useState("streetview");
   const chatRef = useRef(null);
   const [activePhoto, setActivePhoto] = useState(0);
+
+  // Stati per fetch immobile dal DB
+  const [immobileDb, setImmobileDb] = useState(null);
+  const [loadingImmobile, setLoadingImmobile] = useState(true);
+  const [errorImmobile, setErrorImmobile] = useState(null);
+
+  // Fetch immobile da Supabase
+  useEffect(() => {
+    const fetchImmobile = async () => {
+      if (!immobileId) return;
+      setLoadingImmobile(true);
+      const { data, error } = await supabase
+        .from('immobili')
+        .select('*')
+        .eq('id', immobileId)
+        .eq('status', 'published')
+        .maybeSingle();
+
+      console.log('[Immobile fetch]', { immobileId, data, error });
+
+      if (error) {
+        setErrorImmobile(error.message);
+      } else if (!data) {
+        setErrorImmobile('Immobile non trovato');
+      } else {
+        setImmobileDb(data);
+      }
+      setLoadingImmobile(false);
+    };
+    fetchImmobile();
+  }, [immobileId]);
 
   const scrollToChat = () => {
     chatRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
