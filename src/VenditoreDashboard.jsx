@@ -349,7 +349,7 @@ const badgeImmobileStatus = (status) => {
               {mieiImmobili.map((immobile) => {
                 const primaFoto = Array.isArray(immobile.foto) && immobile.foto.length > 0 ? immobile.foto[0] : null
                 const fotoUrl = primaFoto
-                  ? `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/documenti-venditori/${primaFoto}`
+? (primaFoto.includes('://') ? primaFoto : `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/documenti-venditori/${primaFoto}`)
                   : null
 
                 return (
