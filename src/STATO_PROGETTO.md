@@ -125,6 +125,20 @@ Aggiornato: 07/05/2026 notte
   sul preview deployment, generato AI summary + 5 punti_forza + 5 domande
   con qualità soddisfacente. Bug minor osservato: piano "4° su 6"
   letto come "terzo piano" — registrato come miglioramento prompt.
+  - [x] Fix prompt `api/chat-immobile.js` ✅
+  - Bug osservato live: AI chat su /compra/1 rispondeva "non ho questa
+    informazione" su domande tipo balcone, terrazzo, garage_mq,
+    riscaldamento — anche se i dati erano in DB e nel payload inviato
+  - Causa: prompt server-side `immobileCtx` includeva solo 6 campi
+    legacy. Tutti i nuovi campi del refactor non venivano mai
+    "raccontati" all'AI nel system prompt
+  - Fix: esteso `immobileCtx` a 23+ campi strutturati + descrizione
+    completa in prosa. Aggiunta etichetta "Terrazzo/balcone" per
+    forzare il sinonimo. Helper `sn()` per null safety, `yn()` per
+    boolean → "sì"/"no" leggibili
+  - Pattern lesson: ogni volta che si estende lo schema dati, verificare
+    che TUTTI i punti di consumo (chat AI, generate-immobile-ai,
+    eventuali altri prompt) ricevano i campi nuovi nel template prompt
 
 ## File chiave
 - src/HomePage.jsx — home page con Nav e CTA
@@ -274,6 +288,13 @@ Aggiornato: 07/05/2026 notte
   `{...FALLBACK, ...(dbData && {...mappings})}`, OGNI campo va listato
   esplicitamente nel mapping. Dimenticarne uno = `undefined` quando il
   fallback è omesso. Capitato per descrizione, stato_immobile, tipologia.
+  - **Prompt template e payload**: estendere il payload frontend NON
+  basta. Ogni serverless function che usa quel payload (es.
+  `chat-immobile.js`) ha un suo template stringa che cita i campi
+  uno per uno. Se il template non include il campo nuovo, l'AI non
+  lo "vede" anche se il payload è perfetto. Verificare sempre con il
+  Network tab del browser cosa arriva all'API e con un breakpoint
+  o log cosa entra nel prompt.
 - **Colonne `vani` e `camere` su `immobili`**: ridondanti? Da chiarire
   se `vani` = totale locali, `camere` = camere da letto, o se sono
   duplicate. Audit a tempo debito.
