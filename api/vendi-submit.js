@@ -2,12 +2,28 @@ export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
 
   try {
+    // 1. Verifica auth: leggi JWT dall'header e recupera user
+    const authHeader = req.headers.authorization || "";
+    const token = authHeader.replace("Bearer ", "");
+    if (!token) return res.status(401).json({ error: "Non autenticato" });
+
+    const userRes = await fetch(`${process.env.SUPABASE_URL}/auth/v1/user`, {
+      headers: {
+        "apikey": process.env.SUPABASE_SECRET_KEY,
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+    if (!userRes.ok) return res.status(401).json({ error: "Sessione non valida" });
+    const userData = await userRes.json();
+    const userId = userData.id;
+
+    // 2. Parse body
     const buffers = [];
     for await (const chunk of req) buffers.push(chunk);
     const raw = Buffer.concat(buffers).toString("utf8");
     const dati = JSON.parse(raw);
 
-    // Salva in Supabase
+    // 3. Salva in venditori (lead completo, come prima)
     const sbRes = await fetch(`${process.env.SUPABASE_URL}/rest/v1/venditori`, {
       method: "POST",
       headers: {
@@ -57,12 +73,52 @@ export default async function handler(req, res) {
 
     if (!sbRes.ok) {
       const err = await sbRes.text();
-      console.error("Supabase error:", err);
+      console.error("Supabase venditori error:", err);
+    }
+
+    // 4. NUOVO: insert in immobili (status=draft) per l'utente loggato
+    const immobiliPayload = {
+      indirizzo: dati.indirizzo,
+      zona: null,
+      prezzo: dati.prezzo_desiderato ? parseFloat(dati.prezzo_desiderato) : null,
+      superficie: dati.superficie_catastale ? parseFloat(dati.superficie_catastale) : null,
+      tipologia: dati.tipologia || null,
+      piano: dati.piano || null,
+      superficie_calpestabile: dati.superficie_calpestabile ? parseFloat(dati.superficie_calpestabile) : null,
+      vani: dati.vani ? parseInt(dati.vani) : null,
+      camere: dati.camere ? parseInt(dati.camere) : null,
+      bagni: dati.bagni ? parseInt(dati.bagni) : null,
+      anno_costruzione: dati.anno_costruzione ? parseInt(dati.anno_costruzione) : null,
+      classe_energetica: dati.classe_energetica || null,
+      stato_immobile: dati.stato || null,
+      foto: dati.foto || [],
+      venditore_user_id: userId,
+      status: "draft",
+    };
+
+    const immobileRes = await fetch(`${process.env.SUPABASE_URL}/rest/v1/immobili`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": process.env.SUPABASE_SECRET_KEY,
+        "Authorization": `Bearer ${process.env.SUPABASE_SECRET_KEY}`,
+        "Prefer": "return=representation",
+      },
+      body: JSON.stringify(immobiliPayload),
+    });
+
+    let immobileId = null;
+    if (immobileRes.ok) {
+      const immobileData = await immobileRes.json();
+      immobileId = immobileData[0]?.id;
+    } else {
+      const err = await immobileRes.text();
+      console.error("Supabase immobili error:", err);
     }
 
     const supabaseStorageBase = `${process.env.SUPABASE_URL}/storage/v1/object/documenti-venditori`;
 
-    // Email conferma venditore
+    // 5. Email conferma venditore
     await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
       headers: {
@@ -123,7 +179,7 @@ export default async function handler(req, res) {
       }),
     });
 
-    // Notifica interna a Fabio
+    // 6. Notifica interna a Fabio
     await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
       headers: {
@@ -137,6 +193,8 @@ export default async function handler(req, res) {
         htmlContent: [
           "<div style='font-family:Arial,sans-serif;max-width:600px;'>",
           "<h2>Nuovo venditore registrato</h2>",
+          "<p><strong>User ID (auth):</strong> " + userId + "</p>",
+          "<p><strong>Immobile ID (draft):</strong> " + (immobileId || "ERRORE — non creato") + "</p>",
           "<p><strong>Nome:</strong> " + dati.nome + " " + (dati.cognome || "") + "</p>",
           "<p><strong>Email:</strong> " + dati.email + "</p>",
           "<p><strong>Telefono:</strong> " + dati.telefono + "</p>",
@@ -160,7 +218,7 @@ export default async function handler(req, res) {
       }),
     });
 
-    res.status(200).json({ ok: true });
+    res.status(200).json({ ok: true, immobile_id: immobileId });
 
   } catch (e) {
     console.error("vendi-submit error:", e);

@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import NavBar from "./NavBar.jsx";
 import { useAuth } from "./AuthContext";
+import { supabase } from "./supabase";
 
 const vendiStyles = `
   .vendi-page { min-height: 100vh; background: var(--black); padding: 8rem 3rem 5rem; max-width: 1100px; margin: 0 auto; }
@@ -297,6 +298,8 @@ export default function VendiForm() {
     setLoading(true);
     setError("");
     try {
+       const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Sessione scaduta");
       const [planimetriaUrl, apeUrl] = await Promise.all([
         form.planimetria ? uploadFile(form.planimetria, "planimetrie") : Promise.resolve(null),
         form.ape ? uploadFile(form.ape, "ape") : Promise.resolve(null),
@@ -311,7 +314,10 @@ export default function VendiForm() {
       };
       const res = await fetch("/api/vendi-submit", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`,
+        },
         body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error();
@@ -337,7 +343,7 @@ export default function VendiForm() {
             <div className="vendi-success-step"><div className="vendi-success-step-num">02</div><div className="vendi-success-step-text">Ti contatteremo entro 24 ore per confermare i dettagli e raccogliere i documenti mancanti.</div></div>
             <div className="vendi-success-step"><div className="vendi-success-step-num">03</div><div className="vendi-success-step-text">Il tuo annuncio viene pubblicato su RealAIstate e sui principali portali immobiliari.</div></div>
           </div>
-          <a href="/" className="btn-red">Torna alla home</a>
+          <a href="/venditore" className="btn-red">Vai alla mia dashboard →</a>
         </div>
       </div>
     </>
