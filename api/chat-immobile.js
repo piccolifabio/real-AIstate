@@ -11,13 +11,27 @@ export default async function handler(req, res) {
   const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
   const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
 
+  const sn = (v) => (v === null || v === undefined || v === "" ? "non specificato" : v);
+  const yn = (v) => (v === true ? "sì" : v === false ? "no" : "non specificato");
+
   const immobileCtx = `
-Immobile: ${immobile.indirizzo}, ${immobile.zona}
-Prezzo: €${immobile.prezzo?.toLocaleString("it-IT")} (€${Math.round(immobile.prezzo/immobile.superficie)}/m²)
-Superficie: ${immobile.superficie} m² | Locali: ${immobile.locali} | Piano: ${immobile.piano}
-Classe energetica: ${immobile.classe_energetica} | Anno costruzione: ${immobile.anno_costruzione} | Ristrutturazione: ${immobile.anno_ristrutturazione}
-Garage: ${immobile.garage ? "Sì, incluso" : "No"} | Spese condominiali: €${immobile.spese_condominio}/mese
-Fair Price Score: ${immobile.fair_price_score}/100
+${immobile.titolo ? `Titolo annuncio: ${immobile.titolo}` : ""}
+Immobile: ${sn(immobile.tipologia)} in ${sn(immobile.indirizzo)}, ${sn(immobile.zona)}
+Stato: ${sn(immobile.stato_immobile)}
+Prezzo: €${immobile.prezzo?.toLocaleString("it-IT")} ${immobile.superficie ? `(€${Math.round(immobile.prezzo/immobile.superficie)}/m²)` : ""}
+Superficie catastale: ${sn(immobile.superficie)} m² | Calpestabile: ${sn(immobile.superficie_calpestabile)} m²
+Locali: ${sn(immobile.locali)} | Bagni: ${sn(immobile.bagni)} | Piano: ${sn(immobile.piano)} | Ascensore: ${yn(immobile.ascensore)}
+Classe energetica: ${sn(immobile.classe_energetica)} | Anno costruzione: ${sn(immobile.anno_costruzione)} | Ristrutturazione: ${sn(immobile.anno_ristrutturazione)}
+Riscaldamento: ${sn(immobile.riscaldamento)} | Acqua calda: ${sn(immobile.acqua_calda)}
+Garage: ${yn(immobile.garage)}${immobile.garage_mq ? ` (${immobile.garage_mq} m²)` : ""}
+Terrazzo/balcone: ${yn(immobile.terrazzo)}
+Giardino condominiale: ${yn(immobile.giardino_condominiale)}
+Spese condominiali: €${sn(immobile.spese_condominio)}/mese
+Disponibilità rogito: ${sn(immobile.disponibilita_rogito)}
+Fair Price Score: ${sn(immobile.fair_price_score)}/100
+
+Descrizione completa fornita dal venditore:
+${sn(immobile.descrizione)}
   `.trim();
 
   // Save user message to Supabase
