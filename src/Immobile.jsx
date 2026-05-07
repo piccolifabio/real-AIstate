@@ -637,7 +637,10 @@ export default function ImmobilePage() {
       classe_energetica: immobileDb.classe_energetica ?? IMMOBILE_FALLBACK.classe_energetica,
       anno_costruzione: immobileDb.anno_costruzione ?? IMMOBILE_FALLBACK.anno_costruzione,
       anno_ristrutturazione: immobileDb.anno_ristrutturazione ?? IMMOBILE_FALLBACK.anno_ristrutturazione,
-      ascensore: immobileDb.ascensore ?? IMMOBILE_FALLBACK.ascensore,
+      descrizione: immobileDb.descrizione ?? IMMOBILE_FALLBACK.descrizione,
+      stato_immobile: immobileDb.stato_immobile ?? IMMOBILE_FALLBACK.stato_immobile,
+      tipologia: immobileDb.tipologia ?? IMMOBILE_FALLBACK.tipologia,
+            ascensore: immobileDb.ascensore ?? IMMOBILE_FALLBACK.ascensore,
       garage: immobileDb.garage ?? IMMOBILE_FALLBACK.garage,
       terrazzo: immobileDb.terrazzo ?? IMMOBILE_FALLBACK.terrazzo,
       giardino_condominiale: immobileDb.giardino_condominiale ?? IMMOBILE_FALLBACK.giardino_condominiale,
@@ -645,7 +648,6 @@ export default function ImmobilePage() {
       riscaldamento: immobileDb.riscaldamento ?? IMMOBILE_FALLBACK.riscaldamento,
       acqua_calda: immobileDb.acqua_calda ?? IMMOBILE_FALLBACK.acqua_calda,
       disponibilita_rogito: immobileDb.disponibilita_rogito ?? IMMOBILE_FALLBACK.disponibilita_rogito,
-      // AI cachata: se ai_summary in DB esiste, usa quello; altrimenti fallback
       ai_summary: immobileDb.ai_summary ?? IMMOBILE_FALLBACK.ai_summary,
       punti_forza: immobileDb.punti_forza ?? IMMOBILE_FALLBACK.punti_forza,
       domande: immobileDb.domande_consigliate ?? IMMOBILE_FALLBACK.domande,
@@ -745,19 +747,25 @@ export default function ImmobilePage() {
             </div>
           </div>
 
-          {/* DESCRIZIONE */}
-          <div style={{ marginBottom: "2rem", paddingBottom: "2rem", borderBottom: "1px solid var(--border)" }}>
-            <h2 className="section-title" style={{ marginBottom: "1rem" }}>Descrizione</h2>
-            <p style={{ fontSize: "0.95rem", lineHeight: "1.8", color: "rgba(247,245,240,0.7)", marginBottom: "1rem" }}>
-              Appartamento ristrutturato nel 2023 al secondo piano di una palazzina con ascensore in Via Alfonso Capecelatro, nel quartiere San Siro. La ristrutturazione è stata eseguita con materiali di qualità: pavimento in legno chiaro, impianti a norma, finiture curate in ogni stanza.
-            </p>
-            <p style={{ fontSize: "0.95rem", lineHeight: "1.8", color: "rgba(247,245,240,0.7)", marginBottom: "1rem" }}>
-              L'appartamento si sviluppa su 69 mq catastali (65 mq calpestabili) con uno studio indipendente che può essere facilmente convertito in camera ospiti. Il terrazzino privato con doppio accesso dal soggiorno aggiunge uno spazio esterno esclusivo.
-            </p>
-            <p style={{ fontSize: "0.95rem", lineHeight: "1.8", color: "rgba(247,245,240,0.7)" }}>
-              Incluso nel prezzo: garage di 20 mq in proprietà — il cui valore OMI è stimato in €48.000 — e accesso al giardino condominiale. Classe energetica C, spese condominiali €200/mese.
-            </p>
-          </div>
+        {/* DESCRIZIONE */}
+          {immobile.descrizione && (
+            <div style={{ marginBottom: "2rem", paddingBottom: "2rem", borderBottom: "1px solid var(--border)" }}>
+              <h2 className="section-title" style={{ marginBottom: "1rem" }}>Descrizione</h2>
+              {immobile.descrizione.split(/\n\s*\n/).map((paragrafo, i) => (
+                <p
+                  key={i}
+                  style={{
+                    fontSize: "0.95rem",
+                    lineHeight: "1.8",
+                    color: "rgba(247,245,240,0.7)",
+                    marginBottom: i < immobile.descrizione.split(/\n\s*\n/).length - 1 ? "1rem" : 0,
+                  }}
+                >
+                  {paragrafo.trim()}
+                </p>
+              ))}
+            </div>
+          )}
 
           {/* AI PANEL */}
           <div className="ai-panel">
