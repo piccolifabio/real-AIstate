@@ -1,5 +1,7 @@
 import { useState, useRef } from "react";
+import { Link } from "react-router-dom";
 import NavBar from "./NavBar.jsx";
+import { useAuth } from "./AuthContext";
 
 const vendiStyles = `
   .vendi-page { min-height: 100vh; background: var(--black); padding: 8rem 3rem 5rem; max-width: 1100px; margin: 0 auto; }
@@ -101,6 +103,16 @@ const vendiStyles = `
   .vendi-success-step-text { font-size: 0.88rem; color: rgba(247,245,240,0.6); line-height: 1.6; }
   .vendi-error { font-size: 0.8rem; color: var(--red); margin-top: 0.3rem; }
 
+  .vendi-gate-card { max-width: 560px; margin: 0 auto; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 3rem; text-align: center; }
+  .vendi-gate-icon { font-size: 2.5rem; margin-bottom: 1rem; }
+  .vendi-gate-title { font-family: 'Bebas Neue', sans-serif; font-size: 2.2rem; color: var(--white); margin-bottom: 0.6rem; line-height: 1; }
+  .vendi-gate-sub { font-size: 0.92rem; color: rgba(247,245,240,0.5); line-height: 1.7; margin-bottom: 2rem; }
+  .vendi-gate-cta { display: inline-block; background: var(--red); color: var(--white); padding: 0.95rem 2.4rem; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; text-decoration: none; border-radius: 2px; transition: background 0.2s; }
+  .vendi-gate-cta:hover { background: var(--red-dark); }
+  .vendi-gate-bullets { display: flex; flex-direction: column; gap: 0.7rem; text-align: left; max-width: 380px; margin: 0 auto 2rem; }
+  .vendi-gate-bullet { font-size: 0.85rem; color: rgba(247,245,240,0.55); line-height: 1.5; display: flex; gap: 0.6rem; }
+  .vendi-gate-bullet::before { content: '→'; color: var(--red); flex-shrink: 0; }
+
   @media (max-width: 900px) {
     .vendi-page { padding: 8rem 3rem 5rem; }
     .vendi-card { padding: 2rem 1.5rem; }
@@ -109,6 +121,7 @@ const vendiStyles = `
     .vendi-photos-grid { grid-template-columns: repeat(3, 1fr); }
     .vendi-check-grid { grid-template-columns: 1fr 1fr; }
     .vendi-tooltip-box { white-space: normal; width: 200px; left: 0; transform: none; }
+    .vendi-gate-card { padding: 2rem 1.5rem; }
   }
 `;
 const STEPS = [
@@ -157,6 +170,7 @@ function Pertinenza({ title, value, onToggle, metratura, onMetratura, tooltip })
 }
 
 export default function VendiForm() {
+  const { user, loading: authLoading } = useAuth();
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -185,6 +199,49 @@ export default function VendiForm() {
   const planimetriaRef = useRef();
   const apeRef = useRef();
   const fotoRef = useRef();
+
+  // Gate auth: stato di caricamento sessione
+  if (authLoading) {
+    return (
+      <>
+        <style>{vendiStyles}</style>
+        <NavBar />
+        <div className="vendi-page" style={{ textAlign: 'center', color: 'rgba(247,245,240,0.4)', paddingTop: '12rem' }}>
+          Caricamento...
+        </div>
+      </>
+    );
+  }
+
+  // Gate auth: utente non loggato → pre-onboarding
+  if (!user) {
+    return (
+      <>
+        <style>{vendiStyles}</style>
+        <NavBar />
+        <div className="vendi-page">
+          <div className="vendi-hero">
+            <div className="vendi-eyebrow">Vendi il tuo immobile</div>
+            <h1 className="vendi-h1">Pubblica il tuo<br />immobile. Gratis.</h1>
+            <p className="vendi-sub">Niente agenzia. Niente trattative al ribasso. L'AI calcola il prezzo giusto, analizziamo le tue foto e pubblichiamo il tuo annuncio sui principali portali.</p>
+          </div>
+          <div className="vendi-gate-card">
+            <div className="vendi-gate-icon">🔑</div>
+            <div className="vendi-gate-title">Accedi per pubblicare</div>
+            <div className="vendi-gate-sub">
+              Per pubblicare il tuo immobile ti serve un account. Lo crei in 30 secondi ed è gratuito.
+            </div>
+            <div className="vendi-gate-bullets">
+              <div className="vendi-gate-bullet">Gestisci il tuo annuncio dalla dashboard</div>
+              <div className="vendi-gate-bullet">Ricevi le proposte d'acquisto direttamente</div>
+              <div className="vendi-gate-bullet">Chat e documenti tracciati in un posto solo</div>
+            </div>
+            <Link to="/login" className="vendi-gate-cta">Accedi o registrati →</Link>
+          </div>
+        </div>
+      </>
+    );
+  }
 
   const update = (key, val) => setForm(f => ({ ...f, [key]: val }));
 
