@@ -388,7 +388,7 @@ function StickyTooltip({ text }) {
   );
 }
 
-function AiChat({ user }) {
+function AiChat({ user, immobileId, immobile }) {
   const [messages, setMessages] = useState(initialMessages);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -399,7 +399,7 @@ function AiChat({ user }) {
     const { data } = await supabase
       .from('chat_messages')
       .select('*')
-      .eq('immobile_id', immobile.id)
+      .eq('immobile_id', immobileId)
       .eq('user_id', user.id)
       .order('created_at', { ascending: true })
     
@@ -432,7 +432,7 @@ useEffect(() => {
     if (user) {
       await supabase.from('chat_messages').insert({
         sessione_id: sessioneId,
-        immobile_id: immobile.id,
+        immobile_id: immobileId,
         mittente: 'compratore',
         testo: userMsg,
         user_id: user.id
@@ -475,7 +475,7 @@ useEffect(() => {
       if (user) {
         await supabase.from('chat_messages').insert({
           sessione_id: sessioneId,
-          immobile_id: immobile.id,
+          immobile_id: immobileId,
           mittente: 'ai',
           testo: data.risposta,
           user_id: user.id
@@ -625,6 +625,7 @@ export default function ImmobilePage() {
     ...IMMOBILE_FALLBACK,
     ...(immobileDb && {
       id: immobileDb.id,
+      titolo: immobileDb.titolo ?? IMMOBILE_FALLBACK.titolo,
       indirizzo: immobileDb.indirizzo ?? IMMOBILE_FALLBACK.indirizzo,
       zona: immobileDb.zona ?? IMMOBILE_FALLBACK.zona,
       prezzo: immobileDb.prezzo ?? IMMOBILE_FALLBACK.prezzo,
@@ -635,6 +636,19 @@ export default function ImmobilePage() {
       piano: immobileDb.piano ?? IMMOBILE_FALLBACK.piano,
       classe_energetica: immobileDb.classe_energetica ?? IMMOBILE_FALLBACK.classe_energetica,
       anno_costruzione: immobileDb.anno_costruzione ?? IMMOBILE_FALLBACK.anno_costruzione,
+      anno_ristrutturazione: immobileDb.anno_ristrutturazione ?? IMMOBILE_FALLBACK.anno_ristrutturazione,
+      ascensore: immobileDb.ascensore ?? IMMOBILE_FALLBACK.ascensore,
+      garage: immobileDb.garage ?? IMMOBILE_FALLBACK.garage,
+      terrazzo: immobileDb.terrazzo ?? IMMOBILE_FALLBACK.terrazzo,
+      giardino_condominiale: immobileDb.giardino_condominiale ?? IMMOBILE_FALLBACK.giardino_condominiale,
+      spese_condominio: immobileDb.spese_condominio ?? IMMOBILE_FALLBACK.spese_condominio,
+      riscaldamento: immobileDb.riscaldamento ?? IMMOBILE_FALLBACK.riscaldamento,
+      acqua_calda: immobileDb.acqua_calda ?? IMMOBILE_FALLBACK.acqua_calda,
+      disponibilita_rogito: immobileDb.disponibilita_rogito ?? IMMOBILE_FALLBACK.disponibilita_rogito,
+      // AI cachata: se ai_summary in DB esiste, usa quello; altrimenti fallback
+      ai_summary: immobileDb.ai_summary ?? IMMOBILE_FALLBACK.ai_summary,
+      punti_forza: immobileDb.punti_forza ?? IMMOBILE_FALLBACK.punti_forza,
+      domande: immobileDb.domande_consigliate ?? IMMOBILE_FALLBACK.domande,
     }),
   };
 
@@ -913,7 +927,7 @@ export default function ImmobilePage() {
               <span>✦</span>
               <span>Ogni messaggio è revisionato dall&apos;AI prima di essere consegnato. Nessuna sorpresa, nessuna tensione.</span>
             </div>
-            <AiChat user={user} />
+           <AiChat user={user} immobileId={immobile.id} immobile={immobile} />
           </div>
 
           {/* AFFORDABILITY */}
