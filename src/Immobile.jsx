@@ -380,8 +380,8 @@ function AiChat({ user, immobileId, immobile }) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [sessioneId] = useState(() => `sess_${Date.now()}_${Math.random().toString(36).slice(2)}`);
-  const bottomRef = useRef(null);
-  const prevLenChat = useRef(0);
+  const messagesRef = useRef(null);
+  const prevLenChat = useRef(initialMessages.length);
 
   useEffect(() => {
     if (!user) return
@@ -405,8 +405,8 @@ function AiChat({ user, immobileId, immobile }) {
   }, [user, immobileId])
 
   useEffect(() => {
-    if (messages.length > prevLenChat.current) {
-      bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    if (messages.length > prevLenChat.current && messagesRef.current) {
+      messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
     }
     prevLenChat.current = messages.length;
   }, [messages, loading]);
@@ -491,7 +491,7 @@ function AiChat({ user, immobileId, immobile }) {
 
   return (
     <div className="chat-box">
-      <div className="chat-messages">
+      <div className="chat-messages" ref={messagesRef}>
         {messages.map((m, i) => (
           <div className={`chat-msg ${m.role}`} key={i}>
             <div className="chat-msg-sender">{m.role === "ai" ? "✦ AI RealAIstate" : "Tu"}</div>
@@ -508,7 +508,6 @@ function AiChat({ user, immobileId, immobile }) {
             </div>
           </div>
         )}
-        <div ref={bottomRef} />
       </div>
       <div className="chat-input-row">
         <input
@@ -535,12 +534,12 @@ function AffordabilityChat({ immobile }) {
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const bottomRef = useRef(null);
-  const prevLenAfford = useRef(0);
+  const messagesRef = useRef(null);
+  const prevLenAfford = useRef(messages.length);
 
   useEffect(() => {
-    if (messages.length > prevLenAfford.current) {
-      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messages.length > prevLenAfford.current && messagesRef.current) {
+      messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
     }
     prevLenAfford.current = messages.length;
   }, [messages, loading]);
@@ -578,7 +577,7 @@ function AffordabilityChat({ immobile }) {
           <div className="afford-header-sub">Rispondi alle domande — l'AI elabora la tua situazione in tempo reale.</div>
         </div>
       </div>
-      <div className="afford-messages">
+      <div className="afford-messages" ref={messagesRef}>
         {messages.map((m, i) => (
           <div className={`afford-msg ${m.role}`} key={i}>
             <div className="afford-msg-sender">{m.role === "ai" ? "✦ AI RealAIstate" : "Tu"}</div>
@@ -594,7 +593,6 @@ function AffordabilityChat({ immobile }) {
             </div>
           </div>
         )}
-        <div ref={bottomRef} />
       </div>
       <div className="afford-input-row">
         <input className="afford-input" placeholder="Rispondi qui..." value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === "Enter" && send()} />
