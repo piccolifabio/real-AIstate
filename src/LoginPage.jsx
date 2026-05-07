@@ -7,6 +7,7 @@ export default function LoginPage() {
   const navigate = useNavigate()
   const [mode, setMode] = useState('login')
   const [email, setEmail] = useState('')
+  const [confirmEmail, setConfirmEmail] = useState('')
   const [password, setPassword] = useState('')
   const [fullName, setFullName] = useState('')
   const [status, setStatus] = useState('idle')
@@ -14,9 +15,15 @@ export default function LoginPage() {
 
   const handle = async () => {
     if (!email || !password) return
-    if (mode === 'register' && !fullName.trim()) {
-      setError('Inserisci il tuo nome e cognome')
-      return
+    if (mode === 'register') {
+      if (!fullName.trim()) {
+        setError('Inserisci il tuo nome e cognome')
+        return
+      }
+      if (email.trim().toLowerCase() !== confirmEmail.trim().toLowerCase()) {
+        setError('Le due email non coincidono. Controlla di averle scritte uguali.')
+        return
+      }
     }
     setStatus('loading')
     setError('')
@@ -33,6 +40,12 @@ export default function LoginPage() {
         navigate('/')
       }
     }
+  }
+
+  const switchMode = () => {
+    setMode(mode === 'login' ? 'register' : 'login')
+    setError('')
+    setConfirmEmail('')
   }
 
   const inputStyle = {
@@ -94,6 +107,17 @@ export default function LoginPage() {
               autoComplete="email"
               style={inputStyle}
             />
+            {mode === 'register' && (
+              <input
+                type="email"
+                placeholder="Conferma email"
+                value={confirmEmail}
+                onChange={e => setConfirmEmail(e.target.value)}
+                onPaste={e => e.preventDefault()}
+                autoComplete="off"
+                style={inputStyle}
+              />
+            )}
             <input
               type="password"
               placeholder="Password"
@@ -122,7 +146,7 @@ export default function LoginPage() {
             </button>
             <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
               <button
-                onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError('') }}
+                onClick={switchMode}
                 style={{
                   background: 'none', border: 'none', color: 'rgba(247,245,240,0.4)',
                   fontSize: '0.82rem', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif'
