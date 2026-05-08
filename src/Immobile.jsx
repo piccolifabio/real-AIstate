@@ -1075,23 +1075,35 @@ export default function ImmobilePage() {
             )}
 
             <div className="sticky-cta">
-              <button className="btn-primary" onClick={scrollToChat}>Contatta il venditore →</button>
               {(() => {
                 const isOwner = user?.id && immobile?.venditore_user_id && user.id === immobile.venditore_user_id;
-                if (!user) {
-                  return <a href="/login" className="btn-secondary">Accedi per fare una proposta</a>;
-                }
+
                 if (isOwner) {
+                  // Sei il venditore: niente chat e niente proposta su te stesso.
+                  // Linkiamo direttamente alla dashboard dove gestisci tutto.
                   return (
-                    <div className="btn-secondary" style={{ textAlign: 'center', cursor: 'default', opacity: 0.6 }}>
-                      Questo è il tuo immobile
-                    </div>
+                    <>
+                      <a href="/venditore" className="btn-primary" style={{ textAlign: 'center', textDecoration: 'none' }}>
+                        Vai alla dashboard →
+                      </a>
+                      <div className="btn-secondary" style={{ textAlign: 'center', cursor: 'default', opacity: 0.6 }}>
+                        Questo è il tuo immobile
+                      </div>
+                    </>
                   );
                 }
+
                 return (
-                  <button className="btn-primary" style={{ background: '#2d6a4f' }} onClick={() => setShowProposta(true)}>
-                    Fai una proposta →
-                  </button>
+                  <>
+                    <button className="btn-primary" onClick={scrollToChat}>Contatta il venditore →</button>
+                    {user ? (
+                      <button className="btn-primary" style={{ background: '#2d6a4f' }} onClick={() => setShowProposta(true)}>
+                        Fai una proposta →
+                      </button>
+                    ) : (
+                      <a href="/login" className="btn-secondary">Accedi per fare una proposta</a>
+                    )}
+                  </>
                 );
               })()}
               <button className="btn-secondary" onClick={() => setSaved(!saved)}>
