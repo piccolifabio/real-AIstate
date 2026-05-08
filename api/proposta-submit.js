@@ -72,6 +72,10 @@ export default async function handler(req, res) {
     if (immobileDb.status !== "published") {
       return res.status(400).json({ error: "Immobile non disponibile per proposte" });
     }
+    // Defense in depth: il venditore non può fare proposte sul proprio immobile.
+    if (immobileDb.venditore_user_id && immobileDb.venditore_user_id === compratore_user_id) {
+      return res.status(400).json({ error: "Non puoi fare una proposta sul tuo immobile" });
+    }
 
     const indirizzoVero = immobileDb.indirizzo;
     const prezzoVero    = Number(immobileDb.prezzo);
