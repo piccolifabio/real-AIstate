@@ -264,7 +264,7 @@ const initialMessages = [
 
 const deltaLabel = { higher: "▲ +5% vs questo", lower: "▼ -3% vs questo", similar: "≈ Allineato" };
 
-function PropostaModal({ immobile, user, onClose }) {
+function PropostaModal({ immobile, onClose }) {
   const [form, setForm] = useState({ importo: '', condizioni: '', data_rogito: '', note: '' })
   const [status, setStatus] = useState('idle')
   const [error, setError] = useState('')
@@ -288,19 +288,35 @@ function PropostaModal({ immobile, user, onClose }) {
     setError('')
     setStatus('loading')
     try {
-      await fetch("/api/proposta-submit", {
+      // L'API verifica il JWT lato server e prende user_id/user_email dal token,
+      // non dal body. Mandiamo solo l'id dell'immobile: il prezzo e il
+      // venditore_user_id vengono comunque riletti server-side dal DB.
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) {
+        setError('Sessione scaduta. Rifai il login.')
+        setStatus('error')
+        return
+      }
+      const res = await fetch("/api/proposta-submit", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`,
+        },
         body: JSON.stringify({
-          immobile,
-          user_email: user.email,
-          user_id: user.id,
+          immobile_id: immobile.id,
           importo: form.importo,
           condizioni: form.condizioni,
           data_rogito: form.data_rogito,
           note: form.note
         })
       })
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}))
+        setError(json.error || 'Errore invio proposta')
+        setStatus('error')
+        return
+      }
       setStatus('success')
     } catch {
       setStatus('error')
@@ -1078,7 +1094,6 @@ export default function ImmobilePage() {
       {showProposta && (
         <PropostaModal
           immobile={immobile}
-          user={user}
           onClose={() => setShowProposta(false)}
         />
       )}

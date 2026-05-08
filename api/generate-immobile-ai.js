@@ -1,28 +1,29 @@
 // api/generate-immobile-ai.js
-// Genera ai_summary, punti_forza, domande_consigliate per un immobile
-// e li scrive in DB (caching). Idempotente: chiamarla più volte sovrascrive.
+// Genera ai_summary, punti_forza, domande_consigliate per un immobile e li
+// scrive in DB (caching). Idempotente: chiamarla più volte sovrascrive.
 //
-// Trigger: chiamata manuale per ora (es. via curl/Postman dopo aver pubblicato
-// un immobile da /vendi). In futuro: chiamata automatica al passaggio
-// status='draft' → 'published'.
+// Sicurezza:
+//   - Richiede JWT del venditore proprietario dell'immobile
+//   - OPPURE header X-Admin-Secret == ADMIN_SECRET (per trigger amministrativo
+//     quando approvi una pubblicazione)
+//
+// Trigger:
+//   - Manuale dal venditore via dashboard (futuro: bottone "rigenera testi AI")
+//   - Admin tool al passaggio pending_review → published
 //
 // Importante: NON calcola Fair Price Score, NON cita range OMI specifici.
-// Genera solo contenuto descrittivo basato sui dati dell'immobile.
-// Il pricing reale è fatto manualmente dal team con dati OMI ufficiali.
+
+import { verifyJwt } from "./_lib/auth.js";
+import { handleCors } from "./_lib/cors.js";
 
 export default async function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-  if (req.method === "OPTIONS") return res.status(200).end();
+  if (handleCors(req, res)) return;
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
-
-  const { immobile_id } = req.body || {};
-  if (!immobile_id) return res.status(400).json({ error: "immobile_id mancante" });
 
   const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
   const SUPABASE_SECRET = process.env.SUPABASE_SECRET_KEY;
   const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
+  const ADMIN_SECRET = process.env.ADMIN_SECRET;
 
   if (!SUPABASE_URL || !SUPABASE_SECRET) {
     return res.status(500).json({ error: "Supabase env mancante" });
@@ -31,11 +32,25 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Anthropic env mancante" });
   }
 
-  // 1. Leggi l'immobile dal DB (con service_role per bypassare RLS)
+  const { immobile_id } = req.body || {};
+  if (!immobile_id) return res.status(400).json({ error: "immobile_id mancante" });
+
+  // ── Auth: o JWT del venditore, o admin secret ──────────────────────────────
+  const adminHeader = req.headers["x-admin-secret"] || req.headers["X-Admin-Secret"];
+  const isAdmin = ADMIN_SECRET && adminHeader === ADMIN_SECRET;
+
+  let callerUserId = null;
+  if (!isAdmin) {
+    const auth = await verifyJwt(req);
+    if (!auth.ok) return res.status(auth.status).json({ error: auth.error });
+    callerUserId = auth.user.id;
+  }
+
+  // ── 1. Leggi l'immobile dal DB (con service_role per bypassare RLS) ────────
   let immobile;
   try {
     const r = await fetch(
-      `${SUPABASE_URL}/rest/v1/immobili?id=eq.${immobile_id}&select=*`,
+      `${SUPABASE_URL}/rest/v1/immobili?id=eq.${encodeURIComponent(immobile_id)}&select=*`,
       {
         headers: {
           apikey: SUPABASE_SECRET,
@@ -52,7 +67,14 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Errore lettura immobile", detail: String(err) });
   }
 
-  // 2. Prepara il prompt per Claude
+  // ── Ownership check (skippato per admin) ────────────────────────────────────
+  if (!isAdmin) {
+    if (!immobile.venditore_user_id || immobile.venditore_user_id !== callerUserId) {
+      return res.status(403).json({ error: "Non sei autorizzato a rigenerare i testi di questo immobile" });
+    }
+  }
+
+  // ── 2. Prepara il prompt per Claude ────────────────────────────────────────
   const datiImmobile = {
     titolo: immobile.titolo,
     indirizzo: immobile.indirizzo,
@@ -103,7 +125,7 @@ ${JSON.stringify(datiImmobile, null, 2)}
 
 Genera ai_summary, punti_forza, domande_consigliate seguendo le regole.`;
 
-  // 3. Chiama Claude
+  // ── 3. Chiama Claude ────────────────────────────────────────────────────────
   let aiPayload;
   try {
     const r = await fetch("https://api.anthropic.com/v1/messages", {
@@ -132,7 +154,6 @@ Genera ai_summary, punti_forza, domande_consigliate seguendo le regole.`;
       return res.status(500).json({ error: "Risposta AI vuota" });
     }
 
-    // Parse difensivo: a volte il modello include backtick anche con istruzioni esplicite
     const cleaned = text.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```\s*$/i, "").trim();
     aiPayload = JSON.parse(cleaned);
 
@@ -143,10 +164,10 @@ Genera ai_summary, punti_forza, domande_consigliate seguendo le regole.`;
     return res.status(500).json({ error: "Errore generazione AI", detail: String(err) });
   }
 
-  // 4. Salva in DB
+  // ── 4. Salva in DB ──────────────────────────────────────────────────────────
   try {
     const r = await fetch(
-      `${SUPABASE_URL}/rest/v1/immobili?id=eq.${immobile_id}`,
+      `${SUPABASE_URL}/rest/v1/immobili?id=eq.${encodeURIComponent(immobile_id)}`,
       {
         method: "PATCH",
         headers: {

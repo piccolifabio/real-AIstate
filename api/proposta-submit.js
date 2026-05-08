@@ -1,26 +1,56 @@
 // api/proposta-submit.js
 // Chiamato dal modal "Fai un'offerta" in Immobile.jsx
+// Sicurezza:
+//   - Richiede header Authorization: Bearer <jwt> dell'utente loggato
+//   - user_id e user_email vengono letti dal token, NON dal body
+//   - Prezzo e venditore vengono letti dal DB, NON dal body
+//   - Tutti i campi user-controlled passano da escapeHtml prima dell'email
 // Flusso:
-//   1. Riceve dati proposta dal frontend
-//   2. Legge immobile + venditore da DB (autoritativo, frontend non può manipolare prezzo/venditore)
-//   3. Salva proposta su Supabase con compratore_nome letto da auth metadata
+//   1. Valida JWT, ottieni compratore (user)
+//   2. Legge immobile + venditore_user_id dal DB (autoritativo)
+//   3. Salva proposta su Supabase
 //   4. Manda email B (notifica) a info@ + venditore reale
 //   5. Manda email A (conferma) al compratore
 
+import { verifyJwt } from "./_lib/auth.js";
+import { handleCors } from "./_lib/cors.js";
+import { escapeHtml } from "./_lib/escape-html.js";
+
 export default async function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-  if (req.method === "OPTIONS") return res.status(200).end();
+  if (handleCors(req, res)) return;
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-  const { immobile, user_email, user_id, importo, condizioni, data_rogito, note } = req.body;
+  // ── 0. Verifica JWT ──────────────────────────────────────────────────────────
+  const auth = await verifyJwt(req);
+  if (!auth.ok) return res.status(auth.status).json({ error: auth.error });
+
+  const compratore_user_id = auth.user.id;
+  const compratore_email   = auth.user.email;
+  const compratore_nome    = auth.user.user_metadata?.full_name || null;
+
+  // ── 1. Parse e valida body ──────────────────────────────────────────────────
+  const { immobile_id, importo, condizioni, data_rogito, note } = req.body || {};
+
+  if (!immobile_id) {
+    return res.status(400).json({ error: "immobile_id mancante" });
+  }
+  const importoNum = Number(importo);
+  if (!Number.isFinite(importoNum) || importoNum <= 0) {
+    return res.status(400).json({ error: "Importo non valido" });
+  }
+  if (!data_rogito) {
+    return res.status(400).json({ error: "Data rogito mancante" });
+  }
+  // Validazione data: deve essere futura
+  const dataRogitoDate = new Date(data_rogito);
+  if (isNaN(dataRogitoDate.getTime()) || dataRogitoDate <= new Date()) {
+    return res.status(400).json({ error: "Data rogito deve essere futura" });
+  }
 
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SUPABASE_KEY = process.env.SUPABASE_SECRET_KEY;
   const BREVO_KEY    = process.env.BREVO_API_KEY;
 
-  // Helper Supabase REST
   const sbHeaders = {
     "apikey": SUPABASE_KEY,
     "Authorization": `Bearer ${SUPABASE_KEY}`,
@@ -28,9 +58,9 @@ export default async function handler(req, res) {
   };
 
   try {
-    // ── 1. Leggi immobile dal DB (autoritativo) ────────────────────────────────
+    // ── 2. Leggi immobile dal DB (autoritativo) ────────────────────────────────
     const immobileRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/immobili?id=eq.${immobile.id}&select=id,indirizzo,zona,prezzo,venditore_user_id`,
+      `${SUPABASE_URL}/rest/v1/immobili?id=eq.${encodeURIComponent(immobile_id)}&select=id,indirizzo,zona,prezzo,venditore_user_id,status`,
       { headers: sbHeaders }
     );
     const immobiliArr = await immobileRes.json();
@@ -39,30 +69,19 @@ export default async function handler(req, res) {
     if (!immobileDb) {
       return res.status(404).json({ error: "Immobile non trovato" });
     }
+    if (immobileDb.status !== "published") {
+      return res.status(400).json({ error: "Immobile non disponibile per proposte" });
+    }
 
     const indirizzoVero = immobileDb.indirizzo;
     const prezzoVero    = Number(immobileDb.prezzo);
 
-    // Calcoli delta sul prezzo letto da DB, non da frontend
-    const diff   = Number(importo) - prezzoVero;
-    const perc   = Math.round(Math.abs(diff) / prezzoVero * 100);
+    const diff   = importoNum - prezzoVero;
+    const perc   = prezzoVero > 0 ? Math.round(Math.abs(diff) / prezzoVero * 100) : 0;
     const colore = diff >= 0 ? '#2d6a4f' : '#d93025';
     const label  = diff >= 0 ? `+${perc}% sopra prezzo` : `${perc}% sotto prezzo`;
 
-    // ── 2. Leggi nome compratore + email/nome venditore da auth.users ──────────
-    let compratore_nome = null;
-    if (user_id) {
-      try {
-        const r = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${user_id}`, { headers: sbHeaders });
-        if (r.ok) {
-          const u = await r.json();
-          compratore_nome = u?.user_metadata?.full_name || null;
-        }
-      } catch (e) {
-        console.error("Errore lettura compratore:", e);
-      }
-    }
-
+    // ── 3. Leggi email/nome venditore da auth.users ─────────────────────────────
     let venditore_email = null;
     let venditore_nome  = null;
     if (immobileDb.venditore_user_id) {
@@ -81,16 +100,16 @@ export default async function handler(req, res) {
       }
     }
 
-    // ── 3. Salva proposta su Supabase ──────────────────────────────────────────
+    // ── 4. Salva proposta su Supabase ──────────────────────────────────────────
     const supabaseRes = await fetch(`${SUPABASE_URL}/rest/v1/proposte`, {
       method: "POST",
       headers: { ...sbHeaders, "Prefer": "return=representation" },
       body: JSON.stringify({
         immobile_id:        immobileDb.id,
-        compratore_email:   user_email,
+        compratore_email:   compratore_email,
         compratore_nome:    compratore_nome,
-        compratore_user_id: user_id || null,
-        importo:            Number(importo),
+        compratore_user_id: compratore_user_id,
+        importo:            importoNum,
         condizioni:         condizioni || null,
         data_rogito:        data_rogito || null,
         note:               note || null,
@@ -103,15 +122,21 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: "Supabase error", detail: errText });
     }
 
-    // ── 4. Email B — notifica al venditore (e a info@) ─────────────────────────
+    // ── 5. Email B — notifica al venditore (e a info@) ─────────────────────────
+    // Tutti i campi user-controlled passano da escapeHtml.
     const destinatariB = [{ email: 'info@realaistate.ai', name: 'RealAIstate' }];
     if (venditore_email && venditore_email !== 'info@realaistate.ai') {
       destinatariB.push({ email: venditore_email, name: venditore_nome || 'Venditore' });
     }
 
     const compratoreVisuale = compratore_nome
-      ? `${compratore_nome} · ${user_email}`
-      : user_email;
+      ? `${escapeHtml(compratore_nome)} · ${escapeHtml(compratore_email)}`
+      : escapeHtml(compratore_email);
+
+    const indirizzoEsc = escapeHtml(indirizzoVero);
+    const condizioniEsc = condizioni ? escapeHtml(condizioni) : '';
+    const noteEsc = note ? escapeHtml(note) : '';
+    const dataRogitoEsc = escapeHtml(data_rogito || 'Da concordare');
 
     const emailVenditoreHtml = `
       <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#f7f5f0;">
@@ -126,7 +151,7 @@ export default async function handler(req, res) {
             Hai una nuova proposta.
           </h1>
           <p style="font-size:14px;color:rgba(247,245,240,0.55);margin:0 0 28px;line-height:1.5;">
-            ${indirizzoVero}
+            ${indirizzoEsc}
           </p>
 
           <div style="background:#141414;border:1px solid rgba(247,245,240,0.08);border-radius:3px;padding:22px;margin-bottom:24px;">
@@ -136,22 +161,22 @@ export default async function handler(req, res) {
             </div>
             <div style="margin-bottom:14px;">
               <div style="font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:rgba(247,245,240,0.4);margin-bottom:4px;">Importo offerto</div>
-              <div style="font-size:22px;font-weight:700;color:#f7f5f0;">€${Number(importo).toLocaleString('it-IT')}</div>
+              <div style="font-size:22px;font-weight:700;color:#f7f5f0;">€${importoNum.toLocaleString('it-IT')}</div>
               <div style="font-size:13px;color:${colore};font-weight:600;margin-top:4px;">${label} (€${diff >= 0 ? '+' : ''}${diff.toLocaleString('it-IT')})</div>
             </div>
             <div style="margin-bottom:14px;">
               <div style="font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:rgba(247,245,240,0.4);margin-bottom:4px;">Data rogito proposta</div>
-              <div style="font-size:14px;color:#f7f5f0;">${data_rogito || 'Da concordare'}</div>
+              <div style="font-size:14px;color:#f7f5f0;">${dataRogitoEsc}</div>
             </div>
-            ${condizioni ? `
+            ${condizioniEsc ? `
             <div style="margin-bottom:14px;">
               <div style="font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:rgba(247,245,240,0.4);margin-bottom:4px;">Condizioni</div>
-              <div style="font-size:14px;color:rgba(247,245,240,0.8);font-style:italic;">${condizioni}</div>
+              <div style="font-size:14px;color:rgba(247,245,240,0.8);font-style:italic;">${condizioniEsc}</div>
             </div>` : ''}
-            ${note ? `
+            ${noteEsc ? `
             <div>
               <div style="font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:rgba(247,245,240,0.4);margin-bottom:4px;">Note</div>
-              <div style="font-size:14px;color:rgba(247,245,240,0.8);font-style:italic;">${note}</div>
+              <div style="font-size:14px;color:rgba(247,245,240,0.8);font-style:italic;">${noteEsc}</div>
             </div>` : ''}
           </div>
 
@@ -176,8 +201,8 @@ export default async function handler(req, res) {
       }),
     });
 
-    // ── 5. Email A — conferma al compratore ────────────────────────────────────
-    const compratoreNomeVisuale = compratore_nome ? compratore_nome.split(' ')[0] : '';
+    // ── 6. Email A — conferma al compratore ────────────────────────────────────
+    const compratoreNomeVisuale = compratore_nome ? escapeHtml(compratore_nome.split(' ')[0]) : '';
 
     const emailCompratoreHtml = `
       <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#f7f5f0;">
@@ -192,22 +217,22 @@ export default async function handler(req, res) {
             ${compratoreNomeVisuale ? `Ricevuta, ${compratoreNomeVisuale}.` : 'Proposta ricevuta.'}
           </h1>
           <p style="font-size:14px;color:rgba(247,245,240,0.55);margin:0 0 28px;line-height:1.5;">
-            La tua proposta per <strong style="color:rgba(247,245,240,0.8);">${indirizzoVero}</strong> è stata inviata al venditore.
+            La tua proposta per <strong style="color:rgba(247,245,240,0.8);">${indirizzoEsc}</strong> è stata inviata al venditore.
           </p>
 
           <div style="background:#141414;border:1px solid rgba(247,245,240,0.08);border-radius:3px;padding:22px;margin-bottom:24px;">
             <div style="margin-bottom:14px;">
               <div style="font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:rgba(247,245,240,0.4);margin-bottom:4px;">Importo proposto</div>
-              <div style="font-size:22px;font-weight:700;color:#f7f5f0;">€${Number(importo).toLocaleString('it-IT')}</div>
+              <div style="font-size:22px;font-weight:700;color:#f7f5f0;">€${importoNum.toLocaleString('it-IT')}</div>
             </div>
             <div style="margin-bottom:14px;">
               <div style="font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:rgba(247,245,240,0.4);margin-bottom:4px;">Data rogito proposta</div>
-              <div style="font-size:14px;color:#f7f5f0;">${data_rogito || 'Da concordare'}</div>
+              <div style="font-size:14px;color:#f7f5f0;">${dataRogitoEsc}</div>
             </div>
-            ${condizioni ? `
+            ${condizioniEsc ? `
             <div>
               <div style="font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:rgba(247,245,240,0.4);margin-bottom:4px;">Condizioni</div>
-              <div style="font-size:14px;color:rgba(247,245,240,0.8);font-style:italic;">${condizioni}</div>
+              <div style="font-size:14px;color:rgba(247,245,240,0.8);font-style:italic;">${condizioniEsc}</div>
             </div>` : ''}
           </div>
 
@@ -234,7 +259,7 @@ export default async function handler(req, res) {
       headers: { "Content-Type": "application/json", "api-key": BREVO_KEY },
       body: JSON.stringify({
         sender: { name: "RealAIstate", email: "info@realaistate.ai" },
-        to: [{ email: user_email, name: compratore_nome || user_email }],
+        to: [{ email: compratore_email, name: compratore_nome || compratore_email }],
         subject: `Proposta inviata — ${indirizzoVero}`,
         htmlContent: emailCompratoreHtml,
       }),
@@ -242,6 +267,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({ ok: true });
   } catch (e) {
+    console.error("proposta-submit error:", e);
     return res.status(500).json({ error: e.message });
   }
 }
