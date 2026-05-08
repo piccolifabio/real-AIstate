@@ -660,6 +660,7 @@ export default function ImmobilePage() {
       acqua_calda: immobileDb.acqua_calda ?? IMMOBILE_FALLBACK.acqua_calda,
       disponibilita_rogito: immobileDb.disponibilita_rogito ?? IMMOBILE_FALLBACK.disponibilita_rogito,
       foto: immobileDb.foto ?? null,
+      venditore_user_id: immobileDb.venditore_user_id ?? null,
       scores: {
         prezzo: immobileDb.fair_price_score ?? IMMOBILE_FALLBACK.scores.prezzo,
       },
