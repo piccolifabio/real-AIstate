@@ -12,6 +12,7 @@
 //   6. Aggiorna status proposta su Supabase
 
 import { createClient } from '@supabase/supabase-js'
+import { handleCors } from './_lib/cors.js'
 
 // Client service role per operazioni server-side (bypass RLS)
 const supabase = createClient(
@@ -24,6 +25,7 @@ const YOUSIGN_KEY = process.env.YOUSIGN_API_KEY
 const TEMPLATE_ID = '71505658-23d8-4d5a-9ff1-2e221294e929'
 
 export default async function handler(req, res) {
+  if (handleCors(req, res)) return;
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
