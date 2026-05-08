@@ -670,6 +670,10 @@ export default function ImmobilePage() {
     }),
   };
 
+  // True se l'utente loggato è il venditore di questo immobile.
+  // Usato per nascondere chat AI, bottone "Contatta venditore", "Fai proposta".
+  const isOwner = !!(user?.id && immobile?.venditore_user_id && user.id === immobile.venditore_user_id);
+
   // Fetch immobile da Supabase
   useEffect(() => {
     const fetchImmobile = async () => {
@@ -981,27 +985,46 @@ export default function ImmobilePage() {
             </div>
           </div>
 
-          {/* AI CHAT */}
-          <div className="chat-section" ref={chatRef}>
-            <h2 className="section-title">Chatta con l&apos;AI — o col venditore</h2>
-            <div style={{ fontSize: "0.82rem", color: "var(--muted)", marginBottom: "0.5rem" }}>
-              L&apos;AI risponde subito alle domande che conosce. Per tutto il resto, media la conversazione con il venditore — filtrando i toni e proteggendo entrambe le parti.
+          {/* AI CHAT — visibile solo a chi NON è il venditore */}
+          {isOwner ? (
+            <div className="chat-section" ref={chatRef}>
+              <h2 className="section-title">Le tue conversazioni</h2>
+              <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 3, padding: "2rem", textAlign: "center" }}>
+                <div style={{ fontSize: "0.95rem", color: "rgba(247,245,240,0.7)", marginBottom: "0.5rem", lineHeight: 1.6 }}>
+                  Le chat con i compratori che hanno scritto su questo immobile sono raccolte nella tua dashboard.
+                </div>
+                <div style={{ fontSize: "0.78rem", color: "var(--muted)", marginBottom: "1.5rem" }}>
+                  Le risposte alle domande inoltrate dai compratori arrivano via email a <strong>info@realaistate.ai</strong>.
+                </div>
+                <a href="/venditore" className="btn-primary" style={{ display: "inline-block", textDecoration: "none" }}>
+                  Apri dashboard →
+                </a>
+              </div>
             </div>
-            <div style={{ fontSize: "0.78rem", color: "var(--gold)", marginBottom: "1.5rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
-              <span>✦</span>
-              <span>Ogni messaggio è revisionato dall&apos;AI prima di essere consegnato. Nessuna sorpresa, nessuna tensione.</span>
+          ) : (
+            <div className="chat-section" ref={chatRef}>
+              <h2 className="section-title">Chatta con l&apos;AI — o col venditore</h2>
+              <div style={{ fontSize: "0.82rem", color: "var(--muted)", marginBottom: "0.5rem" }}>
+                L&apos;AI risponde subito alle domande che conosce. Per tutto il resto, media la conversazione con il venditore — filtrando i toni e proteggendo entrambe le parti.
+              </div>
+              <div style={{ fontSize: "0.78rem", color: "var(--gold)", marginBottom: "1.5rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                <span>✦</span>
+                <span>Ogni messaggio è revisionato dall&apos;AI prima di essere consegnato. Nessuna sorpresa, nessuna tensione.</span>
+              </div>
+              <AiChat user={user} immobileId={immobile.id} immobile={immobile} />
             </div>
-            <AiChat user={user} immobileId={immobile.id} immobile={immobile} />
-          </div>
+          )}
 
-          {/* AFFORDABILITY */}
-          <div className="afford-section">
-            <h2 className="section-title">Puoi permetterti questa casa?</h2>
-            <div style={{ fontSize: "0.82rem", color: "var(--muted)", marginBottom: "1.2rem" }}>
-              Verifica subito la tua capacità d'acquisto con l'AI. Poche domande, risposta immediata. RealAIstate ti mette poi in contatto con le banche più adeguate alla tua situazione.
+          {/* AFFORDABILITY — non ha senso per il venditore */}
+          {!isOwner && (
+            <div className="afford-section">
+              <h2 className="section-title">Puoi permetterti questa casa?</h2>
+              <div style={{ fontSize: "0.82rem", color: "var(--muted)", marginBottom: "1.2rem" }}>
+                Verifica subito la tua capacità d'acquisto con l'AI. Poche domande, risposta immediata. RealAIstate ti mette poi in contatto con le banche più adeguate alla tua situazione.
+              </div>
+              <AffordabilityChat immobile={immobile} />
             </div>
-            <AffordabilityChat immobile={immobile} />
-          </div>
+          )}
 
           {/* COMPARABLES */}
           {haComparabili && (
@@ -1075,40 +1098,32 @@ export default function ImmobilePage() {
             )}
 
             <div className="sticky-cta">
-              {(() => {
-                const isOwner = user?.id && immobile?.venditore_user_id && user.id === immobile.venditore_user_id;
-
-                if (isOwner) {
-                  // Sei il venditore: niente chat e niente proposta su te stesso.
-                  // Linkiamo direttamente alla dashboard dove gestisci tutto.
-                  return (
-                    <>
-                      <a href="/venditore" className="btn-primary" style={{ textAlign: 'center', textDecoration: 'none' }}>
-                        Vai alla dashboard →
-                      </a>
-                      <div className="btn-secondary" style={{ textAlign: 'center', cursor: 'default', opacity: 0.6 }}>
-                        Questo è il tuo immobile
-                      </div>
-                    </>
-                  );
-                }
-
-                return (
-                  <>
-                    <button className="btn-primary" onClick={scrollToChat}>Contatta il venditore →</button>
-                    {user ? (
-                      <button className="btn-primary" style={{ background: '#2d6a4f' }} onClick={() => setShowProposta(true)}>
-                        Fai una proposta →
-                      </button>
-                    ) : (
-                      <a href="/login" className="btn-secondary">Accedi per fare una proposta</a>
-                    )}
-                  </>
-                );
-              })()}
-              <button className="btn-secondary" onClick={() => setSaved(!saved)}>
-                {saved ? "♥ Salvato nella shortlist" : "♡ Aggiungi alla shortlist"}
-              </button>
+              {isOwner ? (
+                <>
+                  <a href="/venditore" className="btn-primary" style={{ textAlign: 'center', textDecoration: 'none' }}>
+                    Vai alla dashboard →
+                  </a>
+                  <div className="btn-secondary" style={{ textAlign: 'center', cursor: 'default', opacity: 0.6 }}>
+                    Questo è il tuo immobile
+                  </div>
+                </>
+              ) : (
+                <>
+                  <button className="btn-primary" onClick={scrollToChat}>Contatta il venditore →</button>
+                  {user ? (
+                    <button className="btn-primary" style={{ background: '#2d6a4f' }} onClick={() => setShowProposta(true)}>
+                      Fai una proposta →
+                    </button>
+                  ) : (
+                    <a href="/login" className="btn-secondary">Accedi per fare una proposta</a>
+                  )}
+                </>
+              )}
+              {!isOwner && (
+                <button className="btn-secondary" onClick={() => setSaved(!saved)}>
+                  {saved ? "♥ Salvato nella shortlist" : "♡ Aggiungi alla shortlist"}
+                </button>
+              )}
             </div>
           </div>
         </div>
