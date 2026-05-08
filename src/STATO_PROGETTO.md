@@ -1,5 +1,5 @@
 # RealAIstate — Stato del progetto
-Aggiornato: 08/05/2026 notte (sessione 07/05 sera → 08/05 mattina)
+Aggiornato: 08/05/2026 sera (security pass + bug self-proposta)
 
 ## Stack
 - Frontend: React + Vite, deploy su Vercel
@@ -100,6 +100,69 @@ Aggiornato: 08/05/2026 notte (sessione 07/05 sera → 08/05 mattina)
   - Env var VITE_GOOGLE_MAPS_KEY configurata in .env.local + Vercel (Sensitive)
   - Key rotata una volta dopo che era finita in chat (best practice sicurezza)
 
+### Settimana 5 sera ✅ — completata 08/05/2026 sera (security pass)
+- [x] **ARCHITECTURE_REVIEW.md** ✅
+  - Review completa pre-pitch angel: stack, punti forza, debiti tecnici,
+    rischi scala 10/100/1000 immobili e 100/1000/10000 utenti, sicurezza,
+    raccomandazioni divise in (a) pre-angel, (b) post-round, (c) post-PMF
+  - Identificati 3 buchi critici: proposta-submit senza JWT, API AI senza
+    rate-limit, src/supabase.js hardcoded
+- [x] **Helpers condivisi `api/_lib/`** ✅
+  - `auth.js`: verifyJwt(req) — pattern condiviso per validare JWT
+  - `cors.js`: handleCors(req, res) — restringe origin a whitelist
+  - `escape-html.js`: escapeHtml(s) — neutralizza HTML injection nei template email
+  - Vercel ignora directory con prefisso `_` come endpoint
+- [x] **Fix #1: JWT in proposta-submit** ✅
+  - Prima: accettava user_id/user_email dal body — qualsiasi attaccante
+    poteva creare proposte spacciandosi per chiunque
+  - Ora: verifica JWT, prende user_id e email dal token, accetta solo
+    immobile_id dal body. Validazione importo>0 e data_rogito futura
+    server-side. Rifiuta se status≠published.
+- [x] **Fix #4: JWT + ownership in generate-immobile-ai** ✅
+  - Prima: chiunque poteva sovrascrivere ai_summary di qualsiasi immobile
+    e bruciare budget Anthropic
+  - Ora: o JWT del venditore proprietario, o header X-Admin-Secret
+- [x] **Fix #2: escapeHtml nei template email** ✅
+  - Tutti i campi user-controlled (note, condizioni, nome, indirizzo,
+    domanda, risposta AI) passano da escapeHtml
+  - Toccati: chat-immobile, vendi-submit, richiedi-pubblicazione,
+    proposta-submit. URL Storage passano da encodeURI
+- [x] **chat_messages writes via service_role** ✅
+  - chat-immobile.js usava SUPABASE_ANON_KEY → richiedeva INSERT
+    pubblica permissiva su chat_messages
+  - Ora usa SUPABASE_SECRET_KEY (service_role bypassa RLS)
+- [x] **Fix #7: CORS restretto** ✅
+  - Tutti gli endpoint passano da `_lib/cors.handleCors()`
+  - Whitelist: realaistate.ai, *.realaistate.ai, *.vercel.app, localhost:5173/3000/4173
+- [x] **Fix #6: src/supabase.js dall'environment** ✅
+  - Sostituito hardcode con `import.meta.env.VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`
+  - Aggiunto `.env.example` come riferimento + `.env.local` popolato (gitignored)
+- [x] **migrations/2026-05-08-rls-tighten.sql** ✅ (eseguita su Supabase)
+  - Drop "Lettura messaggi utenti loggati" e "Scrittura messaggi utenti
+    loggati" su chat_messages — erano permissive, qualsiasi loggato leggeva/
+    scriveva tutto
+  - Create `chat_messages_venditore_read` (scoped via immobile.venditore_user_id)
+    e `chat_messages_compratore_read` (scoped via compratore_email = auth.email())
+  - Drop "Allow insert" su scuse (la pagina /scuse usa array hardcoded,
+    smonta.js e admin-scuse.js usano già service_role)
+- [x] **Fix bug self-proposta venditore** ✅
+  - Bug trovato in prod: venditore loggato sulla propria scheda poteva
+    fare offerta a se stesso → email "Hai una nuova proposta" arrivava
+    a se stesso
+  - Fix frontend: isOwner promosso a variabile del componente. Se
+    user.id === immobile.venditore_user_id, sticky-cta mostra "Vai alla
+    dashboard" + "Questo è il tuo immobile" invece di chat/proposta.
+    Affordability nascosta. Chat AI sostituita da placeholder con link
+    a /venditore.
+  - Fix backend: proposta-submit rifiuta con 400 se compratore_user_id
+    === venditore_user_id (defense in depth)
+  - Bug nascosto del merge: `venditore_user_id` non era nei campi
+    cherry-pickati in `const immobile = {...IMMOBILE_FALLBACK, ...immobileDb}`
+    quindi il check frontend leggeva sempre undefined. Aggiunto.
+- [x] **Cleanup repo** ✅
+  - Rimosso src/App.jsx.backup
+  - .claude/ aggiunto a .gitignore
+
 ## File chiave
 - src/HomePage.jsx — home page con Nav e CTA
 - src/ScusePage.jsx — pagina scuse separata
@@ -116,17 +179,27 @@ Aggiornato: 08/05/2026 notte (sessione 07/05 sera → 08/05 mattina)
 - src/AuthContext.jsx — gestione sessione + signUp con full_name + updateFullName
 - src/supabase.js — connessione Supabase
 - src/App.jsx — routing centrale con alias /compra/:id ↔ /immobili/:id
-- api/chat-immobile.js — chat AI con notifiche email
-- api/proposta-submit.js — salvataggio + email A (compratore) + email B (info@ + venditore)
+- api/_lib/auth.js — verifyJwt(req) helper condiviso
+- api/_lib/cors.js — handleCors(req, res) restringe origin a whitelist
+- api/_lib/escape-html.js — escapeHtml() per template email
+- api/chat-immobile.js — chat AI con notifiche email (writes via service_role)
+- api/proposta-submit.js — JWT-validated, blocca self-proposta, escape email
 - api/yousign-proposta.js — firma digitale FEA via Yousign sandbox
-- api/vendi-submit.js — form venditore: scrive in venditori + immobili (draft),
-  JWT-authenticated, l'AI genera summary/punti_forza/domande in automatico
-- api/richiedi-pubblicazione.js — draft → pending_review + email venditore + email info@
+- api/vendi-submit.js — form venditore JWT-auth, AI genera summary/punti/domande
+- api/richiedi-pubblicazione.js — draft → pending_review + email venditore + info@
+- api/generate-immobile-ai.js — JWT venditore O X-Admin-Secret per rigenerare AI
+- migrations/2026-05-08-rls-tighten.sql — RLS tighten (eseguita)
+- ARCHITECTURE_REVIEW.md — review pre-pitch angel (root)
+- FIXES_TODO.md — checklist setup esterno (Upstash, Sentry, branch git)
+- .env.example — template env vars (root)
 - public/proposta_acquisto_template.html — template proposta visualizzabile
 - public/llms.txt — descriptor per AI agent
 
 ## Supabase tabelle
-- chat_messages — messaggi chat (user_id, immobile_id, sessione_id, mittente, testo)
+- chat_messages — messaggi chat (user_id, immobile_id, sessione_id, mittente, testo).
+  RLS dopo 08/05: scritture solo via service_role (le API). Letture scoped:
+  `chat_messages_venditore_read` (immobile_id IN miei immobili) +
+  `chat_messages_compratore_read` (compratore_email = auth.email()).
 - proposte — proposte d'acquisto (status: pending/accepted/rejected, yousign_id)
 - immobili — id (sequence), titolo, indirizzo, zona, prezzo, superficie,
   tipologia, piano, superficie_calpestabile, locali (ex vani), camere, bagni,
@@ -135,7 +208,8 @@ Aggiornato: 08/05/2026 notte (sessione 07/05 sera → 08/05 mattina)
   domande_consigliate (jsonb array), status (draft/pending_review/published/
   sold/archived), venditore_user_id (FK auth.users), created_at.
   RLS attive con 4 policy.
-- scuse — scuse dalla pagina /scuse
+- scuse — scuse dalla pagina /scuse. RLS dopo 08/05: niente policy pubbliche
+  (la pagina usa hallOfFame array hardcoded, smonta/admin-scuse usano service_role).
 - venditori — form venditori (lead completo onboarding, ~30 campi)
 
 ## Decisioni architetturali
@@ -179,6 +253,37 @@ Aggiornato: 08/05/2026 notte (sessione 07/05 sera → 08/05 mattina)
   a fine sessione PRIMA di chiudere. Path: `src/STATO_PROGETTO.md` (NON root).
   Lezione imparata 07/05: senza aggiornamento, sessioni successive ricominciano
   da informazioni stale e si rifanno cose già fatte.
+- **Pattern auth obbligatorio per scritture sensibili**: tutte le API che
+  scrivono su DB con dati riferiti all'utente DEVONO validare il JWT via
+  `_lib/auth.verifyJwt()` e prendere user_id/email dal token, MAI dal body.
+  Pattern: vendi-submit, richiedi-pubblicazione, yousign-proposta, proposta-submit,
+  generate-immobile-ai. Solo le API pubbliche per design (subscribe, chat-affordability,
+  smonta) possono restare aperte — ma vanno rate-limitate (TODO Upstash).
+- **CORS centralizzato**: tutte le API usano `_lib/cors.handleCors()`.
+  Whitelist origin: realaistate.ai, *.realaistate.ai, *.vercel.app, localhost.
+  Niente `Access-Control-Allow-Origin: *` mai più.
+- **escapeHtml() su template email**: qualsiasi campo user-controlled
+  (note, condizioni, nome, indirizzo, descrizione, domande, risposte AI)
+  deve passare da `_lib/escape-html.escapeHtml()` prima dell'interpolazione.
+  URL Storage Supabase passano da `encodeURI()`.
+- **chat_messages writes only via service_role**: dopo migration 08/05,
+  l'INSERT da anon/authenticated è bloccato. Le API che scrivono devono
+  usare SUPABASE_SECRET_KEY (mai SUPABASE_ANON_KEY).
+- **isOwner pattern in scheda immobile**: in Immobile.jsx la variabile
+  `isOwner = user?.id === immobile?.venditore_user_id` controlla:
+  - sticky-cta: "Vai alla dashboard" + "Questo è il tuo immobile" (vs
+    "Contatta venditore" + "Fai una proposta")
+  - chat AI section: placeholder "Le tue conversazioni" + link a /venditore
+  - affordability section: nascosta
+  - shortlist button: nascosto
+- **No chat persistente bidirezionale in app per MVP**: il flow è
+  compratore→AI→email a info@→venditore risponde via email. Asincrono
+  va bene per l'immobiliare. Da rivalutare post-PMF quando: 10+ immobili
+  attivi, venditori chiedono "come rispondo dentro l'app?", compratori
+  dicono "non ho capito se ha risposto".
+- **Self-proposta venditore = rifiutata** sia frontend (UI nascosta) sia
+  backend (proposta-submit ritorna 400 se compratore_user_id ===
+  venditore_user_id). Defense in depth.
 
 ## Memo tecnici (gotchas già imparati — non ripetere errori)
 - **Yousign `template_placeholders.signers[].label`**: case-sensitive
@@ -225,6 +330,29 @@ Aggiornato: 08/05/2026 notte (sessione 07/05 sera → 08/05 mattina)
 - **Workflow corretto**: testare in LOCALE prima di committare, non in
   produzione. Lezione imparata 07/05 (test in produzione mascherava
   comportamenti diversi del codice locale).
+- **api/_lib/* è ignorato da Vercel come endpoint**: il prefisso `_`
+  rende il path non esposto come API pubblica. Pattern ufficiale per
+  utilities condivise tra le serverless functions.
+- **Worktree git**: in un worktree non puoi `git checkout main` se main
+  è già checked-out nella cartella principale. Soluzione: `git push
+  origin <branch>:main` da dentro il worktree fa fast-forward diretto
+  su main remoto. Vercel deploya. Il worktree principale recupera con
+  `git pull` quando ci torni sopra.
+- **Spread merge + cherry-pick gotcha**: in Immobile.jsx il `const immobile
+  = { ...IMMOBILE_FALLBACK, ...immobileDb_cherry_picked }` enumera
+  esplicitamente i campi DB. Se aggiungi una colonna nuova (es.
+  `venditore_user_id`) e la usi nel render, ricordati di aggiungerla
+  alla lista cherry-pick — altrimenti finisce undefined nel render
+  e i check silenziosamente non matchano. Bug subdolo: il dato in DB
+  è OK, il render no.
+- **Supabase RLS audit query**: per vedere tutte le policy di una tabella:
+  `SELECT polname, polcmd, polroles::regrole[], pg_get_expr(polqual, polrelid)
+  FROM pg_policy WHERE polrelid = 'public.NOME_TABELLA'::regclass;`
+  Da fare PRIMA di scrivere migration RLS — i nomi default di Supabase
+  Studio non sono mai quello che pensi.
+- **Cache browser dopo deploy Vercel**: Ctrl+F5 a volte non basta. Per
+  test puliti usa finestra incognito. Bundle JS può restare cached
+  diversi minuti dopo il deploy.
 
 ## ⚠️ Bug aperti (cosmetici, non bloccanti)
 - **Pagina /immobili/:id scrolla a metà al caricamento**: comportamento non
@@ -262,6 +390,21 @@ Steps:
 **Attenzione**: in production le firme hanno valore legale.
 
 ## Prossima sessione
+- **Cleanup proposta-fantasma di test**: lanciare su Supabase SQL Editor
+  ```sql
+  DELETE FROM public.proposte
+  WHERE compratore_email = 'fabiopiccoli@hotmail.it'
+    AND immobile_id = 1
+    AND status = 'pending'
+  RETURNING id, importo, created_at;
+  ```
+- **Setup Upstash + integrazione rate-limit AI**: vedi FIXES_TODO.md punto 2.
+  Setup founder ~10 min (account + 2 env Vercel), poi ~30 min lavoro AI per
+  middleware in `_lib/rate-limit.js` + integrazione su 4 API AI (chat-immobile,
+  chat-affordability, chat-venditore, smonta).
+- **Setup Sentry frontend + backend** (opzionale ma utile): FIXES_TODO.md punto 3.
+- **Cancellare branch git remoti morti**: feat/listing-dinamico, feat/vendi-reale,
+  fix/dashboard-venditore-cover. Via GitHub UI o `git push --delete origin <name>`.
 - **Bug scroll /immobili/:id**: 15-30 min con diagnosi corretta tramite
   console window.scrollTo monkey-patch + stack trace.
 - **Email al venditore quando approvi pubblicazione**: oggi UPDATE SQL
@@ -293,6 +436,19 @@ Steps:
 - **Tool admin per approvazione pubblicazioni** con email automatica al venditore
 - **Documenti immobile come tabella DB** (oggi hardcoded fallback)
 - **Comparabili immobile come tabella DB** (oggi hardcoded fallback)
-- **Cancellare branch git vecchi** (feat/vendi-reale, feat/immobile-dinamico
-  remote, fix/dashboard-venditore-cover) — pulizia repo
-- **Cancellare src/App.jsx.backup** — file orfano in repo
+- **Cancellare branch git vecchi remoti** (feat/listing-dinamico, feat/vendi-reale,
+  fix/dashboard-venditore-cover) — pulizia repo (locale: src/App.jsx.backup
+  già rimosso 08/05)
+- **Rate-limit Upstash su API AI**: setup tracciato in FIXES_TODO.md
+- **Sentry frontend + backend**: error monitoring, FIXES_TODO.md
+- **Tool admin pubblicazione immobili**: bottone "Approva" che chiama API
+  che (a) cambia status a published, (b) chiama generate-immobile-ai
+  (con header X-Admin-Secret), (c) manda email venditore
+- **Chat persistente venditore↔compratore in app** (post-PMF): textarea
+  in dashboard venditore per rispondere, tab "Le mie chat" lato compratore
+  in /account, polling o Supabase Realtime, notifiche
+- **Riepilogo "rispondi via email entro 24h"** sotto ogni sessione in
+  /venditore con email del compratore in mailto: link
+- **Refactor Immobile.jsx**: 1088 righe, monolite. Estrazione in
+  `<ImmobileScheda>`, `<AiChat>`, `<AffordabilityChat>`, `<ProposalModal>`,
+  `<Gallery>` quando avrai tempo (post-angel)
