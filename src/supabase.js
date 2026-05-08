@@ -1,6 +1,16 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = 'https://strigywjvkhbubyszuxp.supabase.co'
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0cmlneXdqdmtoYnVieXN6dXhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU5MzM0OTcsImV4cCI6MjA5MTUwOTQ5N30.aoe0BIuDrJyYU15hWVBaxO1I8PxweWpy6assvprRkns'
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  // Fail fast in dev: meglio rompere all'avvio che avere un client undefined
+  // che fallisce silenziosamente più avanti. In production Vercel le env sono
+  // configurate; in locale serve `.env.local` (vedi .env.example).
+  throw new Error(
+    'Mancano VITE_SUPABASE_URL o VITE_SUPABASE_ANON_KEY. ' +
+    'In locale crea .env.local copiando .env.example.'
+  )
+}
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
