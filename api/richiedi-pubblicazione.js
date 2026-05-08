@@ -1,4 +1,8 @@
+import { escapeHtml } from "./_lib/escape-html.js";
+import { handleCors } from "./_lib/cors.js";
+
 export default async function handler(req, res) {
+  if (handleCors(req, res)) return;
   if (req.method !== "POST") return res.status(405).end();
 
   try {
@@ -71,9 +75,16 @@ export default async function handler(req, res) {
     }
 
     const supabaseStorageBase = `${process.env.SUPABASE_URL}/storage/v1/object/documenti-venditori`;
+    const e = (v) => escapeHtml(v == null || v === "" ? "—" : v);
+    const safeStorageHref = (path) => `${supabaseStorageBase}/${encodeURI(path)}`;
+
     const fotoLinks = Array.isArray(immobile.foto) && immobile.foto.length > 0
-      ? immobile.foto.map((f, i) => `<p>&rarr; <a href="${supabaseStorageBase}/${f}">Foto ${i + 1}</a></p>`).join("")
+      ? immobile.foto.map((f, i) => `<p>&rarr; <a href="${safeStorageHref(f)}">Foto ${i + 1}</a></p>`).join("")
       : "<p>Nessuna foto caricata</p>";
+
+    const prezzoFmt = immobile.prezzo
+      ? Number(immobile.prezzo).toLocaleString("it-IT")
+      : "—";
 
     // 5. Email a info@ con tutti i dati per la review
     await fetch("https://api.brevo.com/v3/smtp/email", {
@@ -85,26 +96,26 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         sender: { name: "RealAIstate", email: "info@realaistate.ai" },
         to: [{ email: "info@realaistate.ai", name: "Fabio" }],
-        subject: `🔔 Richiesta pubblicazione: ${immobile.indirizzo}`,
+        subject: `Richiesta pubblicazione: ${immobile.indirizzo}`,
         htmlContent: [
           "<div style='font-family:Arial,sans-serif;max-width:600px;'>",
           "<h2>Richiesta pubblicazione immobile</h2>",
           "<p>Un venditore ha richiesto la pubblicazione del proprio immobile. Verifica i dati e le foto, poi approva o richiedi modifiche.</p>",
           "<hr/>",
-          "<p><strong>Venditore:</strong> " + userName + " (" + userEmail + ")</p>",
-          "<p><strong>User ID:</strong> " + userId + "</p>",
-          "<p><strong>Immobile ID:</strong> " + immobile_id + "</p>",
-          "<p><strong>Indirizzo:</strong> " + immobile.indirizzo + "</p>",
-          "<p><strong>Tipologia:</strong> " + (immobile.tipologia || "—") + " &mdash; " + (immobile.stato_immobile || "—") + "</p>",
-          "<p><strong>Prezzo:</strong> &euro; " + (immobile.prezzo ? Number(immobile.prezzo).toLocaleString("it-IT") : "—") + "</p>",
-          "<p><strong>Superficie:</strong> " + (immobile.superficie || "—") + " mq catastali" + (immobile.superficie_calpestabile ? " / " + immobile.superficie_calpestabile + " mq calpestabili" : "") + "</p>",
-          "<p><strong>Vani:</strong> " + (immobile.vani || "—") + " | Camere: " + (immobile.camere || "—") + " | Bagni: " + (immobile.bagni || "—") + "</p>",
-          "<p><strong>Anno costruzione:</strong> " + (immobile.anno_costruzione || "—") + " | Classe energetica: " + (immobile.classe_energetica || "—") + "</p>",
+          "<p><strong>Venditore:</strong> " + escapeHtml(userName) + " (" + escapeHtml(userEmail) + ")</p>",
+          "<p><strong>User ID:</strong> " + escapeHtml(userId) + "</p>",
+          "<p><strong>Immobile ID:</strong> " + escapeHtml(immobile_id) + "</p>",
+          "<p><strong>Indirizzo:</strong> " + e(immobile.indirizzo) + "</p>",
+          "<p><strong>Tipologia:</strong> " + e(immobile.tipologia) + " &mdash; " + e(immobile.stato_immobile) + "</p>",
+          "<p><strong>Prezzo:</strong> &euro; " + escapeHtml(prezzoFmt) + "</p>",
+          "<p><strong>Superficie:</strong> " + e(immobile.superficie) + " mq catastali" + (immobile.superficie_calpestabile ? " / " + e(immobile.superficie_calpestabile) + " mq calpestabili" : "") + "</p>",
+          "<p><strong>Vani:</strong> " + e(immobile.vani) + " | Camere: " + e(immobile.camere) + " | Bagni: " + e(immobile.bagni) + "</p>",
+          "<p><strong>Anno costruzione:</strong> " + e(immobile.anno_costruzione) + " | Classe energetica: " + e(immobile.classe_energetica) + "</p>",
           "<hr/>",
           "<p><strong>Foto (" + (immobile.foto ? immobile.foto.length : 0) + "):</strong></p>",
           fotoLinks,
           "<hr/>",
-          "<p><strong>Per approvare:</strong> vai su Supabase → tabella immobili → riga id=" + immobile_id + " → cambia <code>status</code> a <code>published</code>.</p>",
+          "<p><strong>Per approvare:</strong> vai su Supabase → tabella immobili → riga id=" + escapeHtml(immobile_id) + " → cambia <code>status</code> a <code>published</code>.</p>",
           "<p><strong>Per rifiutare:</strong> rispondi a questa email scrivendo al venditore cosa va sistemato, poi riporta <code>status</code> a <code>draft</code>.</p>",
           "</div>",
         ].join(""),

@@ -1,15 +1,17 @@
+import { handleCors } from "./_lib/cors.js";
+import { escapeHtml } from "./_lib/escape-html.js";
+
 export default async function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-  if (req.method === "OPTIONS") return res.status(200).end();
+  if (handleCors(req, res)) return;
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
   const { domanda, immobile, sessione_id, compratore_nome, compratore_email, messaggi_precedenti } = req.body;
   if (!domanda || domanda.trim().length < 2) return res.status(400).json({ error: "Domanda non valida" });
 
+  // Scriviamo su chat_messages con service_role: dopo la migration RLS del
+  // 2026-05-08 l'INSERT pubblico è chiuso. La API è il solo writer legittimo.
   const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-  const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+  const SUPABASE_KEY = process.env.SUPABASE_SECRET_KEY;
 
   const sn = (v) => (v === null || v === undefined || v === "" ? "non specificato" : v);
   const yn = (v) => (v === true ? "sì" : v === false ? "no" : "non specificato");
@@ -61,7 +63,15 @@ ${sn(immobile.descrizione)}
   };
 
   // Send email notification when forwarding
+  // Tutti i campi user-controlled passano da escapeHtml.
   const sendForwardEmail = async (domandaOriginale, rispostaAI, nomeComp, emailComp) => {
+    const indirizzoEsc = escapeHtml(immobile.indirizzo);
+    const nomeEsc = nomeComp ? escapeHtml(nomeComp) : "Anonimo";
+    const emailEsc = emailComp ? escapeHtml(emailComp) : "email non fornita";
+    const emailHref = emailComp ? encodeURI(emailComp) : "";
+    const sessioneEsc = escapeHtml(sessione_id);
+    const domandaEsc = escapeHtml(domandaOriginale);
+    const rispostaEsc = escapeHtml(rispostaAI);
     try {
       await fetch("https://api.brevo.com/v3/smtp/email", {
         method: "POST",
@@ -73,7 +83,7 @@ ${sn(immobile.descrizione)}
           sender: { name: "RealAIstate Chat", email: "info@realaistate.ai" },
           to: [{ email: "info@realaistate.ai", name: "RealAIstate" }],
           replyTo: emailComp ? { email: emailComp, name: nomeComp || "Compratore" } : undefined,
-          subject: `💬 Domanda da inoltrare al venditore — Immobile ${immobile.indirizzo}`,
+          subject: `Domanda da inoltrare al venditore — Immobile ${immobile.indirizzo}`,
           htmlContent: `
             <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
               <div style="background:#0a0a0a;padding:20px;text-align:center;">
@@ -83,16 +93,16 @@ ${sn(immobile.descrizione)}
               </div>
               <div style="padding:30px;background:#f9f9f9;">
                 <h2 style="color:#0a0a0a;">Domanda da inoltrare al venditore</h2>
-                <p><strong>Immobile:</strong> ${immobile.indirizzo}</p>
-                <p><strong>Compratore:</strong> ${nomeComp || "Anonimo"} — ${emailComp || "email non fornita"}</p>
-                <p><strong>Sessione:</strong> ${sessione_id}</p>
+                <p><strong>Immobile:</strong> ${indirizzoEsc}</p>
+                <p><strong>Compratore:</strong> ${nomeEsc} — ${emailEsc}</p>
+                <p><strong>Sessione:</strong> ${sessioneEsc}</p>
                 <hr/>
                 <p><strong>Domanda del compratore:</strong></p>
-                <blockquote style="border-left:3px solid #d93025;padding-left:15px;color:#333;">${domandaOriginale}</blockquote>
+                <blockquote style="border-left:3px solid #d93025;padding-left:15px;color:#333;">${domandaEsc}</blockquote>
                 <p><strong>Risposta AI inviata:</strong></p>
-                <blockquote style="border-left:3px solid #6b6b6b;padding-left:15px;color:#555;">${rispostaAI}</blockquote>
+                <blockquote style="border-left:3px solid #6b6b6b;padding-left:15px;color:#555;">${rispostaEsc}</blockquote>
                 <hr/>
-                <p style="color:#666;font-size:13px;">Rispondi a <a href="mailto:${emailComp || ""}">${emailComp || "email non fornita"}</a> entro 24 ore.</p>
+                <p style="color:#666;font-size:13px;">Rispondi a <a href="mailto:${emailHref}">${emailEsc}</a> entro 24 ore.</p>
               </div>
             </div>
           `,
