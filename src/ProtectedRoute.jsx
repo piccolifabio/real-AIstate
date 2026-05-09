@@ -8,7 +8,8 @@ export default function ProtectedRoute({ children }) {
   if (loading) return null
 
   if (!user) {
-    return <Navigate to="/login" state={{ from: location }} replace />
+    const dest = location.pathname + location.search + location.hash
+    return <Navigate to={`/login?redirect=${encodeURIComponent(dest)}`} replace />
   }
 
   return children

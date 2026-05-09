@@ -1,10 +1,20 @@
 import { useState } from 'react'
 import { useAuth } from './AuthContext'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+
+function safeRedirect(raw) {
+  if (!raw || typeof raw !== 'string') return null
+  if (raw.length > 512) return null
+  if (!raw.startsWith('/')) return null
+  if (raw.startsWith('//') || raw.startsWith('/\\')) return null
+  return raw
+}
 
 export default function LoginPage() {
   const { signIn, signUp } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const redirectTo = safeRedirect(searchParams.get('redirect')) || '/'
   const [mode, setMode] = useState('login')
   const [email, setEmail] = useState('')
   const [confirmEmail, setConfirmEmail] = useState('')
@@ -37,7 +47,7 @@ export default function LoginPage() {
       if (mode === 'register') {
         setStatus('confirm')
       } else {
-        navigate('/')
+        navigate(redirectTo)
       }
     }
   }
