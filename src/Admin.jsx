@@ -15,7 +15,7 @@ export default function AdminPage() {
   const fetchData = async (key) => {
     const [scuseRes, immRes] = await Promise.all([
       fetch("/api/admin-scuse", { headers: { "x-admin-key": key } }),
-      fetch("/api/admin-immobili", { headers: { "x-admin-key": key } }),
+      fetch("/api/admin/immobili", { headers: { "x-admin-key": key } }),
     ]);
     if (scuseRes.status === 401 || immRes.status === 401) {
       throw new Error("AUTH");
@@ -42,7 +42,7 @@ export default function AdminPage() {
 
   const refreshImmobili = async () => {
     try {
-      const r = await fetch("/api/admin-immobili", { headers: { "x-admin-key": password } });
+      const r = await fetch("/api/admin/immobili", { headers: { "x-admin-key": password } });
       if (r.ok) setImmobili(await r.json());
     } catch {
       // ignora
@@ -54,7 +54,7 @@ export default function AdminPage() {
     setProcessing((p) => ({ ...p, [im.id]: "approva" }));
     setFeedback("");
     try {
-      const r = await fetch("/api/admin-pubblica-immobile", {
+      const r = await fetch("/api/admin/pubblica", {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-admin-key": password },
         body: JSON.stringify({ immobile_id: im.id }),
@@ -91,7 +91,7 @@ export default function AdminPage() {
     setProcessing((p) => ({ ...p, [im.id]: "rifiuta" }));
     setFeedback("");
     try {
-      const r = await fetch("/api/admin-rifiuta-immobile", {
+      const r = await fetch("/api/admin/rifiuta", {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-admin-key": password },
         body: JSON.stringify({ immobile_id: im.id, motivo }),

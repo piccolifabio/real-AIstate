@@ -1,5 +1,5 @@
 # RealAIstate — Stato del progetto
-Aggiornato: 09/05/2026 (settimana 6 — admin tool + UX fix)
+Aggiornato: 09/05/2026 (settimana 6 — admin tool + UX fix + Vercel limit fix)
 
 ## Stack
 - Frontend: React + Vite, deploy su Vercel
@@ -186,7 +186,7 @@ Aggiornato: 09/05/2026 (settimana 6 — admin tool + UX fix)
     invece di introdurre uno schema nuovo (es. ADMIN_USER_IDS list).
   - **Decisione di design**: estratta logica core di generazione AI in
     `api/_lib/ai-content.js` (helper `generateAndSaveImmobileAI(immobile)`).
-    Richiamata in-process da `admin-pubblica-immobile.js` invece di una
+    Richiamata in-process da `admin/[op].js` (op=pubblica) invece di una
     fetch HTTP interna. Più affidabile, no cold-start chain, no problemi
     di URL base in dev. `generate-immobile-ai.js` resta come HTTP wrapper
     (auth JWT venditore O X-Admin-Secret) e usa lo stesso helper.
@@ -194,19 +194,22 @@ Aggiornato: 09/05/2026 (settimana 6 — admin tool + UX fix)
     flow esistente (login con password, x-admin-key in header). Ai login
     fetcha entrambe le liste in parallelo. Badge giallo sul tab
     Pubblicazioni se ci sono pending.
-  - **API admin-immobili.js (GET)**: lista pending_review con join
-    auth.users via `/auth/v1/admin/users/{id}` per recuperare email +
-    nome venditore (PostgREST non joina facilmente auth.users).
-  - **API admin-pubblica-immobile.js (POST)**: UPDATE status='published'
-    → se ai_summary/punti_forza/domande_consigliate mancanti chiama
-    helper AI → recupera email venditore → manda email Brevo "Il tuo
-    immobile è online" con CTA cliccabile a /immobili/:id. Stesso layout
-    di richiedi-pubblicazione, escapeHtml su tutti i campi. Errore AI
-    NON blocca pubblicazione (l'immobile resta published, l'errore
-    finisce nei log Vercel).
-  - **API admin-rifiuta-immobile.js (POST)**: scope minimo. UPDATE
-    status='draft' → email venditore con motivo opzionale (passato come
-    body, escaped lato server).
+  - **API consolidata `api/admin/[op].js`**: dispatcher unico per le 3
+    operazioni admin (immobili/pubblica/rifiuta). Consolidato per stare
+    sotto il limite Vercel Hobby di 12 serverless functions per
+    deployment (vedi gotcha sotto).
+  - **GET /api/admin/immobili**: lista pending_review con join auth.users
+    via `/auth/v1/admin/users/{id}` per recuperare email + nome venditore
+    (PostgREST non joina facilmente auth.users).
+  - **POST /api/admin/pubblica**: UPDATE status='published' → se
+    ai_summary/punti_forza/domande_consigliate mancanti chiama helper AI →
+    recupera email venditore → manda email Brevo "Il tuo immobile è online"
+    con CTA cliccabile a /immobili/:id. Stesso layout di richiedi-pubblicazione,
+    escapeHtml su tutti i campi. Errore AI NON blocca pubblicazione
+    (l'immobile resta published, l'errore finisce nei log Vercel).
+  - **POST /api/admin/rifiuta**: scope minimo. UPDATE status='draft' →
+    email venditore con motivo opzionale (passato come body, escaped
+    lato server).
   - Il bottone "Rifiuta" apre `prompt()` per il motivo + `confirm()` per
     sicurezza. Niente modal custom — semplicità su scope minimo.
 - [x] **Pre-popolazione campi /vendi dal profilo (step 4 contatti)** ✅
@@ -267,13 +270,11 @@ Aggiornato: 09/05/2026 (settimana 6 — admin tool + UX fix)
 - api/generate-immobile-ai.js — JWT venditore O X-Admin-Secret. Wrapper HTTP
   che delega all'helper _lib/ai-content.js
 - api/_lib/ai-content.js — generateAndSaveImmobileAI(immobile): chiama
-  Anthropic + PATCH DB (riusato da generate-immobile-ai e admin-pubblica)
-- api/admin-immobili.js — GET lista pending_review con info venditore
-  (x-admin-key auth)
-- api/admin-pubblica-immobile.js — POST approva pubblicazione: UPDATE
-  status, AI fill se mancante, email venditore (x-admin-key auth)
-- api/admin-rifiuta-immobile.js — POST rifiuto con motivo + email
-  (x-admin-key auth)
+  Anthropic + PATCH DB (riusato da generate-immobile-ai e admin/[op])
+- api/admin/[op].js — dispatcher unico admin (x-admin-key auth):
+  GET /api/admin/immobili (lista pending_review con info venditore),
+  POST /api/admin/pubblica (approva + AI fill + email),
+  POST /api/admin/rifiuta (rifiuto + email con motivo)
 - migrations/2026-05-08-rls-tighten.sql — RLS tighten (eseguita)
 - ARCHITECTURE_REVIEW.md — review pre-pitch angel (root)
 - FIXES_TODO.md — checklist setup esterno (Upstash, Sentry, branch git)
@@ -372,10 +373,10 @@ Aggiornato: 09/05/2026 (settimana 6 — admin tool + UX fix)
   venditore_user_id). Defense in depth.
 - **Admin auth pattern**: header `x-admin-key` (frontend) / `x-admin-secret`
   (chiamate API-to-API tramite ENV `ADMIN_SECRET`). Usato in admin-scuse,
-  admin-immobili, admin-pubblica-immobile, admin-rifiuta-immobile, e come
-  bypass in generate-immobile-ai. NON è un sistema multi-utente — è un
-  toggle "io founder" via password singola. OK per scala MVP. Da rivedere
-  quando avremo più di un admin operativo.
+  admin/[op] (dispatcher: immobili/pubblica/rifiuta), e come bypass in
+  generate-immobile-ai. NON è un sistema multi-utente — è un toggle "io
+  founder" via password singola. OK per scala MVP. Da rivedere quando
+  avremo più di un admin operativo.
 - **Flow pubblicazione immobile (status workflow)**:
   draft → richiedi-pubblicazione (venditore) → pending_review → admin
   approva/rifiuta → published / draft (con motivo via email).
@@ -463,12 +464,24 @@ Aggiornato: 09/05/2026 (settimana 6 — admin tool + UX fix)
   start chain + URL base che cambia in dev/preview/prod. Pattern giusto:
   estrarre la logica in `api/_lib/<nome>.js` come funzione pura, poi
   importarla in entrambi gli handler. Esempio: `_lib/ai-content.js`
-  riutilizzata da `generate-immobile-ai.js` e `admin-pubblica-immobile.js`.
+  riutilizzata da `generate-immobile-ai.js` e `admin/[op].js`.
 - **Recupero email user da auth.users in serverless**: PostgREST non joina
   facilmente auth.users (schema separato). Soluzione: chiamare
   `${SUPABASE_URL}/auth/v1/admin/users/{id}` con apikey + auth bearer
   service_role. Ritorna {email, user_metadata.full_name, ...}. Va fatto
-  per ogni record (in pratica 1-5 in admin-immobili).
+  per ogni record (in pratica 1-5 in admin/immobili).
+- **Vercel Hobby — limite 12 serverless functions per deployment**: errore
+  hard fail con "No more than 12 Serverless Functions can be added to a
+  Deployment on the Hobby plan. Create a team (Pro plan) to deploy more."
+  Lezione imparata 09/05: dopo aver aggiunto 3 nuovi endpoint admin
+  (admin-immobili/pubblica/rifiuta) il count passava 11→14 e Vercel
+  rifiutava il deploy SENZA mostrare l'errore nel build log standard
+  (passa la fase "vercel build" e fallisce in "Deploying outputs").
+  L'errore è visibile solo in Deployment Details → Build Logs (sezione
+  Functions). Pattern di mitigazione: consolidare endpoint correlati in
+  un dispatcher dynamic-route `api/<gruppo>/[op].js` che switch su
+  req.query.op. Vercel conta UN file = UNA funzione, anche con dynamic
+  routing. Vedi `api/admin/[op].js`. Files in `_lib/` non contano.
 - **Open redirect protection in query param**: quando leggi un path da
   `?redirect=...` per `navigate()`, valida sempre: deve startsWith('/'),
   NON '//' o '/\\' (protocol-relative URL evil), length cap. Vedi

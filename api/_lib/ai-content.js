@@ -1,8 +1,8 @@
 // api/_lib/ai-content.js
 // Logica core di generazione contenuto AI per un immobile (ai_summary,
 // punti_forza, domande_consigliate). Riutilizzata da:
-//   - generate-immobile-ai.js  → handler HTTP esposto al venditore/admin
-//   - admin-pubblica-immobile.js → al passaggio pending_review → published
+//   - generate-immobile-ai.js     → handler HTTP esposto al venditore/admin
+//   - admin/[op].js (op=pubblica) → al passaggio pending_review → published
 //
 // Il chiamante è responsabile di auth + ownership check. Questo helper si
 // limita a chiamare Anthropic e a salvare in DB.
