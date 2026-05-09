@@ -1,5 +1,5 @@
 # RealAIstate — Stato del progetto
-Aggiornato: 08/05/2026 sera (security pass + bug self-proposta)
+Aggiornato: 09/05/2026 (settimana 6 — admin tool + UX fix)
 
 ## Stack
 - Frontend: React + Vite, deploy su Vercel
@@ -172,6 +172,68 @@ Aggiornato: 08/05/2026 sera (security pass + bug self-proposta)
     + stack trace per identificare il chiamante esatto. Tempo stimato fix
     vero: 15-30 min con strumenti dev usati correttamente.
 
+### Settimana 6 ✅ — completata 09/05/2026
+- [x] **Cleanup operativo** ✅
+  - Cancellati 3 branch git remoti morti: feat/listing-dinamico,
+    feat/vendi-reale, fix/dashboard-venditore-cover (verificati prima
+    che non avessero commit non in main).
+  - Proposta-fantasma di test su Supabase: query SELECT/DELETE fornita
+    al founder per esecuzione manuale via SQL Editor (no accesso DB
+    diretto da AI).
+- [x] **Tool admin pubblicazione immobili** ✅
+  - **Decisione di design**: pattern auth `x-admin-key` + env ADMIN_SECRET
+    già usato da admin-scuse e generate-immobile-ai. Riusato per coerenza
+    invece di introdurre uno schema nuovo (es. ADMIN_USER_IDS list).
+  - **Decisione di design**: estratta logica core di generazione AI in
+    `api/_lib/ai-content.js` (helper `generateAndSaveImmobileAI(immobile)`).
+    Richiamata in-process da `admin-pubblica-immobile.js` invece di una
+    fetch HTTP interna. Più affidabile, no cold-start chain, no problemi
+    di URL base in dev. `generate-immobile-ai.js` resta come HTTP wrapper
+    (auth JWT venditore O X-Admin-Secret) e usa lo stesso helper.
+  - **Pagina /admin estesa**: tab "Pubblicazioni | Scuse". Mantenuto il
+    flow esistente (login con password, x-admin-key in header). Ai login
+    fetcha entrambe le liste in parallelo. Badge giallo sul tab
+    Pubblicazioni se ci sono pending.
+  - **API admin-immobili.js (GET)**: lista pending_review con join
+    auth.users via `/auth/v1/admin/users/{id}` per recuperare email +
+    nome venditore (PostgREST non joina facilmente auth.users).
+  - **API admin-pubblica-immobile.js (POST)**: UPDATE status='published'
+    → se ai_summary/punti_forza/domande_consigliate mancanti chiama
+    helper AI → recupera email venditore → manda email Brevo "Il tuo
+    immobile è online" con CTA cliccabile a /immobili/:id. Stesso layout
+    di richiedi-pubblicazione, escapeHtml su tutti i campi. Errore AI
+    NON blocca pubblicazione (l'immobile resta published, l'errore
+    finisce nei log Vercel).
+  - **API admin-rifiuta-immobile.js (POST)**: scope minimo. UPDATE
+    status='draft' → email venditore con motivo opzionale (passato come
+    body, escaped lato server).
+  - Il bottone "Rifiuta" apre `prompt()` per il motivo + `confirm()` per
+    sicurezza. Niente modal custom — semplicità su scope minimo.
+- [x] **Pre-popolazione campi /vendi dal profilo (step 4 contatti)** ✅
+  - useEffect in VendiForm che, al mount/load di user, popola form.nome
+    da `user.user_metadata.full_name` e form.email da `user.email`
+    (solo se i campi sono ancora vuoti — non sovrascrive modifiche).
+  - Email mostrata READ-ONLY (greyed, cursor not-allowed, opacity 55%)
+    con label "Email account" e link "Modificabile da /account".
+  - Nuovo campo "Conferma email" obbligatorio. Validazione case-insensitive
+    via `.toLowerCase().trim()`. Errore inline rosso sotto il campo se
+    diverge.
+  - canProceed step 4 aggiornato. email_conferma escluso dal payload
+    inviato a /api/vendi-submit (campo solo client-side).
+  - Layout: telefono spostato in riga propria (email + conferma email
+    occupano la prima riga insieme).
+- [x] **Redirect post-login a destination** ✅
+  - ProtectedRoute: invece di state `{from: location}` (che si perde nei
+    Navigate consecutivi), passa `?redirect=<encoded path+search+hash>`
+    come query param.
+  - LoginPage: legge `?redirect=` con useSearchParams + helper
+    `safeRedirect()` che valida (must startsWith '/', not '//' or '/\\',
+    length <= 512). Open redirect protection. Default '/' se invalido.
+  - Dopo `signIn` riuscito: `navigate(redirectTo)` invece di `'/'`.
+  - **Out of scope**: signup. Dopo registrazione l'utente clicca il link
+    di conferma email Supabase che lo riporta al Site URL — il
+    redirect param scompare. Caso accettabile per ora.
+
 ## File chiave
 - src/HomePage.jsx — home page con Nav e CTA
 - src/ScusePage.jsx — pagina scuse separata
@@ -183,8 +245,14 @@ Aggiornato: 08/05/2026 sera (security pass + bug self-proposta)
 - src/Immobile.jsx — scheda immobile DINAMICA da Supabase con fallback
   Capecelatro hardcoded per campi non ancora in DB (documenti/comparabili)
 - src/Listing.jsx — pagina /compra dinamica da Supabase + fittizi "In arrivo"
-- src/LoginPage.jsx — login/registrazione (con campo nome + Conferma email in signup)
-- src/VendiForm.jsx — form 5 step con auth gate, salva immobile draft + lead
+- src/LoginPage.jsx — login/registrazione (con campo nome + Conferma email
+  in signup; legge ?redirect= post-login con open-redirect protection)
+- src/ProtectedRoute.jsx — gate auth, propaga destination come ?redirect=
+- src/VendiForm.jsx — form 5 step con auth gate, salva immobile draft + lead.
+  Step 4 contatti pre-popola nome/email da user; email read-only; conferma
+  email obbligatoria
+- src/Admin.jsx — pannello admin con tab Pubblicazioni | Scuse, bottoni
+  Approva/Rifiuta sugli immobili pending_review
 - src/AuthContext.jsx — gestione sessione + signUp con full_name + updateFullName
 - src/supabase.js — connessione Supabase
 - src/App.jsx — routing centrale con alias /compra/:id ↔ /immobili/:id
@@ -196,7 +264,16 @@ Aggiornato: 08/05/2026 sera (security pass + bug self-proposta)
 - api/yousign-proposta.js — firma digitale FEA via Yousign sandbox
 - api/vendi-submit.js — form venditore JWT-auth, AI genera summary/punti/domande
 - api/richiedi-pubblicazione.js — draft → pending_review + email venditore + info@
-- api/generate-immobile-ai.js — JWT venditore O X-Admin-Secret per rigenerare AI
+- api/generate-immobile-ai.js — JWT venditore O X-Admin-Secret. Wrapper HTTP
+  che delega all'helper _lib/ai-content.js
+- api/_lib/ai-content.js — generateAndSaveImmobileAI(immobile): chiama
+  Anthropic + PATCH DB (riusato da generate-immobile-ai e admin-pubblica)
+- api/admin-immobili.js — GET lista pending_review con info venditore
+  (x-admin-key auth)
+- api/admin-pubblica-immobile.js — POST approva pubblicazione: UPDATE
+  status, AI fill se mancante, email venditore (x-admin-key auth)
+- api/admin-rifiuta-immobile.js — POST rifiuto con motivo + email
+  (x-admin-key auth)
 - migrations/2026-05-08-rls-tighten.sql — RLS tighten (eseguita)
 - ARCHITECTURE_REVIEW.md — review pre-pitch angel (root)
 - FIXES_TODO.md — checklist setup esterno (Upstash, Sentry, branch git)
@@ -293,6 +370,25 @@ Aggiornato: 08/05/2026 sera (security pass + bug self-proposta)
 - **Self-proposta venditore = rifiutata** sia frontend (UI nascosta) sia
   backend (proposta-submit ritorna 400 se compratore_user_id ===
   venditore_user_id). Defense in depth.
+- **Admin auth pattern**: header `x-admin-key` (frontend) / `x-admin-secret`
+  (chiamate API-to-API tramite ENV `ADMIN_SECRET`). Usato in admin-scuse,
+  admin-immobili, admin-pubblica-immobile, admin-rifiuta-immobile, e come
+  bypass in generate-immobile-ai. NON è un sistema multi-utente — è un
+  toggle "io founder" via password singola. OK per scala MVP. Da rivedere
+  quando avremo più di un admin operativo.
+- **Flow pubblicazione immobile (status workflow)**:
+  draft → richiedi-pubblicazione (venditore) → pending_review → admin
+  approva/rifiuta → published / draft (con motivo via email).
+  Il bottone "Approva" è in `/admin` tab "Pubblicazioni". L'email al
+  venditore è automatica e include CTA cliccabile alla scheda.
+- **Pre-popolazione form da auth user**: pattern useEffect su `user` con
+  setForm condizionale (solo se i campi sono ancora vuoti, mai sovrascrivere
+  modifiche manuali). Email mostrata read-only se viene da auth (riduce
+  rischio typo che divergano email account vs email contatto).
+- **Redirect post-login**: ProtectedRoute propaga la destination come
+  `?redirect=<encoded>` query param invece che state — sopravvive a
+  Navigate consecutivi. LoginPage valida con safeRedirect() prima di
+  navigate(). Default '/' se param assente o invalido.
 
 ## Memo tecnici (gotchas già imparati — non ripetere errori)
 - **Yousign `template_placeholders.signers[].label`**: case-sensitive
@@ -362,6 +458,21 @@ Aggiornato: 08/05/2026 sera (security pass + bug self-proposta)
 - **Cache browser dopo deploy Vercel**: Ctrl+F5 a volte non basta. Per
   test puliti usa finestra incognito. Bundle JS può restare cached
   diversi minuti dopo il deploy.
+- **Chiamate inter-API serverless**: NON usare `fetch(VERCEL_URL/api/...)`
+  per chiamare un'altra serverless function dal proprio handler. Cold
+  start chain + URL base che cambia in dev/preview/prod. Pattern giusto:
+  estrarre la logica in `api/_lib/<nome>.js` come funzione pura, poi
+  importarla in entrambi gli handler. Esempio: `_lib/ai-content.js`
+  riutilizzata da `generate-immobile-ai.js` e `admin-pubblica-immobile.js`.
+- **Recupero email user da auth.users in serverless**: PostgREST non joina
+  facilmente auth.users (schema separato). Soluzione: chiamare
+  `${SUPABASE_URL}/auth/v1/admin/users/{id}` con apikey + auth bearer
+  service_role. Ritorna {email, user_metadata.full_name, ...}. Va fatto
+  per ogni record (in pratica 1-5 in admin-immobili).
+- **Open redirect protection in query param**: quando leggi un path da
+  `?redirect=...` per `navigate()`, valida sempre: deve startsWith('/'),
+  NON '//' o '/\\' (protocol-relative URL evil), length cap. Vedi
+  `safeRedirect()` in LoginPage.jsx.
 
 ## ⚠️ Bug aperti
 Nessuno noto. (Bug scroll /immobili/:id non riproducibile dopo 08/05 sera —
@@ -385,7 +496,8 @@ Steps:
 **Attenzione**: in production le firme hanno valore legale.
 
 ## Prossima sessione
-- **Cleanup proposta-fantasma di test**: lanciare su Supabase SQL Editor
+- **Confermare cancellazione proposta-fantasma**: il founder deve eseguire
+  manualmente via Supabase SQL Editor (query fornita 09/05, sotto è il backup):
   ```sql
   DELETE FROM public.proposte
   WHERE compratore_email = 'fabiopiccoli@hotmail.it'
@@ -393,17 +505,17 @@ Steps:
     AND status = 'pending'
   RETURNING id, importo, created_at;
   ```
+- **Test E2E flow admin pubblicazione** dopo deploy 09/05:
+  - Login /admin con password ADMIN_SECRET
+  - Tab "Pubblicazioni" mostra immobili pending_review (se ce ne sono)
+  - Click "Approva" → email arriva al venditore + scheda diventa /immobili/:id
+    visibile pubblicamente
+  - Click "Rifiuta" con motivo → email arriva al venditore + scheda torna draft
 - **Setup Upstash + integrazione rate-limit AI**: vedi FIXES_TODO.md punto 2.
   Setup founder ~10 min (account + 2 env Vercel), poi ~30 min lavoro AI per
   middleware in `_lib/rate-limit.js` + integrazione su 4 API AI (chat-immobile,
   chat-affordability, chat-venditore, smonta).
 - **Setup Sentry frontend + backend** (opzionale ma utile): FIXES_TODO.md punto 3.
-- **Cancellare branch git remoti morti**: feat/listing-dinamico, feat/vendi-reale,
-  fix/dashboard-venditore-cover. Via GitHub UI o `git push --delete origin <name>`.
-- **Email al venditore quando approvi pubblicazione**: oggi UPDATE SQL
-  `pending_review → published` bypassa l'app, venditore non sa che è online.
-  Soluzioni: (a) tool admin con bottone approva, (b) trigger DB con webhook
-  Brevo, (c) UPDATE via API serverless con email automatica.
 - Task 7: Contatta notaio (chat AI qualificante + email automatica)
 - Switch Yousign production se call commerciale va bene
 
@@ -415,28 +527,17 @@ Steps:
 - Fair Price Score AI dinamico (oggi hardcoded per Capecelatro)
 - Generazione PDF dinamica della proposta (PDFShift)
 - Webhook Yousign per aggiornare status='signed' su Supabase a firma completata
-- Redirect post-login: se utente clicca link CTA email mentre non è loggato,
-  dopo login deve tornare alla destination, non alla home
-- Validazione form /vendi: doppio campo email anche nel form venditore
 - Estrazione zona da indirizzo via geocoding
-- Pre-popolazione campi contatti in /vendi dal profilo Supabase
 - Link firma diretto in dashboard venditore (signature_link Yousign in jsonb)
 - Stringere DMARC policy da `p=none` a `p=quarantine` poi `p=reject`
 - Configurare client email mobile (IMAP/SMTP) per leggere info@ da iPhone
 - Fix warning React keys in VendiForm.jsx stepper
 - **Standardizzazione formato `foto` jsonb**: scegliere formato unico
   (URL completi consigliati) e migrare i record esistenti
-- **Tool admin per approvazione pubblicazioni** con email automatica al venditore
 - **Documenti immobile come tabella DB** (oggi hardcoded fallback)
 - **Comparabili immobile come tabella DB** (oggi hardcoded fallback)
-- **Cancellare branch git vecchi remoti** (feat/listing-dinamico, feat/vendi-reale,
-  fix/dashboard-venditore-cover) — pulizia repo (locale: src/App.jsx.backup
-  già rimosso 08/05)
 - **Rate-limit Upstash su API AI**: setup tracciato in FIXES_TODO.md
 - **Sentry frontend + backend**: error monitoring, FIXES_TODO.md
-- **Tool admin pubblicazione immobili**: bottone "Approva" che chiama API
-  che (a) cambia status a published, (b) chiama generate-immobile-ai
-  (con header X-Admin-Secret), (c) manda email venditore
 - **Chat persistente venditore↔compratore in app** (post-PMF): textarea
   in dashboard venditore per rispondere, tab "Le mie chat" lato compratore
   in /account, polling o Supabase Realtime, notifiche
