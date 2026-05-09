@@ -1,5 +1,5 @@
 # RealAIstate — Stato del progetto
-Aggiornato: 09/05/2026 (settimana 6 — admin tool + UX fix + Vercel limit fix)
+Aggiornato: 09/05/2026 (settimana 6 — admin tool + UX fix + Vercel limit fix + decisione rate-limit)
 
 ## Stack
 - Frontend: React + Vite, deploy su Vercel
@@ -7,7 +7,7 @@ Aggiornato: 09/05/2026 (settimana 6 — admin tool + UX fix + Vercel limit fix)
 - API serverless: Vercel functions (api/)
 - Email transazionali: Brevo (SMTP collegato a Supabase Auth + email custom)
 - Email casella business: Namecheap Private Email (info@realaistate.ai)
-- AI: Anthropic API
+- AI: Anthropic API (limite spesa €20 su console — sufficiente per fase beta, vedi sezione "Decisioni architetturali")
 - Mappe: Google Maps Embed API (key in env var, restretta a 4 referrer)
 - Firma digitale: Yousign — sandbox attiva, production trial Pro 12gg
 - Repo: github.com/piccolifabio/real-AIstate
@@ -315,6 +315,19 @@ Aggiornato: 09/05/2026 (settimana 6 — admin tool + UX fix + Vercel limit fix)
 - SRL: da aprire al primo commitment angel
 - Policy RLS hardcoded su email: VIETATE. Sempre via venditore_user_id ↔ auth.uid()
 - DMARC policy: per ora `p=none` (monitoring)
+- **Rate-limit AI in fase beta: NON necessario** (decisione 09/05/2026).
+  Il limite spesa €20 configurato sulla console Anthropic funge da
+  killswitch globale automatico ed è sufficiente per la fase beta.
+  Motivazione: volumi attesi bassi (1-2 venditori beta + qualche compratore
+  curioso), founder monitora attivamente, beta privata, nessuna registrazione
+  pubblica aperta. Aggiungere Upstash ora = ottimizzazione prematura.
+  **NON ricordare al founder di setuppare Upstash** finché non si verifica
+  almeno una di queste condizioni:
+  (a) si apre la registrazione pubblica (post-pitch angel o post-PMF),
+  (b) il limite €20 viene raggiunto in modo non spiegabile da uso normale,
+  (c) un angel chiede esplicitamente "come gestite gli abusi?" in DD tecnica,
+  (d) il volume di chiamate AI legittime cresce al punto che €20 non basta.
+  Setup tracciato in FIXES_TODO.md punto 2 — pronto da attivare quando serve.
 - **Separazione `venditori` vs `immobili`**: `venditori` = lead onboarding completo
   (~30 campi), `immobili` = ciò che serve a scheda pubblica + relazioni con
   proposte/chat. Vivono in parallelo.
@@ -345,7 +358,7 @@ Aggiornato: 09/05/2026 (settimana 6 — admin tool + UX fix + Vercel limit fix)
   `_lib/auth.verifyJwt()` e prendere user_id/email dal token, MAI dal body.
   Pattern: vendi-submit, richiedi-pubblicazione, yousign-proposta, proposta-submit,
   generate-immobile-ai. Solo le API pubbliche per design (subscribe, chat-affordability,
-  smonta) possono restare aperte — ma vanno rate-limitate (TODO Upstash).
+  smonta) possono restare aperte — il limite €20 console Anthropic protegge dai costi.
 - **CORS centralizzato**: tutte le API usano `_lib/cors.handleCors()`.
   Whitelist origin: realaistate.ai, *.realaistate.ai, *.vercel.app, localhost.
   Niente `Access-Control-Allow-Origin: *` mai più.
@@ -524,13 +537,12 @@ Steps:
   - Click "Approva" → email arriva al venditore + scheda diventa /immobili/:id
     visibile pubblicamente
   - Click "Rifiuta" con motivo → email arriva al venditore + scheda torna draft
-- **Setup Upstash + integrazione rate-limit AI**: vedi FIXES_TODO.md punto 2.
-  Setup founder ~10 min (account + 2 env Vercel), poi ~30 min lavoro AI per
-  middleware in `_lib/rate-limit.js` + integrazione su 4 API AI (chat-immobile,
-  chat-affordability, chat-venditore, smonta).
 - **Setup Sentry frontend + backend** (opzionale ma utile): FIXES_TODO.md punto 3.
 - Task 7: Contatta notaio (chat AI qualificante + email automatica)
 - Switch Yousign production se call commerciale va bene
+- **Iniziare lead generation primi venditori beta**: il prodotto è pronto
+  per onboarding 1-2 persone. LinkedIn, Instagram DM mirati, contatti diretti.
+- (Rate-limit Upstash: NON in questa sessione. Vedi "Decisioni architetturali".)
 
 ## Da fare post-MVP
 - ImmobileVenditore.jsx: refactor CSS e navbar
@@ -549,7 +561,9 @@ Steps:
   (URL completi consigliati) e migrare i record esistenti
 - **Documenti immobile come tabella DB** (oggi hardcoded fallback)
 - **Comparabili immobile come tabella DB** (oggi hardcoded fallback)
-- **Rate-limit Upstash su API AI**: setup tracciato in FIXES_TODO.md
+- **Rate-limit Upstash su API AI** (*parking lot*): setup tracciato in
+  FIXES_TODO.md. Non implementare finché non si verificano le condizioni
+  in "Decisioni architetturali → Rate-limit AI in fase beta".
 - **Sentry frontend + backend**: error monitoring, FIXES_TODO.md
 - **Chat persistente venditore↔compratore in app** (post-PMF): textarea
   in dashboard venditore per rispondere, tab "Le mie chat" lato compratore
