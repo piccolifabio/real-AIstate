@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import NavBar from "./NavBar.jsx";
 import { useAuth } from "./AuthContext";
@@ -193,9 +193,19 @@ export default function VendiForm() {
     prezzo_desiderato: "", note_prezzo: "",
     foto: [],
     planimetria: null, ape: null,
-    nome: "", cognome: "", email: "", telefono: "",
+    nome: "", cognome: "", email: "", email_conferma: "", telefono: "",
     disponibilita: [], note: "",
   });
+
+  useEffect(() => {
+    if (!user) return;
+    setForm(f => {
+      const next = { ...f };
+      if (!f.nome && user.user_metadata?.full_name) next.nome = user.user_metadata.full_name;
+      if (!f.email && user.email) next.email = user.email;
+      return next;
+    });
+  }, [user]);
 
   const planimetriaRef = useRef();
   const apeRef = useRef();
@@ -272,7 +282,10 @@ export default function VendiForm() {
     if (step === 1) return form.prezzo_desiderato;
     if (step === 2) return form.foto.length >= 3;
     if (step === 3) return form.planimetria && form.ape;
-    if (step === 4) return form.nome && form.email && form.telefono;
+    if (step === 4) {
+      const emailMatch = form.email_conferma.trim().toLowerCase() === form.email.trim().toLowerCase();
+      return form.nome && form.email && form.email_conferma && emailMatch && form.telefono;
+    }
     return true;
   };
 
@@ -305,8 +318,9 @@ export default function VendiForm() {
         form.ape ? uploadFile(form.ape, "ape") : Promise.resolve(null),
       ]);
       const fotoUrls = await Promise.all(form.foto.map(f => uploadFile(f, "foto")));
+      const { email_conferma: _eic, ...formForApi } = form;
       const payload = {
-        ...form,
+        ...formForApi,
         foto: fotoUrls,
         planimetria: planimetriaUrl,
         ape: apeUrl,
@@ -692,9 +706,36 @@ export default function VendiForm() {
 
             <div className="vendi-grid">
               <div className="vendi-field">
-                <label className="vendi-label">Email <span className="req">*</span></label>
-                <input className="vendi-input" placeholder="mario@email.it" type="email" value={form.email} onChange={e => update("email", e.target.value)} />
+                <label className="vendi-label">Email account</label>
+                <input
+                  className="vendi-input"
+                  type="email"
+                  value={form.email}
+                  readOnly
+                  style={{ opacity: 0.55, cursor: "not-allowed", background: "rgba(247,245,240,0.04)" }}
+                />
+                <div style={{ fontSize: "0.72rem", color: "rgba(247,245,240,0.35)", marginTop: "0.4rem" }}>
+                  Modificabile da <Link to="/account" style={{ color: "var(--red)" }}>/account</Link>.
+                </div>
               </div>
+              <div className="vendi-field">
+                <label className="vendi-label">Conferma email <span className="req">*</span></label>
+                <input
+                  className="vendi-input"
+                  type="email"
+                  placeholder="Riscrivi la tua email"
+                  value={form.email_conferma}
+                  onChange={e => update("email_conferma", e.target.value)}
+                />
+                {form.email_conferma && form.email_conferma.trim().toLowerCase() !== form.email.trim().toLowerCase() && (
+                  <div style={{ fontSize: "0.72rem", color: "var(--red)", marginTop: "0.4rem" }}>
+                    Le email non coincidono.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="vendi-grid single">
               <div className="vendi-field">
                 <label className="vendi-label">Telefono <span className="req">*</span></label>
                 <input className="vendi-input" placeholder="+39 333 1234567" value={form.telefono} onChange={e => update("telefono", e.target.value)} />
