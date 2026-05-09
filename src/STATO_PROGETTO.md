@@ -162,6 +162,15 @@ Aggiornato: 08/05/2026 sera (security pass + bug self-proposta)
 - [x] **Cleanup repo** ✅
   - Rimosso src/App.jsx.backup
   - .claude/ aggiunto a .gitignore
+- [x] **Bug scroll /immobili/:id: non più riproducibile** ✅
+  - Verificato 08/05 sera in incognito senza login: la pagina rimane in alto.
+  - Non ho fixato esplicitamente. Possibile side-effect del fix isOwner
+    (chat e affordability nascoste al venditore → scrollIntoView non parte
+    in quel ramo) o bug intermittente che dipendeva da timing iframe Maps
+    + scrollIntoView non più innescato dalle condizioni di stasera.
+  - **Se ricompare**: ripartire dalla diagnosi `window.scrollTo` monkey-patch
+    + stack trace per identificare il chiamante esatto. Tempo stimato fix
+    vero: 15-30 min con strumenti dev usati correttamente.
 
 ## File chiave
 - src/HomePage.jsx — home page con Nav e CTA
@@ -354,23 +363,9 @@ Aggiornato: 08/05/2026 sera (security pass + bug self-proposta)
   test puliti usa finestra incognito. Bundle JS può restare cached
   diversi minuti dopo il deploy.
 
-## ⚠️ Bug aperti (cosmetici, non bloccanti)
-- **Pagina /immobili/:id scrolla a metà al caricamento**: comportamento non
-  deterministico (a volte scrolla più, a volte meno). Ipotesi non confermate:
-  iframe Google Maps che fa reflow durante caricamento, scrollIntoView delle
-  chat (AiChat e AffordabilityChat), sticky positioning della sticky-card
-  destra. Tentativi falliti durante sessione 07/05 notte:
-  (a) useLayoutEffect per scroll a 0,
-  (b) timeout multipli a 50/200/500ms con scrollTo,
-  (c) sostituire scrollIntoView con scrollTop = scrollHeight (rotto comportamento
-      chat normale, rollbackato),
-  (d) cambio scroll-behavior CSS da smooth ad auto (innocuo, lasciato in App.jsx
-      ma poi rollbackato per pulizia).
-  **Diagnosi vera da fare in sessione fresca**: F12 → Console → patchare
-  `window.scrollTo` con stack trace per identificare il chiamante esatto.
-  Tempo stimato fix vero: 15-30 min con strumenti dev usati correttamente.
-  Workaround attuale: nessuno, l'utente fa scroll su a mano. Non bloccante
-  per nessuna funzione né conversione. **Non urgente.**
+## ⚠️ Bug aperti
+Nessuno noto. (Bug scroll /immobili/:id non riproducibile dopo 08/05 sera —
+vedi sezione settimana 5 sera per dettagli e cosa fare se ricompare.)
 
 ## Switch Yousign sandbox → production (quando si farà)
 Triggerato da: call commerciale che sblocca API production OPPURE primo
@@ -405,8 +400,6 @@ Steps:
 - **Setup Sentry frontend + backend** (opzionale ma utile): FIXES_TODO.md punto 3.
 - **Cancellare branch git remoti morti**: feat/listing-dinamico, feat/vendi-reale,
   fix/dashboard-venditore-cover. Via GitHub UI o `git push --delete origin <name>`.
-- **Bug scroll /immobili/:id**: 15-30 min con diagnosi corretta tramite
-  console window.scrollTo monkey-patch + stack trace.
 - **Email al venditore quando approvi pubblicazione**: oggi UPDATE SQL
   `pending_review → published` bypassa l'app, venditore non sa che è online.
   Soluzioni: (a) tool admin con bottone approva, (b) trigger DB con webhook
