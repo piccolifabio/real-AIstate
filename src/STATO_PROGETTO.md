@@ -1,5 +1,5 @@
 # RealAIstate — Stato del progetto
-Aggiornato: 10/05/2026 (settimana 7 — fix walkthrough batch 1 + 1.5: vani→locali, AI no-leak, chat JWT, isolamento storico chat per immobile, AI genera titolo)
+Aggiornato: 10/05/2026 (settimana 7 — batch 2: chat AI anonimo invita registrazione, nome/cognome separati, documenti minimi su tutti gli immobili, Google Places Autocomplete in /vendi)
 
 ## Stack
 - Frontend: React + Vite, deploy su Vercel
@@ -350,6 +350,165 @@ dai precedenti. Chiusi in branch `fix/walkthrough-tier-1-5`.
     `/api/generate-immobile-ai` con JWT venditore (o X-Admin-Secret),
     oppure UPDATE manuale del titolo su Supabase.
 
+### Settimana 7 — batch 2 ✅ — completata 10/05/2026 (4 miglioramenti walkthrough impatto medio-alto)
+Test E2E batch 1 + 1.5 hanno qualificato il prodotto come pronto per
+onboarding venditore beta. Batch 2 chiude i 4 task di impatto medio-alto
+emersi nel walkthrough UX 10/05.
+
+- [x] **Task 2.A: chat AI anonimo invita a registrarsi (no più finto inoltro)** ✅
+  - Sintomo: utente NON loggato faceva una domanda fuori scope all'AI →
+    AI fingeva inoltro chiedendo nome/email → API spediva email a info@
+    con lead non qualificato (nessun follow-up possibile, info@ si
+    riempiva di spazzatura).
+  - Fix in `api/chat-immobile.js`:
+    - System prompt branching: anonimi ricevono istruzione
+      "NON simulare inoltro, NON chiedere nome/email; rispondi con la
+      frase canonica `Questa è una domanda specifica per il venditore.
+      Per inoltrarla e ricevere risposta, registrati gratuitamente —
+      bastano 30 secondi.`"
+    - Loggati: comportamento invariato (2-step: chiedi conferma → "Ho
+      inoltrato").
+    - `saveMessage` skippa anonimi (return early): niente righe
+      `chat_messages` senza user_id.
+    - `forwarded` è `false` per anonimi anche se l'AI sbagliasse a
+      seguire le istruzioni — defense in depth.
+    - `inviteRegistration` flag nel JSON di risposta: regex match della
+      frase canonica "registrati gratuitamente — bastano 30 secondi".
+    - `sendForwardEmail` chiamata solo se loggato + forwarded → niente
+      email a info@ per anonimi.
+    - Pulito il blocco di sendForwardEmail eliminando il branch `else`
+      morto (estrazione regex email da messaggio anonimo).
+  - Frontend `AiChat` in `Immobile.jsx`:
+    - Quando `data.inviteRegistration` è true, sotto la bubble dell'AI
+      compare un CTA "Registrati gratuitamente →" con redirect alla
+      scheda corrente (`/login?redirect=<encoded path+search>`).
+    - L'utente fa il click, completa il signup, torna sulla scheda dove
+      stava chattando. Da loggato la stessa domanda passa per il flow
+      di inoltro normale.
+  - **Decisione di design**: niente session-merge tra anonimo e loggato.
+    Quando l'utente si registra dopo aver chattato da anonimo, la chat
+    riparte fresh (key={immobileId} forza il rimount). Riassociare lo
+    storico anonimo via fingerprint browser/cookie sarebbe scope creep
+    per il MVP.
+
+- [x] **Task 2.B: nome e cognome separati in user_metadata** ✅
+  - Sintomo: signup, /account, /vendi salvavano un unico campo
+    `full_name`. Conseguenze: cognome sempre vuoto nei form pre-popolati,
+    email transazionali approssimative ("Gentile Mario Rossi" invece di
+    "Gentile Sig. Rossi"), impossibile generare documenti firma con
+    nome+cognome distinti come da contratti.
+  - `AuthContext`:
+    - `signUp(email, password, nome, cognome)` salva i due campi separati
+      + `full_name = nome + cognome` come derivato (per compat con codice
+      che oggi legge full_name nelle email transazionali e in 5 endpoint
+      API).
+    - `updateNomeCognome(nome, cognome)` aggiorna tutti e tre.
+    - `updateFullName(fullName)` deprecato: wrapper che splitta sul primo
+      whitespace e chiama updateNomeCognome — niente codice rotto.
+  - `LoginPage`: tab Registrati con due input affiancati. Riga unica
+    desktop, column su mobile (≤480px) tramite `<style>` inline con media
+    query. Validazione: entrambi obbligatori dopo trim.
+  - `AccountPage`: card Nome e Cognome con due input separati. Pre-popolati
+    da `user_metadata.nome` / `.cognome`, fallback a split del vecchio
+    `full_name` per utenti pre-migrazione (primo token = nome, resto =
+    cognome). Salva chiama `updateNomeCognome`.
+  - `VendiForm` step 4: Cognome ora obbligatorio (`canProceed` aggiornato).
+    Pre-popolazione da nome/cognome separati, fallback a split di
+    full_name.
+  - **Migration SQL one-shot** in
+    `migrations/2026-05-10-split-nome-cognome.sql`: splitta full_name
+    esistente in nome+cognome via `split_part` e `regexp_replace`,
+    idempotente (rilanciabile senza danni). Da eseguire manualmente dal
+    founder via Supabase SQL Editor — il codice ha già un fallback
+    runtime.
+  - **Le 5 API che leggono `user_metadata.full_name`**
+    (proposta-submit, yousign-proposta, richiedi-pubblicazione,
+    chat-immobile, admin/[op]) NON sono state toccate: full_name è sempre
+    aggiornato da AuthContext, quindi continuano a funzionare. Se in
+    futuro vorrai email tipo "Gentile Sig. Rossi" basterà passare a
+    leggere `cognome` direttamente.
+
+- [x] **Task 2.C: sezione Documenti visibile su tutti gli immobili published** ✅
+  - Sintomo: la sezione Documenti era visibile solo per Capecelatro id=1
+    (`haDocumenti = id === 1`). Su nuovi immobili pubblicati la scheda
+    appariva incompleta — niente template proposta, niente accenno alla
+    documentazione, compratore non sapeva che poteva richiederla.
+  - Variante per Capecelatro (demo): rendering completo invariato —
+    lista hardcoded di 6 documenti verificati + template proposta + CTA
+    download (logica preservata letterale).
+  - Variante per altri immobili published: solo Template Proposta
+    d'Acquisto (sempre disponibile, link a
+    `/proposta_acquisto_template.html`) + un box placeholder
+    "Documentazione completa (visura catastale, planimetria, APE, atto
+    di provenienza, regolamento condominiale) disponibile su richiesta.
+    Contatta il venditore via chat per riceverli."
+  - **Bonus rimosso un altro leak Capecelatro**: il badge "✓ Immobile
+    Verificato" in gallery e la verified-box nella sticky-card erano
+    calcolati su `immobile.documenti` che cadeva sulla lista hardcoded
+    di Capecelatro per qualsiasi immobile (tutti 6 verificati → tutti
+    gli immobili "verificati" nel badge). Ora entrambi visibili solo
+    per la demo (`isCapecelatroDemo`).
+  - Comparabili restano solo per Capecelatro finché non avremo colonne
+    DB dedicate (post-MVP).
+
+- [x] **Task 2.D: Google Places Autocomplete in /vendi step 1 indirizzo** ✅
+  - Sintomo: l'utente digitava l'indirizzo libero in un input testo →
+    indirizzi inventati / errati / incompleti passavano senza
+    validazione, immobili in DB con zona=NULL, niente CAP/città/provincia,
+    impossibile geocoding o ricerca per zona.
+  - **Decisione di design**: usato `google.maps.places.Autocomplete`
+    classico (Places API legacy) caricato via tag `<script>` dinamico
+    invece di:
+    - `gmpx-place-autocomplete` web component nuovo: richiede registrazione
+      custom element + import library, complica il pattern React.
+    - `@react-google-maps/api`: pacchetto npm grosso per un solo widget,
+      overkill.
+    Niente nuove dipendenze npm, API stabile e ben documentata, key
+    `VITE_GOOGLE_MAPS_KEY` già usata per Maps Embed (estesa da Fabio
+    con Places API New sul progetto Google Cloud).
+  - `AddressAutocomplete` component (in VendiForm.jsx):
+    - Carica lo script Google Maps con `libraries=places&language=it`
+      una volta sola (cache via `document.getElementById`, idempotente).
+    - Configurazione: `componentRestrictions: { country: 'it' }`,
+      `types: ['address']`, `fields: ['address_components', 'geometry',
+      'formatted_address']`.
+    - Listener `place_changed`: parsing `address_components` → indirizzo
+      (route + street_number), CAP (postal_code), città (locality o
+      admin_area_3 fallback), provincia (admin_area_2 short_name), zona
+      (sublocality_1 / neighborhood / fallback città), lat/lng
+      (geometry.location).
+    - Disclaimer "Powered by Google" sotto il campo (richiesto da TOS
+      Google Maps Platform).
+  - VendiForm step 0:
+    - Se `!form.addressVerified`: mostra il campo Autocomplete +
+      eventuale errore inline "Seleziona un indirizzo dai suggerimenti
+      per continuare" (appare quando l'utente ha digitato qualcosa ma
+      non selezionato).
+    - Se `form.addressVerified`: box verde "✓ Indirizzo verificato" con
+      indirizzo, CAP città (Provincia), zona, e bottone "Cambia" per
+      resettare la selezione.
+    - `canProceed` step 0 ora richiede `addressVerified=true` →
+      l'utente NON può procedere con solo testo libero.
+    - `handleSubmit` strippa `addressVerified` dal payload (campo
+      solo-client, non c'è colonna DB).
+  - **Schema DB**: nuove colonne `cap`, `citta`, `provincia`,
+    `latitudine`, `longitudine` in `immobili`. `zona` esisteva già.
+    Migration in `migrations/2026-05-10-add-address-fields.sql` con
+    `NOTIFY pgrst, 'reload schema'` finale (necessario dopo ALTER TABLE
+    per evitare "Could not find column ..." dalla cache PostgREST).
+  - `api/vendi-submit.js`:
+    - Validazione server-side: se cap/citta/provincia mancanti rifiuta
+      con 400 "Indirizzo incompleto: ..." (defense in depth contro
+      client modificati o richieste fuori-flow).
+    - Salva tutti i campi indirizzo nel record immobili.
+  - `Immobile.jsx`: il render del header ora costruisce
+    `indirizzoSottoTitolo = "Indirizzo, CAP Città (Provincia)"` se i
+    campi strutturati sono popolati, fallback al vecchio "indirizzo,
+    zona" per Capecelatro e immobili pre-migrazione. La query del Maps
+    Embed iframe usa lo stesso indirizzo strutturato → mappa più
+    precisa. `luogoLabel` (sopra il titolo) preferisce
+    `città · zona` se disponibili.
+
 ## File chiave
 - src/HomePage.jsx — home page con Nav e CTA
 - src/ScusePage.jsx — pagina scuse separata
@@ -357,19 +516,24 @@ dai precedenti. Chiusi in branch `fix/walkthrough-tier-1-5`.
 - src/Termini.jsx — termini di servizio
 - src/VenditoreDashboard.jsx — dashboard venditore (gated, multi-immobile,
   cover tollerante a entrambi i formati foto)
-- src/AccountPage.jsx — account con nome modificabile + sezione "Le mie proposte"
+- src/AccountPage.jsx — account con nome+cognome separati editabili (fallback a
+  split di full_name per utenti pre-migrazione) + sezione "Le mie proposte"
 - src/Immobile.jsx — scheda immobile DINAMICA da Supabase con fallback
   Capecelatro hardcoded per campi non ancora in DB (documenti/comparabili)
 - src/Listing.jsx — pagina /compra dinamica da Supabase + fittizi "In arrivo"
-- src/LoginPage.jsx — login/registrazione (con campo nome + Conferma email
-  in signup; legge ?redirect= post-login con open-redirect protection)
+- src/LoginPage.jsx — login/registrazione (con campi nome+cognome separati +
+  Conferma email in signup; legge ?redirect= post-login con open-redirect protection)
 - src/ProtectedRoute.jsx — gate auth, propaga destination come ?redirect=
 - src/VendiForm.jsx — form 5 step con auth gate, salva immobile draft + lead.
-  Step 4 contatti pre-popola nome/email da user; email read-only; conferma
-  email obbligatoria
+  Step 1 indirizzo via Google Places Autocomplete (componentRestrictions IT,
+  types address) — popola indirizzo+cap+città+provincia+zona+lat/lng.
+  Step 4 contatti pre-popola nome+cognome separati ed email da user; email
+  read-only; conferma email obbligatoria; cognome obbligatorio
 - src/Admin.jsx — pannello admin con tab Pubblicazioni | Scuse, bottoni
   Approva/Rifiuta sugli immobili pending_review
-- src/AuthContext.jsx — gestione sessione + signUp con full_name + updateFullName
+- src/AuthContext.jsx — gestione sessione + signUp(email, password, nome, cognome)
+  che salva nome/cognome separati + full_name derivato; updateNomeCognome(nome,
+  cognome) come funzione preferita; updateFullName deprecato (wrapper che splitta)
 - src/supabase.js — connessione Supabase
 - src/App.jsx — routing centrale con alias /compra/:id ↔ /immobili/:id
 - api/_lib/auth.js — verifyJwt(req) helper condiviso
@@ -377,11 +541,16 @@ dai precedenti. Chiusi in branch `fix/walkthrough-tier-1-5`.
 - api/_lib/escape-html.js — escapeHtml() per template email
 - api/chat-immobile.js — chat AI con notifiche email (writes via service_role).
   JWT opzionale: se Bearer presente, system prompt riceve "Compratore
-  identificato: <nome> <email>" e salta la richiesta nome/email; per
-  anonimi il flow 3-step resta invariato
+  identificato: <nome> <email>" e salta la richiesta nome/email; per anonimi
+  (batch 2) NIENTE simulazione di inoltro: l'AI risponde con frase canonica
+  "registrati gratuitamente — bastano 30 secondi" (regex match → flag
+  inviteRegistration nel JSON di risposta), niente saveMessage, niente email
+  forward. Per loggati il flow 2-step resta invariato.
 - api/proposta-submit.js — JWT-validated, blocca self-proposta, escape email
 - api/yousign-proposta.js — firma digitale FEA via Yousign sandbox
-- api/vendi-submit.js — form venditore JWT-auth, AI genera summary/punti/domande
+- api/vendi-submit.js — form venditore JWT-auth, AI genera summary/punti/domande;
+  batch 2 valida server-side cap/citta/provincia (400 se mancanti) e salva i
+  nuovi campi indirizzo strutturati nella tabella immobili
 - api/richiedi-pubblicazione.js — draft → pending_review + email venditore + info@
 - api/generate-immobile-ai.js — JWT venditore O X-Admin-Secret. Wrapper HTTP
   che delega all'helper _lib/ai-content.js
@@ -392,6 +561,10 @@ dai precedenti. Chiusi in branch `fix/walkthrough-tier-1-5`.
   POST /api/admin/pubblica (approva + AI fill + email),
   POST /api/admin/rifiuta (rifiuto + email con motivo)
 - migrations/2026-05-08-rls-tighten.sql — RLS tighten (eseguita)
+- migrations/2026-05-10-split-nome-cognome.sql — splitta full_name in nome+cognome
+  per utenti pre-batch-2 (idempotente, da eseguire dal founder via SQL Editor)
+- migrations/2026-05-10-add-address-fields.sql — aggiunge cap/citta/provincia/lat/lng
+  a immobili + NOTIFY pgrst (da eseguire post-deploy batch 2)
 - ARCHITECTURE_REVIEW.md — review pre-pitch angel (root)
 - FIXES_TODO.md — checklist setup esterno (Upstash, Sentry, branch git)
 - .env.example — template env vars (root)
@@ -404,13 +577,14 @@ dai precedenti. Chiusi in branch `fix/walkthrough-tier-1-5`.
   `chat_messages_venditore_read` (immobile_id IN miei immobili) +
   `chat_messages_compratore_read` (compratore_email = auth.email()).
 - proposte — proposte d'acquisto (status: pending/accepted/rejected, yousign_id)
-- immobili — id (sequence), titolo, indirizzo, zona, prezzo, superficie,
-  tipologia, piano, superficie_calpestabile, locali (ex vani), camere, bagni,
-  anno_costruzione, classe_energetica, stato_immobile, foto (jsonb),
-  descrizione, fair_price_score, ai_summary, punti_forza (jsonb array),
-  domande_consigliate (jsonb array), status (draft/pending_review/published/
-  sold/archived), venditore_user_id (FK auth.users), created_at.
-  RLS attive con 4 policy.
+- immobili — id (sequence), titolo, indirizzo, cap, citta, provincia, zona,
+  latitudine, longitudine, prezzo, superficie, tipologia, piano,
+  superficie_calpestabile, locali (ex vani), camere, bagni, anno_costruzione,
+  classe_energetica, stato_immobile, foto (jsonb), descrizione,
+  fair_price_score, ai_summary, punti_forza (jsonb array), domande_consigliate
+  (jsonb array), status (draft/pending_review/published/sold/archived),
+  venditore_user_id (FK auth.users), created_at. RLS attive con 4 policy.
+  cap/citta/provincia/lat/lng aggiunti il 10/05/2026 (batch 2 task 2.D).
 - scuse — scuse dalla pagina /scuse. RLS dopo 08/05: niente policy pubbliche
   (la pagina usa hallOfFame array hardcoded, smonta/admin-scuse usano service_role).
 - venditori — form venditori (lead completo onboarding, ~30 campi)
@@ -559,6 +733,54 @@ dai precedenti. Chiusi in branch `fix/walkthrough-tier-1-5`.
   garage/terrazzo se non in dati, fallback neutri tipo "{tipologia}
   in {zona}"). Il render frontend usa `titolo || indirizzo` come
   fallback runtime, mai un titolo "demo".
+- **Chat AI anonima = funnel verso registrazione, NON lead generator**
+  (decisione 10/05/2026 batch 2 task 2.A). Prima la chat anonima
+  raccoglieva nome ed email come "inoltro al venditore" → email a
+  info@ con lead non qualificato. Da oggi: anonimi vedono solo "qui
+  serve registrarti". Razionale:
+  (a) info@ stava diventando rumore — lead senza follow-up reale.
+  (b) la chat ha valore informativo anche senza inoltro: l'AI
+      risponde su prezzo, zona, superficie, FPS, sommario AI.
+  (c) la registrazione è gratuita 30s — barrier minima.
+  (d) loggandosi l'utente abilita inoltro vero, proposte, shortlist,
+      storico chat persistente: incentivo allineato.
+  Implementazione: `inviteRegistration` flag nel JSON di risposta
+  (regex match della frase canonica "registrati gratuitamente —
+  bastano 30 secondi"), CTA Registrati sotto la bubble nel frontend.
+  Pattern riusabile per ogni futura paywall soft.
+- **Nome e cognome SEMPRE separati in user_metadata**, full_name è derivato
+  (decisione 10/05/2026 batch 2 task 2.B). I nuovi campi ufficiali sono
+  `user_metadata.nome` e `user_metadata.cognome`. `user_metadata.full_name`
+  resta come campo derivato (`${nome} ${cognome}`.trim()) per non
+  rompere le 5 API che oggi lo leggono — è sempre aggiornato da
+  AuthContext (signUp, updateNomeCognome, updateFullName wrapper).
+  Codice nuovo: usa `nome`/`cognome` direttamente. Codice vecchio:
+  legge full_name e funziona. Migrazione utenti esistenti via SQL
+  one-shot in /migrations/2026-05-10-split-nome-cognome.sql (idempotente,
+  fallback runtime nel frontend per utenti pre-migrazione).
+- **Indirizzo immobile = struttura, non testo libero** (decisione 10/05/2026
+  batch 2 task 2.D). /vendi step 1 usa Google Places Autocomplete classico
+  (`google.maps.places.Autocomplete`) per popolare cap/citta/provincia/zona/
+  lat/lng come campi DB strutturati. Razionale:
+  (a) impossibile pubblicare immobili con indirizzi inventati o errati;
+  (b) FPS dinamico futuro avrà bisogno di geocoding preciso;
+  (c) ricerca per zona / mappa centrata richiedono lat/lng;
+  (d) il rendering della scheda mostra "Via X, CAP Città (Prov)" pulito.
+  Validazione frontend (canProceed step 0 richiede addressVerified) +
+  validazione server-side (vendi-submit rifiuta 400 se cap/citta/provincia
+  mancanti). Niente nuove dipendenze npm — script Google Maps caricato
+  dinamicamente con la stessa key VITE_GOOGLE_MAPS_KEY già usata per
+  Maps Embed. La key richiede Places API (New) abilitata sul progetto
+  Google Cloud. Restrizione paese 'it', types 'address' (esclude POI).
+- **Sezione Documenti = sempre visibile su immobili published** (decisione
+  10/05/2026 batch 2 task 2.C). Capecelatro mostra la lista hardcoded di
+  6 documenti verificati (demo). Altri immobili mostrano solo Template
+  Proposta + placeholder "documentazione disponibile su richiesta — chat
+  con il venditore". La sezione non scompare mai — la scheda non sembra
+  vuota. La lista per-immobile reale richiede una tabella
+  `documenti_immobile` dedicata, in backlog post-MVP. Stessa logica per
+  badge "✓ Immobile Verificato" e verified-box: mostrati solo per la
+  demo, niente leak Capecelatro su immobili senza dati di verifica.
 
 ## Memo tecnici (gotchas già imparati — non ripetere errori)
 - **Yousign `template_placeholders.signers[].label`**: case-sensitive
@@ -684,6 +906,34 @@ dai precedenti. Chiusi in branch `fix/walkthrough-tier-1-5`.
   prop tipo "id corrente", usa la fonte autoritativa stable (es. il
   param URL da `useParams()`) invece di una prop derivata che dipende
   dal fetch async.
+- **Google Places Autocomplete classic (`google.maps.places.Autocomplete`)**:
+  l'API legacy è ancora supportata e ben documentata. Va caricata via
+  `<script src="https://maps.googleapis.com/maps/api/js?key=X&libraries=places&language=it">`
+  *dinamicamente* (non in index.html: pesante per pagine che non lo usano).
+  Inizializzazione: `new window.google.maps.places.Autocomplete(input, {
+  componentRestrictions: { country: 'it' }, fields: [...], types: ['address']
+  })` + `addListener('place_changed', cb)`. Il listener riceve
+  `getPlace()` con `address_components` (array di parti tipo route,
+  street_number, postal_code, locality, ecc.) + `geometry.location.lat()/lng()`.
+  Pattern parsing: `place.address_components.find(c => c.types.includes('postal_code'))?.long_name`.
+  Gotcha: `lat()` e `lng()` sono FUNZIONI, non property — chiamate con `()`.
+- **Frase canonica come segnale machine-readable nel prompt AI**: pattern
+  riusabile per riconoscere lato server quando l'AI ha emesso una specifica
+  intent (invito registrazione, conferma inoltro, ecc.). Nel prompt
+  istruisci il modello a includere SEMPRE una frase letterale specifica
+  ("registrati gratuitamente — bastano 30 secondi"), poi sul testo di
+  risposta fai regex match e setti un flag nel JSON di risposta. Più
+  affidabile di un classifier post-hoc. Se l'AI infrange l'istruzione, il
+  flag resta false: difensivo ma non dannoso. Esempio: `forwarded` in
+  chat-immobile.js cerca "ho inoltrato la tua domanda al venditore",
+  `inviteRegistration` cerca "registrati gratuitamente — bastano 30 secondi".
+- **Default Vercel/Vite: il rimount di un componente svuota i refs**. Quando
+  un sibling React swappa (es. ternario `addressVerified ? Box : <Autocomplete />`),
+  il componente Autocomplete viene smontato/rimontato. `useRef` parte fresh
+  → l'init Autocomplete deve girare di nuovo. È esattamente quello che vogliamo
+  per "Cambia indirizzo" ma è un pattern da tenere a mente: se serve
+  preservare refs/instance attraverso un toggle, sposta il componente fuori
+  dal ramo (es. `<div style={{display: hidden ? 'none' : 'block'}}>`).
 
 ## ⚠️ Bug aperti
 Nessuno noto. (Bug scroll /immobili/:id non riproducibile dopo 08/05 sera —
@@ -707,10 +957,79 @@ Steps:
 **Attenzione**: in production le firme hanno valore legale.
 
 ## Prossima sessione
-- **AZIONE OBBLIGATORIA su Supabase post-deploy settimana 7**: nel SQL
-  Editor eseguire `NOTIFY pgrst, 'reload schema';` per pulire la cache
-  PostgREST. Senza questo step il fix vani→locali del 10/05 potrebbe
-  ancora vedere lo schema stale e fallire.
+- **AZIONI OBBLIGATORIE su Supabase post-deploy batch 2** (eseguire in
+  ordine via SQL Editor):
+  1. `migrations/2026-05-10-add-address-fields.sql` — aggiunge
+     cap/citta/provincia/lat/lng alla tabella immobili. Include
+     `NOTIFY pgrst, 'reload schema';` finale. SENZA questo, l'INSERT
+     in `vendi-submit` fallisce con "Could not find the 'cap' column
+     of 'immobili' in the schema cache".
+  2. `migrations/2026-05-10-split-nome-cognome.sql` — splitta full_name
+     esistente nei nuovi campi nome+cognome per utenti pre-migrazione.
+     Idempotente (può essere rilanciato), già protetto da `NOT
+     (raw_user_meta_data ? 'nome')` nel WHERE. Senza, il fallback
+     runtime nel frontend continua a funzionare ma /account mostra
+     "Aggiungi nome e cognome" finché l'utente non li imposta.
+- **AZIONE OBBLIGATORIA su Supabase post-deploy settimana 7 batch 1**: nel
+  SQL Editor eseguire `NOTIFY pgrst, 'reload schema';` per pulire la cache
+  PostgREST (se non già fatto post-batch 1). Senza questo step il fix
+  vani→locali del 10/05 potrebbe ancora vedere lo schema stale e fallire.
+- **Test E2E batch 2 (10/05/2026) — verifica i 4 task su preview/prod**
+  (DOPO aver eseguito le 2 migration SQL sopra):
+  1. **Task 2.A — chat anonima invita registrazione**:
+     - Logout. Apri /immobili/4 (o qualsiasi non-Capecelatro). Invia
+       in chat AI: "ci sono lavori straordinari deliberati?".
+     - Risposta attesa: "Questa è una domanda specifica per il
+       venditore. Per inoltrarla e ricevere risposta, registrati
+       gratuitamente — bastano 30 secondi. Ti rispondiamo appena il
+       venditore avrà risposto." + bottone rosso "Registrati
+       gratuitamente →" sotto la bubble.
+     - VERIFICA: NIENTE email a info@realaistate.ai (controlla
+       inbox). NIENTE riga in `chat_messages` con user_id=null per
+       quella sessione.
+     - Click sul CTA → /login con `?redirect=/immobili/4` → fai signup
+       → torni su /immobili/4 → stessa domanda → AI propone inoltro
+       (flow loggato 2-step) → "sì" → "Ho inoltrato..." + email a
+       info@.
+  2. **Task 2.B — nome/cognome separati**:
+     - Nuovo signup: form mostra due campi affiancati Nome + Cognome
+       (su mobile <=480px diventano column). Compila, conferma,
+       verifica su Supabase auth.users che user_metadata abbia
+       `nome`, `cognome` e `full_name` = "Nome Cognome".
+     - /account: mostra due input separati pre-popolati. Modifica
+       cognome → Salva → ricarica → entrambi corretti + full_name
+       aggiornato.
+     - /vendi step 4: nome e cognome pre-popolati. Cognome ha
+       l'asterisco rosso (obbligatorio). canProceed false se cognome
+       vuoto.
+     - Esegui la migration SQL split-nome-cognome → verifica con
+       `SELECT raw_user_meta_data FROM auth.users LIMIT 5;` che
+       gli utenti pre-batch ora abbiano nome+cognome.
+  3. **Task 2.C — documenti minimi su tutti gli immobili**:
+     - /immobili/1 (Capecelatro): sezione "Documenti" completa come
+       prima — 6 documenti + template proposta + verified-box +
+       badge "✓ Immobile Verificato" sopra la gallery.
+     - /immobili/3 (o altro non-demo): sezione "Documenti" mostra
+       SOLO Template Proposta + box "documentazione su richiesta".
+       Nessun badge "Immobile Verificato" sopra la gallery, nessuna
+       verified-box nella sticky-card.
+  4. **Task 2.D — Google Places Autocomplete in /vendi**:
+     - /vendi step 1: campo "Indirizzo" con placeholder "Inizia a
+       digitare via, città...". Digita "Via Pinturicchio Milano".
+       Devono apparire suggerimenti dropdown da Google. Click su
+       "Via Pinturicchio, 20133 Milano MI".
+     - Box verde "✓ Indirizzo verificato" si popola con: indirizzo,
+       "20133 Milano (MI)", zona se disponibile, bottone "Cambia".
+     - Continua bloccato finché non hai selezionato (canProceed false).
+     - Submit completo del form → su Supabase verifica record
+       `immobili` con cap='20133', citta='Milano', provincia='MI',
+       latitudine ~45.47, longitudine ~9.22, zona popolata o NULL.
+     - Approvazione admin → /immobili/<nuovo_id> → header mostra
+       "Via Pinturicchio 14, 20133 Milano (MI)". Mappa centrata
+       precisamente. "Apri in Google Maps" porta al posto giusto.
+     - **Test con indirizzo edge case**: piccolo paese senza
+       sublocality (es. "Via Roma 10, San Daniele del Friuli UD") →
+       zona deve fare fallback al nome città.
 - **Test E2E walkthrough — verifica i fix batch 1 e 1.5 su preview/prod**:
   1. Registra nuovo account (email Gmail con sub-addressing per tracciare):
      - Compila /vendi 5 step → submit step 5 → verifica niente 500,
@@ -772,7 +1091,8 @@ Steps:
 - Fair Price Score AI dinamico (oggi hardcoded per Capecelatro)
 - Generazione PDF dinamica della proposta (PDFShift)
 - Webhook Yousign per aggiornare status='signed' su Supabase a firma completata
-- Estrazione zona da indirizzo via geocoding
+- ~~Estrazione zona da indirizzo via geocoding~~ ✅ chiusa 10/05/2026
+  (batch 2 task 2.D — Google Places Autocomplete popola zona/cap/lat/lng)
 - Link firma diretto in dashboard venditore (signature_link Yousign in jsonb)
 - Stringere DMARC policy da `p=none` a `p=quarantine` poi `p=reject`
 - Configurare client email mobile (IMAP/SMTP) per leggere info@ da iPhone
