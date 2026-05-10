@@ -471,14 +471,19 @@ function AiChat({ user, immobileId, immobileDb }) {
     };
 
     try {
+      // Se loggato passiamo il JWT: l'API estrae nome/email dal token e
+      // istruisce l'AI a non chiederli di nuovo.
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
       const res = await fetch("/api/chat-immobile", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
         body: JSON.stringify({
           domanda: userMsg,
           sessione_id: sessioneId,
-          compratore_nome: null,
-          compratore_email: null,
           messaggi_precedenti: messages,
           immobile: aiImmobile,
         })

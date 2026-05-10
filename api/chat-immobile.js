@@ -13,6 +13,30 @@ export default async function handler(req, res) {
   const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
   const SUPABASE_KEY = process.env.SUPABASE_SECRET_KEY;
 
+  // JWT opzionale: la chat AI deve restare aperta agli anonimi, ma se il
+  // compratore è loggato estraiamo nome/email dal token e li passiamo al
+  // prompt — così l'AI NON gli chiede di nuovo "lasciami nome ed email"
+  // (walkthrough 10/05).
+  let authedNome = null;
+  let authedEmail = null;
+  const authHeader = req.headers.authorization || "";
+  const token = authHeader.replace("Bearer ", "");
+  if (token && SUPABASE_URL && SUPABASE_KEY) {
+    try {
+      const userRes = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}` },
+      });
+      if (userRes.ok) {
+        const u = await userRes.json();
+        authedEmail = u.email || null;
+        authedNome = u.user_metadata?.full_name || null;
+      }
+    } catch {
+      // JWT invalido o errore di rete: trattiamo come anonimo, no fail.
+    }
+  }
+  const compratoreIdentificato = !!authedEmail;
+
   const sn = (v) => (v === null || v === undefined || v === "" ? "non specificato" : v);
   const yn = (v) => (v === true ? "sì" : v === false ? "no" : "non specificato");
 
@@ -53,8 +77,10 @@ ${sn(immobile.descrizione)}
           mittente,
           testo,
           da_inoltrare,
-          compratore_nome: compratore_nome || null,
-          compratore_email: compratore_email || null,
+          // Se loggato, sovrascriviamo body con JWT (più affidabile e niente
+          // dipendenza dalla buona fede del client).
+          compratore_nome: compratoreIdentificato ? authedNome : (compratore_nome || null),
+          compratore_email: compratoreIdentificato ? authedEmail : (compratore_email || null),
         }),
       });
     } catch (e) {
@@ -143,10 +169,16 @@ REGOLE INDEROGABILI sui dati:
 - Se la domanda è sul prezzo e il Fair Price Score è "non specificato", NON dare un giudizio: spiega che il punteggio non è ancora calcolato e proponi di inoltrare la domanda al venditore o di confrontare con i comparabili in zona.
 
 Tono: professionale, diretto, rassicurante. Mai più di 3 frasi.
-Se la domanda va inoltrata al venditore, NON inoltrarla automaticamente. Segui questo flusso in ordine:
+${compratoreIdentificato
+  ? `Compratore già identificato: ${authedNome || "(nome non in profilo)"} <${authedEmail}>.
+NON chiedere nome ed email — sono già noti. Quando devi inoltrare al venditore, segui questo flusso:
+1. Prima chiedi: "Vuoi che inoltri questa domanda al venditore? Risponderà entro 24 ore."
+2. Se l'utente risponde sì/confermo/inoltro/procedi o simili → rispondi ESATTAMENTE con: "Grazie. Ho inoltrato la tua domanda al venditore — ti risponderà via email entro 24 ore." e nient'altro.`
+  : `Compratore non autenticato. Quando devi inoltrare al venditore, segui questo flusso in ordine:
 1. Prima chiedi: "Vuoi che inoltri questa domanda al venditore? Risponderà entro 24 ore."
 2. Se l'utente risponde sì/confermo/inoltro/procedi o simili → chiedi ESATTAMENTE: "Perfetto. Per ricevere la risposta del venditore, lasciami il tuo nome e la tua email."
-3. Quando l'utente fornisce nome ed email → rispondi ESATTAMENTE con: "Grazie. Ho inoltrato la tua domanda al venditore — ti risponderà via email entro 24 ore." e nient'altro.
+3. Quando l'utente fornisce nome ed email → rispondi ESATTAMENTE con: "Grazie. Ho inoltrato la tua domanda al venditore — ti risponderà via email entro 24 ore." e nient'altro.`}
+NON inoltrare automaticamente: usa sempre lo step di conferma.
 Rispondi SEMPRE in italiano.`,
         messages: [
           ...(messaggi_precedenti || []).map(m => ({
@@ -169,20 +201,30 @@ Rispondi SEMPRE in italiano.`,
 
     // Send email if forwarding
     if (forwarded) {
-      // Extract name and email from current message if provided
-      let nomeFinale = compratore_nome;
-      let emailFinale = compratore_email;
+      // Se il compratore è loggato (JWT valido), nome/email vengono dal token —
+      // ignoriamo body e regex. Per anonimi: estrazione regex come prima.
+      let nomeFinale;
+      let emailFinale;
+      if (compratoreIdentificato) {
+        nomeFinale = authedNome;
+        emailFinale = authedEmail;
+      } else {
+        nomeFinale = compratore_nome;
+        emailFinale = compratore_email;
+        const emailMatch = domanda.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+        if (emailMatch && !emailFinale) emailFinale = emailMatch[0];
+      }
 
-      // Try to extract email from current message
-      const emailMatch = domanda.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
-      if (emailMatch && !emailFinale) emailFinale = emailMatch[0];
-
-      // Find the original question — search back through messages for the first user question
+      // Find the original question — search back through messages for the first user question.
+      // Per loggati il flow è di 2 step (chiedi conferma → conferma+inoltro), quindi la
+      // domanda originale è penultimo user message. Per anonimi è di 3 step (conferma →
+      // chiedi nome/email → fornisci dati+inoltro), domanda originale 3 indietro.
       let domandaOriginale = domanda;
-      if (messaggi_precedenti && messaggi_precedenti.length >= 3) {
+      if (messaggi_precedenti && messaggi_precedenti.length >= 2) {
         const userMsgs = messaggi_precedenti.filter(m => m.role === "user");
-        if (userMsgs.length >= 3) {
-          domandaOriginale = userMsgs[userMsgs.length - 3].text || domanda;
+        const stepBack = compratoreIdentificato ? 2 : 3;
+        if (userMsgs.length >= stepBack) {
+          domandaOriginale = userMsgs[userMsgs.length - stepBack].text || domanda;
         } else if (userMsgs.length >= 2) {
           domandaOriginale = userMsgs[userMsgs.length - 2].text || domanda;
         }
