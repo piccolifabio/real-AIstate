@@ -1,5 +1,5 @@
 # RealAIstate — Stato del progetto
-Aggiornato: 10/05/2026 (settimana 7 — batch 2 + post-fix Places API New + post-post-fix mount + post-post-post-fix types: chat AI anonimo invita registrazione, nome/cognome separati, documenti minimi su tutti gli immobili, Google Places Autocomplete in /vendi migrato a PlaceAutocompleteElement con includedPrimaryTypes='street_address')
+Aggiornato: 10/05/2026 (settimana 7 — batch 2 + 4 post-fix Places API New: chat AI anonimo invita registrazione, nome/cognome separati, documenti minimi su tutti gli immobili, Google Places Autocomplete in /vendi migrato a `<gmp-place-autocomplete>` come tag JSX nativo)
 
 ## Stack
 - Frontend: React + Vite, deploy su Vercel
@@ -632,6 +632,43 @@ per indirizzi stradali è `'street_address'`.
     Place Types e nota che `'address'` era valore legacy.
   - Build pulita, schema DB invariato, UX invariata.
 
+### Settimana 7 — batch 2 fourth-fix ✅ — completata 10/05/2026 (rendering listbox)
+Dopo i tre fix precedenti (legacy → New, mount race, types), in
+produzione il Web Component restava VUOTO: input visibile, console
+pulita, chiamate POST a `places.googleapis.com/v1/places:autocomplete`
+con status 200, ma il DOM non renderizzava il listbox dei suggerimenti
+(`innerHTML` 0, `aria-expanded` null). Diagnosi chirurgica founder
+in incognito su realaistate.ai/vendi.
+
+- [x] **Pattern programmatico `new + appendChild` non triggherava il
+  rendering interno** ✅
+  - Causa: il pattern `new PlaceAutocompleteElement({...}) +
+    containerRef.current.appendChild(pickerEl)` dentro un async useEffect
+    risulta in un Web Component "dormiente" — i fetch API partono e
+    rispondono 200, ma il listbox non viene renderizzato. Sospetto:
+    React e il lifecycle del custom element (connectedCallback) non si
+    sincronizzano correttamente quando il mount è programmatico dentro
+    un async iife in useEffect, dopo che React ha già completato il
+    layout del container.
+  - Fix: `<gmp-place-autocomplete ref={pickerRef}>` come tag JSX nativo.
+    Il browser gestisce nativamente il lifecycle del custom element e
+    il rendering interno del listbox funziona correttamente.
+  - Property che richiedono array (`includedRegionCodes`,
+    `includedPrimaryTypes`) settate via ref dopo il mount:
+    `picker.includedPrimaryTypes = ["street_address"]`. Gli attributi
+    HTML sono stringhe e non garantiscono il parsing come array.
+  - Listener `gmp-select` e `input` agganciati via `ref + addEventListener`
+    (React 18 non riconosce eventi custom in JSX). Le callback in ref
+    permettono di aggangiare i listener UNA volta sola — senza, ad ogni
+    keystroke `setAddressTouched(true)` causa re-render del parent →
+    add/remove listener girerebbe su ogni input.
+  - Split del singolo useEffect in due: (1) carica script + attendi
+    custom element, (2) configura property + listener quando il
+    custom element è renderizzato. Più chiaro e separa le concerns.
+  - Aggiunto `console.error` anche nell'handler `gmp-select` per
+    debug futuro.
+  - Build pulita, schema DB invariato, UX invariata.
+
 ## File chiave
 - src/HomePage.jsx — home page con Nav e CTA
 - src/ScusePage.jsx — pagina scuse separata
@@ -1062,6 +1099,32 @@ per indirizzi stradali è `'street_address'`.
   `long_name`/`short_name`. `place.location.lat()/lng()` sono ancora
   funzioni. Styling: shadow DOM CHIUSO (no `::part`), solo CSS
   variables Material `--gmp-mat-color-*` e `--gmp-mat-font-*` esposte.
+- **Web Components React: usa il TAG JSX, non `new + appendChild`**
+  (lezione 10/05/2026, fourth-fix batch 2). Per integrare un Web
+  Component in React (es. `<gmp-place-autocomplete>` della Places API
+  New) ci sono due pattern:
+  (a) `<gmp-place-autocomplete ref={r}>` come tag JSX, property/eventi
+      settati via ref dopo il mount;
+  (b) `new PlaceAutocompleteElement({...})` + `containerRef.current.
+      appendChild(picker)` dentro un async useEffect.
+  In teoria sono equivalenti, in pratica solo (a) garantisce il
+  funzionamento corretto. Sintomo (b) provato in prod: input visibile,
+  Network 200 sui fetch autocomplete, ma il listbox non viene MAI
+  renderizzato (innerHTML 0, aria-expanded null) — il custom element
+  resta "dormiente". Sospetto: il `connectedCallback` interno del
+  Web Component non triggera correttamente quando il mount è
+  programmatico dentro un async iife dopo che React ha completato il
+  layout del container.
+  Pattern (a) corretto: render `<gmp-place-autocomplete ref={r}>`
+  condizionalmente (`{scriptStatus === "ready" && <gmp-...>}`), poi in
+  un useEffect con dep `[scriptStatus]` setta property array via
+  ref (`r.current.includedRegionCodes = ['it']`) e attacca listener
+  custom (`r.current.addEventListener("gmp-select", ...)`). React 18
+  non riconosce eventi custom (`gmp-*`) come prop JSX, quindi
+  addEventListener via ref è obbligatorio. Per stable references delle
+  callback, metterle in ref (onSelectRef/onUserTypeRef) e aggiornarle
+  in useEffect senza deps — così add/remove listener gira UNA volta
+  sola e non rebinding ad ogni render del parent.
 - **Place Types Places API (New) NON sono i `types` legacy** (lezione
   10/05/2026, post-post-post-fix batch 2). Nel classico
   `google.maps.places.Autocomplete` si passava `types: ['address']`

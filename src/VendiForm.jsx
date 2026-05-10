@@ -238,15 +238,26 @@ function parsePlace(place) {
 
 // Componente Autocomplete dell'indirizzo. Usa PlaceAutocompleteElement
 // (Web Component `<gmp-place-autocomplete>`) della Places API (New).
-// Crea programmaticamente l'elemento e lo appende al container ref. Quando
-// l'utente seleziona un Place, fetcha i fields e chiama onSelect con l'oggetto
-// strutturato. La fonte di verità rimane il form parent (popolato solo dopo
-// la selezione).
+//
+// Pattern di mount: rendiamo il custom element DIRETTAMENTE come tag JSX
+// (non più `new PlaceAutocompleteElement(...) + appendChild` programmatico
+// in useEffect). Il pattern programmatico in produzione non triggherava
+// il rendering del listbox dei suggerimenti: il componente riceveva i
+// dati da Google (Network 200 su places:autocomplete) ma DOM rimaneva
+// vuoto (innerHTML 0, aria-expanded null). Diagnosi 10/05/2026.
+//
+// Con il tag JSX il browser gestisce nativamente il lifecycle del custom
+// element (connectedCallback, attributeChangedCallback) e il rendering
+// interno funziona. Le property che richiedono array (includedRegionCodes,
+// includedPrimaryTypes) vengono settate via ref dopo il mount, perché gli
+// attributi HTML sono stringhe e non garantiscono il parsing come array.
 function AddressAutocomplete({ apiKey, onSelect, onUserType }) {
-  const containerRef = useRef(null);
+  const pickerRef = useRef(null);
   const [scriptStatus, setScriptStatus] = useState("loading");
   // Le callback cambiano ad ogni render del parent (non sono memoizzate).
-  // Le mettiamo in ref per evitare di rimontare il picker ad ogni render.
+  // Le mettiamo in ref per agganciare i listener UNA VOLTA SOLA — senza
+  // questo, removeListener/addListener girerebbero ad ogni keystroke
+  // (setAddressTouched triggera re-render del parent).
   const onSelectRef = useRef(onSelect);
   const onUserTypeRef = useRef(onUserType);
   useEffect(() => {
@@ -254,28 +265,17 @@ function AddressAutocomplete({ apiKey, onSelect, onUserType }) {
     onUserTypeRef.current = onUserType;
   });
 
+  // Step 1 — carica lo script Maps API e attendi la registrazione del
+  // custom element. Quando ready, React renderizza <gmp-place-autocomplete>.
   useEffect(() => {
     if (!apiKey) {
       setScriptStatus("error");
       return;
     }
     let mounted = true;
-    let pickerEl = null;
-    let cleanup = () => {};
-
     (async () => {
       try {
         await loadGoogleMapsScript(apiKey);
-        // Aspettiamo che il custom element <gmp-place-autocomplete> sia
-        // registrato dal Maps SDK. È il check più affidabile: lo
-        // `script.onload` può anticipare la registrazione del custom
-        // element (places.js è una libreria caricata in background dal
-        // main script), e google.maps.places può essere parzialmente
-        // popolato durante l'init.
-        // Non usiamo `await google.maps.importLibrary("places")` perché
-        // con `&libraries=places` (eager) `importLibrary` può essere
-        // undefined (provato in produzione: TypeError → catch → errore
-        // utente "Impossibile caricare i suggerimenti").
         const TIMEOUT_MS = 8000;
         await Promise.race([
           window.customElements.whenDefined("gmp-place-autocomplete"),
@@ -284,81 +284,68 @@ function AddressAutocomplete({ apiKey, onSelect, onUserType }) {
             TIMEOUT_MS
           )),
         ]);
-        if (!mounted || !containerRef.current) return;
-        const PlaceAutocompleteElement = window.google?.maps?.places?.PlaceAutocompleteElement;
-        if (!PlaceAutocompleteElement) {
-          throw new Error("google.maps.places.PlaceAutocompleteElement non disponibile dopo whenDefined");
-        }
-        pickerEl = new PlaceAutocompleteElement({
-          // Restrizione paese (Italia) — equivalente al vecchio
-          // componentRestrictions: { country: 'it' }.
-          includedRegionCodes: ["it"],
-          // Solo indirizzi stradali (esclude POI, business, ecc.).
-          // ATTENZIONE: nella Places API (New) il valore legacy 'address'
-          // NON è valido (provato in prod 10/05: 400
-          // "Invalid included_primary_types 'address'"). Il corrispondente
-          // Place Type ufficiale per indirizzi è 'street_address'. Vedi
-          // tabella supported types:
-          // https://developers.google.com/maps/documentation/places/web-service/place-types
-          includedPrimaryTypes: ["street_address"],
-        });
-        pickerEl.placeholder = "Inizia a digitare via, città...";
-        // Hint per allargare l'elemento al 100% del container parent.
-        pickerEl.style.width = "100%";
-
-        const onSelectEvent = async (event) => {
-          try {
-            // Nuovo flow API (New): l'evento porta una placePrediction;
-            // toPlace() ritorna un Place "vuoto" che va popolato con
-            // fetchFields prima di leggere addressComponents/location.
-            const place = event.placePrediction.toPlace();
-            await place.fetchFields({
-              fields: ["formattedAddress", "addressComponents", "location"],
-            });
-            const parsed = parsePlace(place);
-            if (parsed && parsed.indirizzo && parsed.citta && parsed.cap && parsed.provincia) {
-              onSelectRef.current?.(parsed);
-            } else {
-              // Place senza dati sufficienti (es. l'utente ha cliccato un
-              // risultato ambiguo). Segnaliamo al parent come non verificato.
-              onSelectRef.current?.(null);
-            }
-          } catch {
-            onSelectRef.current?.(null);
-          }
-        };
-
-        // L'evento `input` bubblando dallo shadow DOM ci permette di
-        // rilevare quando l'utente sta digitando (per mostrare l'errore
-        // inline "Seleziona un indirizzo dai suggerimenti").
-        const onInput = (e) => {
-          const v = e.composedPath?.()[0]?.value ?? "";
-          if (v) onUserTypeRef.current?.(v);
-        };
-
-        pickerEl.addEventListener("gmp-select", onSelectEvent);
-        pickerEl.addEventListener("input", onInput);
-        containerRef.current.appendChild(pickerEl);
         if (mounted) setScriptStatus("ready");
-
-        cleanup = () => {
-          pickerEl.removeEventListener("gmp-select", onSelectEvent);
-          pickerEl.removeEventListener("input", onInput);
-          if (pickerEl.parentNode) pickerEl.parentNode.removeChild(pickerEl);
-        };
       } catch (err) {
-        // Loggiamo il vero errore: senza questo in produzione si vede solo
-        // il messaggio rosso utente e il debug è impossibile.
-        console.error("[VendiForm] AddressAutocomplete init failed:", err);
+        console.error("[VendiForm] AddressAutocomplete script load failed:", err);
         if (mounted) setScriptStatus("error");
       }
     })();
+    return () => { mounted = false; };
+  }, [apiKey]);
+
+  // Step 2 — quando il custom element è renderizzato (scriptStatus="ready"
+  // → React mette `<gmp-place-autocomplete ref={pickerRef}>` nel DOM),
+  // settiamo le property array e agganciamo i listener `gmp-select` /
+  // `input`. Le deps sono solo [scriptStatus]: le callback sono lette via
+  // ref, quindi i listener sono stabili e non vengono ri-agganciati ad
+  // ogni keystroke (era una delle cause sospette del bug rendering).
+  useEffect(() => {
+    if (scriptStatus !== "ready" || !pickerRef.current) return;
+    const picker = pickerRef.current;
+
+    // Property dinamiche: gli attributi HTML stringhe non garantiscono
+    // il parsing come array. Settiamo direttamente le property JS.
+    picker.includedRegionCodes = ["it"];
+    picker.includedPrimaryTypes = ["street_address"];
+
+    const onSelectEvent = async (event) => {
+      try {
+        // L'evento porta una placePrediction; toPlace() ritorna un Place
+        // "vuoto" che va popolato con fetchFields prima di leggere
+        // addressComponents/location.
+        const place = event.placePrediction.toPlace();
+        await place.fetchFields({
+          fields: ["formattedAddress", "addressComponents", "location"],
+        });
+        const parsed = parsePlace(place);
+        if (parsed && parsed.indirizzo && parsed.citta && parsed.cap && parsed.provincia) {
+          onSelectRef.current?.(parsed);
+        } else {
+          // Place senza dati sufficienti (raro: risultato ambiguo).
+          onSelectRef.current?.(null);
+        }
+      } catch (err) {
+        console.error("[VendiForm] gmp-select handler error:", err);
+        onSelectRef.current?.(null);
+      }
+    };
+
+    // L'evento `input` bubblando dallo shadow DOM ci permette di rilevare
+    // quando l'utente sta digitando (per mostrare l'errore inline
+    // "Seleziona un indirizzo dai suggerimenti").
+    const onInput = (e) => {
+      const v = e.composedPath?.()[0]?.value ?? "";
+      if (v) onUserTypeRef.current?.(v);
+    };
+
+    picker.addEventListener("gmp-select", onSelectEvent);
+    picker.addEventListener("input", onInput);
 
     return () => {
-      mounted = false;
-      cleanup();
+      picker.removeEventListener("gmp-select", onSelectEvent);
+      picker.removeEventListener("input", onInput);
     };
-  }, [apiKey]);
+  }, [scriptStatus]);
 
   if (scriptStatus === "error") {
     return (
@@ -370,28 +357,28 @@ function AddressAutocomplete({ apiKey, onSelect, onUserType }) {
 
   return (
     <>
-      {/* Container per il Web Component <gmp-place-autocomplete>. Lo styling
-          dell'input interno (in shadow DOM chiuso) è limitato a CSS variables
-          e shadow parts esposti da Google. Le var --gmp-mat-* sono il sistema
-          Material delle Places UI Kit. */}
-      <div
-        ref={containerRef}
-        className="vendi-place-autocomplete"
-        style={{
-          // Variabili Material di Google per dark theme:
-          "--gmp-mat-color-surface": "rgba(247,245,240,0.04)",
-          "--gmp-mat-color-on-surface": "var(--white)",
-          "--gmp-mat-color-on-surface-variant": "rgba(247,245,240,0.5)",
-          "--gmp-mat-color-primary": "var(--red)",
-          "--gmp-mat-color-outline": "rgba(247,245,240,0.1)",
-          "--gmp-mat-font-family": "'DM Sans', sans-serif",
-          "--gmp-mat-font-body-medium": "0.95rem",
-          width: "100%",
-          minHeight: "48px",
-        }}
-      />
-      {scriptStatus !== "ready" && (
-        <div style={{ fontSize: "0.8rem", color: "rgba(247,245,240,0.4)", marginTop: "0.4rem" }}>
+      {scriptStatus === "ready" ? (
+        // Web Component nativo della Places API (New). Lo styling dell'input
+        // interno (shadow DOM chiuso) è limitato a CSS variables e shadow
+        // parts esposti da Google: --gmp-mat-* è il set Material delle
+        // Places UI Kit.
+        <gmp-place-autocomplete
+          ref={pickerRef}
+          placeholder="Inizia a digitare via, città..."
+          style={{
+            "--gmp-mat-color-surface": "rgba(247,245,240,0.04)",
+            "--gmp-mat-color-on-surface": "var(--white)",
+            "--gmp-mat-color-on-surface-variant": "rgba(247,245,240,0.5)",
+            "--gmp-mat-color-primary": "var(--red)",
+            "--gmp-mat-color-outline": "rgba(247,245,240,0.1)",
+            "--gmp-mat-font-family": "'DM Sans', sans-serif",
+            "--gmp-mat-font-body-medium": "0.95rem",
+            width: "100%",
+            display: "block",
+          }}
+        />
+      ) : (
+        <div className="vendi-input" style={{ color: "rgba(247,245,240,0.4)", display: "flex", alignItems: "center" }}>
           Caricamento suggerimenti...
         </div>
       )}
