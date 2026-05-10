@@ -1,5 +1,5 @@
 # RealAIstate — Stato del progetto
-Aggiornato: 10/05/2026 (settimana 7 — batch 2 + 5 post-fix Places API New: chat AI anonimo invita registrazione, nome/cognome separati, documenti minimi su tutti gli immobili, Google Places Autocomplete in /vendi migrato a `<gmp-place-autocomplete>` con upgrade-readiness via `importLibrary('places')`)
+Aggiornato: 10/05/2026 (settimana 7 — batch 2 + 6 post-fix Places API New: chat AI anonimo invita registrazione, nome/cognome separati, documenti minimi su tutti gli immobili, Google Places Autocomplete in /vendi migrato a `<gmp-place-autocomplete>` con upgrade-readiness via `importLibrary('places')` + polling per gap di attachment post-onload)
 
 ## Stack
 - Frontend: React + Vite, deploy su Vercel
@@ -730,6 +730,43 @@ la shadow root quando React aveva montato il tag.
   - Build pulita, schema DB invariato, UX invariata. Branch
     `fix/places-autocomplete-upgrade`.
 
+### Settimana 7 — batch 2 sixth-fix ✅ — completata 10/05/2026 (importLibrary polling)
+Il fifth-fix (commit 005ce0d, in main) introduceva un sanity check
+sincrono `if (typeof google.maps.importLibrary !== "function") throw`
+subito dopo `loadGoogleMapsScript`. In produzione questo check FALLIVA
+istantaneamente con l'errore "google.maps.importLibrary non disponibile
+dopo script load" — ma il founder verificava manualmente in console
+pochi istanti dopo che `importLibrary` era effettivamente disponibile
+come function. Bug logico di timing.
+
+- [x] **Causa: gap tra `script.onload` e attachment di `importLibrary`** ✅
+  - Lo script `https://maps.googleapis.com/maps/api/js?...&loading=async`
+    triggera `script.onload` quando il file JS è stato parsato, MA il
+    bootstrap loader Google attacca `google.maps.importLibrary` come
+    function in un microtask successivo (post-parse init). C'è un gap
+    di poche centinaia di ms in cui `google.maps` esiste ma
+    `importLibrary` è ancora undefined.
+  - Diagnostica founder in produzione (post-deploy fifth-fix):
+    `typeof window.google.maps.importLibrary === 'function'` quando
+    testato manualmente in console dopo hard refresh — ma il check
+    sincrono nell'effect React falliva subito dopo loadGoogleMapsScript.
+
+- [x] **Fix: `waitForImportLibrary` con polling 50ms / timeout 3s** ✅
+  - Nuovo helper in VendiForm.jsx: ogni 50ms verifica
+    `typeof window.google?.maps?.importLibrary === 'function'`. Se true
+    → resolve. Se 3s scaduti senza disponibilità → reject con messaggio
+    esplicito (network molto lento o key invalida).
+  - Sostituito il check sincrono `throw` nel useEffect con
+    `await waitForImportLibrary(3000)`. Il resto del flow invariato:
+    `loadGoogleMapsScript → waitForImportLibrary → importLibrary("places")
+    → whenDefined → setScriptStatus("ready") → render condizionale`.
+  - Alternativa considerata: usare il bootstrap loader inline Google
+    `(g) => {...}` con la callback custom — più complesso, l'IIFE
+    contiene minified code Google. Polling è più semplice e
+    funzionalmente equivalente per il nostro caso d'uso.
+  - Build pulita, schema DB invariato, UX invariata. Branch
+    `fix/places-importlibrary-polling`.
+
 ## File chiave
 - src/HomePage.jsx — home page con Nav e CTA
 - src/ScusePage.jsx — pagina scuse separata
@@ -1240,11 +1277,30 @@ la shadow root quando React aveva montato il tag.
   bootstrap loader puro, poi `await google.maps.importLibrary('places')`
   garantisce che la classe sia completa PRIMA di risolvere → custom
   element upgrade-ready quando React lo monta. **Fix raccomandato e
-  attivo in VendiForm.jsx (fifth-fix)**: solo `&loading=async`, niente
-  `&libraries=`, e `await importLibrary('places')` esplicito prima di
-  `setScriptStatus("ready")`. **Best practice generale**: sempre
-  `console.error(err)` nel catch di un init async che mostra fallback
-  utente — senza, in produzione il debug è cieco.
+  attivo in VendiForm.jsx (fifth-fix + sixth-fix)**: solo
+  `&loading=async`, niente `&libraries=`, polling per attendere
+  `importLibrary` attached come function (vedi sotto), e `await
+  importLibrary('places')` esplicito prima di `setScriptStatus("ready")`.
+  **Best practice generale**: sempre `console.error(err)` nel catch di
+  un init async che mostra fallback utente — senza, in produzione il
+  debug è cieco.
+- **Bootstrap loader Google: `script.onload` ≠ `importLibrary` attached**
+  (lezione 10/05/2026, sixth-fix batch 2). Lo script
+  `https://maps.googleapis.com/maps/api/js?...&loading=async` triggera
+  `script.onload` quando il file JS è stato parsato, MA il bootstrap
+  loader Google attacca `google.maps.importLibrary` come function in
+  un microtask successivo (post-parse init). Tra `onload` e quando
+  `importLibrary` diventa una function passano poche centinaia di ms
+  in cui `google.maps` esiste come oggetto ma `importLibrary` è ancora
+  undefined. Sintomo (sixth-fix): un check sincrono `if (typeof
+  importLibrary !== 'function') throw` falliva istantaneamente in
+  produzione anche quando il founder verificava manualmente in console
+  pochi istanti dopo che importLibrary era effettivamente disponibile.
+  **Fix**: polling 50ms / timeout 3s su
+  `typeof window.google?.maps?.importLibrary === 'function'`.
+  **Generalizzazione**: quando un evento `onload` espone API via init
+  asincrono, NON fare check sincroni throw-on-fail — usa polling con
+  timeout o ascolta un evento custom di "ready" se la libreria lo espone.
 - **Frase canonica come segnale machine-readable nel prompt AI**: pattern
   riusabile per riconoscere lato server quando l'AI ha emesso una specifica
   intent (invito registrazione, conferma inoltro, ecc.). Nel prompt

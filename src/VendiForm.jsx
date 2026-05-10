@@ -163,15 +163,21 @@ function Tooltip({ text }) {
 // `&loading=async` SENZA `&libraries=`. Lo script base espone
 // `google.maps.importLibrary`, e il chiamante fa
 // `await google.maps.importLibrary('places')` per caricare E inizializzare
-// la libreria places in modo ATOMICO. Questo è cruciale: la combinazione
-// "eager `&libraries=places`" che usavamo prima registrava il custom element
-// come stub PRIMA che la classe fosse completamente inizializzata, e
-// `customElements.whenDefined` risolveva troppo presto. Risultato: React
-// montava il tag JSX, ma `connectedCallback` non attaccava lo shadow root
-// (`hasShadow:false` in produzione) → input visibile ma listbox mai
-// renderizzato. Con `loading=async + importLibrary`, la promise risolve
-// SOLO quando la classe è completa e il custom element è upgrade-ready.
-// Diagnosi 10/05/2026 dopo il 4° tentativo (commit 317189f).
+// la libreria places in modo ATOMICO. Questo è cruciale per evitare il
+// bug del fourth-fix in cui `&libraries=places` (eager) registrava il
+// custom element come stub e `whenDefined` risolveva troppo presto →
+// React montava il tag JSX inerte (`shadowRoot:null` in produzione).
+// Con `loading=async + importLibrary`, la promise di importLibrary
+// risolve SOLO quando la classe è completa e il custom element è
+// upgrade-ready.
+//
+// GOTCHA fifth-fix (10/05/2026): `script.onload` triggera PRIMA che
+// `google.maps.importLibrary` sia attached come function. Il founder
+// ha verificato in console che `importLibrary` esiste come function
+// dopo il caricamento, ma se viene controllato ISTANTANEAMENTE dopo
+// onload può ancora essere undefined. Per questo il chiamante DEVE
+// fare polling (vedi `waitForImportLibrary` sotto), non un check
+// sincrono throw-on-fail.
 function loadGoogleMapsScript(apiKey) {
   return new Promise((resolve, reject) => {
     // Già caricato (re-mount dopo "Cambia indirizzo" o navigazione interna):
@@ -198,6 +204,34 @@ function loadGoogleMapsScript(apiKey) {
     script.onload = () => resolve();
     script.onerror = () => reject(new Error("Script load error"));
     document.head.appendChild(script);
+  });
+}
+
+// Polling per `google.maps.importLibrary`: lo `script.onload` di
+// `loadGoogleMapsScript` può triggerare prima che `importLibrary` sia
+// attached come function. È un microtask gap del bootstrap loader Google
+// con `loading=async`. Polling ogni 50ms fino a un massimo di 3 secondi
+// (in produzione il founder ha verificato che diventa disponibile entro
+// poche centinaia di ms su connessione normale; 3s è il timeout di
+// fallback per network molto lenti). Sintomo storico (fifth-fix bug,
+// 10/05/2026): un check sincrono `if (typeof importLibrary !== 'function')
+// throw` falliva immediatamente in produzione mentre il founder vedeva
+// la function disponibile in console pochi istanti dopo.
+function waitForImportLibrary(timeoutMs = 3000, intervalMs = 50) {
+  return new Promise((resolve, reject) => {
+    const start = Date.now();
+    const check = () => {
+      if (typeof window.google?.maps?.importLibrary === "function") {
+        resolve();
+        return;
+      }
+      if (Date.now() - start > timeoutMs) {
+        reject(new Error(`google.maps.importLibrary non disponibile entro ${timeoutMs}ms`));
+        return;
+      }
+      setTimeout(check, intervalMs);
+    };
+    check();
   });
 }
 
@@ -291,12 +325,13 @@ function AddressAutocomplete({ apiKey, onSelect, onUserType }) {
           setTimeout(() => rej(new Error(`Timeout ${label} dopo ${ms}ms`)), ms)
         );
         await Promise.race([loadGoogleMapsScript(apiKey), timeout(TIMEOUT_MS, "loadGoogleMapsScript")]);
-        // Sanity check: dopo loadGoogleMapsScript il bootstrap loader DEVE
-        // aver esposto importLibrary. Se manca, lo script ha problemi
-        // (es. key invalida, dominio non whitelistato, network bloccato).
-        if (typeof window.google?.maps?.importLibrary !== "function") {
-          throw new Error("google.maps.importLibrary non disponibile dopo script load");
-        }
+        // Polling fino a 3s: lo `script.onload` può triggerare prima che
+        // `importLibrary` sia attached come function. Il check sincrono
+        // throw-on-fail (fifth-fix originario) falliva istantaneamente in
+        // produzione anche quando importLibrary diventava disponibile poco
+        // dopo. Polling è il pattern Google "Dynamic Library Import" per
+        // attendere che il bootstrap loader abbia finito.
+        await waitForImportLibrary(3000);
         // importLibrary('places') è il pattern ufficiale Google per la
         // Places API (New): carica E inizializza la libreria, registra
         // il custom element CON la sua classe completa (incluso il
