@@ -391,7 +391,7 @@ function StickyTooltip({ text }) {
   );
 }
 
-function AiChat({ user, immobileId, immobile }) {
+function AiChat({ user, immobileId, immobileDb }) {
   const [messages, setMessages] = useState(initialMessages);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -444,6 +444,32 @@ function AiChat({ user, immobileId, immobile }) {
       })
     }
 
+    // Costruiamo il payload AI ESCLUSIVAMENTE dai dati DB raw, MAI dal merge
+    // con IMMOBILE_FALLBACK. Walkthrough 10/05: chat su villa id=2 rispondeva
+    // citando Fair Price 88/100 di Capecelatro perché i campi null finivano
+    // sui valori del fallback. I campi non presenti nella tabella immobili
+    // (ascensore, garage, terrazzo, riscaldamento, ecc.) restano null —
+    // l'API lato server li mostra come "non specificato" e il prompt
+    // istruisce l'AI a NON inventare.
+    const aiImmobile = {
+      id: immobileDb?.id,
+      titolo: immobileDb?.titolo ?? null,
+      indirizzo: immobileDb?.indirizzo ?? null,
+      zona: immobileDb?.zona ?? null,
+      tipologia: immobileDb?.tipologia ?? null,
+      stato_immobile: immobileDb?.stato_immobile ?? null,
+      descrizione: immobileDb?.descrizione ?? null,
+      prezzo: immobileDb?.prezzo ?? null,
+      superficie: immobileDb?.superficie ?? null,
+      superficie_calpestabile: immobileDb?.superficie_calpestabile ?? null,
+      locali: immobileDb?.locali ?? null,
+      bagni: immobileDb?.bagni ?? null,
+      piano: immobileDb?.piano ?? null,
+      classe_energetica: immobileDb?.classe_energetica ?? null,
+      anno_costruzione: immobileDb?.anno_costruzione ?? null,
+      fair_price_score: immobileDb?.fair_price_score ?? null,
+    };
+
     try {
       const res = await fetch("/api/chat-immobile", {
         method: "POST",
@@ -454,34 +480,7 @@ function AiChat({ user, immobileId, immobile }) {
           compratore_nome: null,
           compratore_email: null,
           messaggi_precedenti: messages,
-          immobile: {
-            id: immobile.id,
-            titolo: immobile.titolo,
-            indirizzo: immobile.indirizzo,
-            zona: immobile.zona,
-            tipologia: immobile.tipologia,
-            stato_immobile: immobile.stato_immobile,
-            descrizione: immobile.descrizione,
-            prezzo: immobile.prezzo,
-            superficie: immobile.superficie_catastale,
-            superficie_calpestabile: immobile.superficie_calpestabile,
-            locali: immobile.locali,
-            bagni: immobile.bagni,
-            piano: immobile.piano,
-            ascensore: immobile.ascensore,
-            classe_energetica: immobile.classe_energetica,
-            anno_costruzione: immobile.anno_costruzione,
-            anno_ristrutturazione: immobile.anno_ristrutturazione,
-            spese_condominio: immobile.spese_condominio,
-            riscaldamento: immobile.riscaldamento,
-            acqua_calda: immobile.acqua_calda,
-            garage: immobile.garage,
-            garage_mq: immobile.garage_mq,
-            terrazzo: immobile.terrazzo,
-            giardino_condominiale: immobile.giardino_condominiale,
-            disponibilita_rogito: immobile.disponibilita_rogito,
-            fair_price_score: immobile.scores.prezzo,
-          }
+          immobile: aiImmobile,
         })
       });
       const data = await res.json();
@@ -1011,7 +1010,7 @@ export default function ImmobilePage() {
                 <span>✦</span>
                 <span>Ogni messaggio è revisionato dall&apos;AI prima di essere consegnato. Nessuna sorpresa, nessuna tensione.</span>
               </div>
-              <AiChat user={user} immobileId={immobile.id} immobile={immobile} />
+              <AiChat user={user} immobileId={immobile.id} immobileDb={immobileDb} />
             </div>
           )}
 
