@@ -281,21 +281,34 @@ function parsePlace(place) {
 // Componente Autocomplete dell'indirizzo. Usa PlaceAutocompleteElement
 // (Web Component `<gmp-place-autocomplete>`) della Places API (New).
 //
-// Pattern di mount: il tag JSX `<gmp-place-autocomplete>` viene renderizzato
-// SOLO dopo che `google.maps.importLibrary('places')` ha risolto. Questo
-// è non-negoziabile: i Web Components NON si auto-upgradano retroattivamente.
-// Se React monta il tag PRIMA che la classe del custom element sia
-// completamente inizializzata, il browser tratta l'elemento come stub
-// inerte (HTMLUnknownElement-like): nessun shadow root, nessun
-// connectedCallback funzionante, anche caricando la libreria DOPO non
-// si recupera. Per questo `scriptStatus="ready"` segnala con certezza
-// che il custom element è upgrade-ready.
+// Pattern di mount (seventh-fix, 10/05/2026 — definitivo):
+// Il `<gmp-place-autocomplete>` NON viene mai renderizzato come tag JSX.
+// Viene creato programmaticamente via `document.createElement` e iniettato
+// in un container vuoto SOLO DOPO che `importLibrary('places')` ha risolto.
 //
-// Le property che richiedono array (includedRegionCodes,
-// includedPrimaryTypes) vengono settate via ref dopo il mount, perché gli
-// attributi HTML sono stringhe e non garantiscono il parsing come array.
+// MOTIVO TECNICO (diagnosi finale dopo 6 fix falliti):
+// I Web Components NON si auto-upgradano retroattivamente. Se il browser
+// incontra un tag custom element come HTMLUnknownElement (perché la classe
+// non era ancora registrata quando il parser/React lo ha visto), quel
+// particolare elemento NON viene upgraded quando la classe diventa
+// disponibile più tardi — solo gli elementi NUOVI creati post-registrazione
+// vengono upgraded. La diagnostica del founder ha confermato che, anche
+// dopo che `importLibrary('places')` risolve E `customElements.whenDefined`
+// risolve, il tag JSX già nel DOM ha `shadowRoot=false` e `children.length=0`.
+// Esiste uno stato intermedio in cui `customElements.get('gmp-place-autocomplete')`
+// ritorna una stub class che soddisfa whenDefined ma non implementa
+// connectedCallback completo. Solo `document.createElement` chiamato DOPO
+// `importLibrary('places')` garantisce che il browser usi la classe
+// completa per istanziare l'elemento (upgrade-ready dalla nascita).
+//
+// Tentativi falliti documentati (NON riprovare il pattern JSX dichiarativo):
+// - 005ce0d: gate scriptStatus="ready" prima del mount JSX → tag JSX
+//   ancora inerte in produzione (shadowRoot=false).
+// - 3e41628: aggiunto polling waitForImportLibrary → idem, perché il bug
+//   è nel rendering dichiarativo, non nel timing del bootstrap.
+// - 317189f, 26b9e98, f13619d: varianti del pattern JSX → tutti shadowRoot=false.
 function AddressAutocomplete({ apiKey, onSelect, onUserType }) {
-  const pickerRef = useRef(null);
+  const containerRef = useRef(null);
   const [scriptStatus, setScriptStatus] = useState("loading");
   // Le callback cambiano ad ogni render del parent (non sono memoizzate).
   // Le mettiamo in ref per agganciare i listener UNA VOLTA SOLA — senza
@@ -308,16 +321,21 @@ function AddressAutocomplete({ apiKey, onSelect, onUserType }) {
     onUserTypeRef.current = onUserType;
   });
 
-  // Step 1 — carica lo script bootstrap, importa la libreria places in
-  // modo ATOMICO, attendi che il custom element sia completamente
-  // upgrade-ready. Solo a quel punto setta scriptStatus="ready" → React
-  // renderizza il tag JSX.
+  // Carica lo script bootstrap, importa la libreria places, attendi
+  // che il custom element sia completamente upgrade-ready, POI crea
+  // programmaticamente l'elemento e lo aggancia. È un singolo effect
+  // perché tutto il setup (fetch + creazione + listener) deve avvenire
+  // in sequenza atomica nello stesso ciclo per garantire l'upgrade.
   useEffect(() => {
     if (!apiKey) {
       setScriptStatus("error");
       return;
     }
     let mounted = true;
+    let createdElement = null;
+    let onSelectEvent = null;
+    let onInput = null;
+
     (async () => {
       try {
         const TIMEOUT_MS = 8000;
@@ -335,8 +353,7 @@ function AddressAutocomplete({ apiKey, onSelect, onUserType }) {
         // importLibrary('places') è il pattern ufficiale Google per la
         // Places API (New): carica E inizializza la libreria, registra
         // il custom element CON la sua classe completa (incluso il
-        // connectedCallback che attacca lo shadow root). La promise risolve
-        // SOLO quando tutto è pronto — niente race condition.
+        // connectedCallback che attacca lo shadow root).
         await Promise.race([window.google.maps.importLibrary("places"), timeout(TIMEOUT_MS, "importLibrary('places')")]);
         // Doppia sicurezza: in teoria dopo importLibrary il custom element
         // è già definito e whenDefined risolve immediatamente.
@@ -344,68 +361,90 @@ function AddressAutocomplete({ apiKey, onSelect, onUserType }) {
           window.customElements.whenDefined("gmp-place-autocomplete"),
           timeout(TIMEOUT_MS, "whenDefined('gmp-place-autocomplete')"),
         ]);
+
+        if (!mounted || !containerRef.current) return;
+
+        // CHIAVE DEL FIX: createElement DOPO importLibrary. Il browser usa
+        // la classe registrata (completa, non lo stub) per istanziare
+        // l'elemento. shadowRoot viene attaccato in connectedCallback al
+        // momento dell'appendChild qui sotto.
+        const el = document.createElement("gmp-place-autocomplete");
+        el.setAttribute("placeholder", "Inizia a digitare via, città...");
+        // Property dinamiche (array): gli attributi HTML sono stringhe e
+        // non garantiscono il parsing come array. Settiamo direttamente le
+        // property JS, PRIMA dell'appendChild così connectedCallback le legge.
+        el.includedRegionCodes = ["it"];
+        el.includedPrimaryTypes = ["street_address"];
+        // Styling: le CSS variables `--gmp-mat-*` sono il set Material delle
+        // Places UI Kit, gli unici hook esposti da Google per personalizzare
+        // l'input dentro lo shadow DOM chiuso.
+        el.style.setProperty("--gmp-mat-color-surface", "rgba(247,245,240,0.04)");
+        el.style.setProperty("--gmp-mat-color-on-surface", "var(--white)");
+        el.style.setProperty("--gmp-mat-color-on-surface-variant", "rgba(247,245,240,0.5)");
+        el.style.setProperty("--gmp-mat-color-primary", "var(--red)");
+        el.style.setProperty("--gmp-mat-color-outline", "rgba(247,245,240,0.1)");
+        el.style.setProperty("--gmp-mat-font-family", "'DM Sans', sans-serif");
+        el.style.setProperty("--gmp-mat-font-body-medium", "0.95rem");
+        el.style.width = "100%";
+        el.style.display = "block";
+
+        onSelectEvent = async (event) => {
+          try {
+            // L'evento porta una placePrediction; toPlace() ritorna un Place
+            // "vuoto" che va popolato con fetchFields prima di leggere
+            // addressComponents/location.
+            const place = event.placePrediction.toPlace();
+            await place.fetchFields({
+              fields: ["formattedAddress", "addressComponents", "location"],
+            });
+            const parsed = parsePlace(place);
+            if (parsed && parsed.indirizzo && parsed.citta && parsed.cap && parsed.provincia) {
+              onSelectRef.current?.(parsed);
+            } else {
+              onSelectRef.current?.(null);
+            }
+          } catch (err) {
+            console.error("[VendiForm] gmp-select handler error:", err);
+            onSelectRef.current?.(null);
+          }
+        };
+
+        // L'evento `input` bubblando dallo shadow DOM ci permette di rilevare
+        // quando l'utente sta digitando (per mostrare l'errore inline
+        // "Seleziona un indirizzo dai suggerimenti").
+        onInput = (e) => {
+          const v = e.composedPath?.()[0]?.value ?? "";
+          if (v) onUserTypeRef.current?.(v);
+        };
+
+        el.addEventListener("gmp-select", onSelectEvent);
+        el.addEventListener("input", onInput);
+
+        // Svuota il container (difensivo: residui da un re-mount precedente
+        // o doppio invocation di useEffect in StrictMode) e aggancia.
+        // L'appendChild triggera connectedCallback che attacca lo shadow root.
+        containerRef.current.innerHTML = "";
+        containerRef.current.appendChild(el);
+
+        createdElement = el;
         if (mounted) setScriptStatus("ready");
       } catch (err) {
         console.error("[VendiForm] AddressAutocomplete script load failed:", err);
         if (mounted) setScriptStatus("error");
       }
     })();
-    return () => { mounted = false; };
-  }, [apiKey]);
-
-  // Step 2 — quando il custom element è renderizzato (scriptStatus="ready"
-  // → React mette `<gmp-place-autocomplete ref={pickerRef}>` nel DOM),
-  // settiamo le property array e agganciamo i listener `gmp-select` /
-  // `input`. Le deps sono solo [scriptStatus]: le callback sono lette via
-  // ref, quindi i listener sono stabili e non vengono ri-agganciati ad
-  // ogni keystroke (era una delle cause sospette del bug rendering).
-  useEffect(() => {
-    if (scriptStatus !== "ready" || !pickerRef.current) return;
-    const picker = pickerRef.current;
-
-    // Property dinamiche: gli attributi HTML stringhe non garantiscono
-    // il parsing come array. Settiamo direttamente le property JS.
-    picker.includedRegionCodes = ["it"];
-    picker.includedPrimaryTypes = ["street_address"];
-
-    const onSelectEvent = async (event) => {
-      try {
-        // L'evento porta una placePrediction; toPlace() ritorna un Place
-        // "vuoto" che va popolato con fetchFields prima di leggere
-        // addressComponents/location.
-        const place = event.placePrediction.toPlace();
-        await place.fetchFields({
-          fields: ["formattedAddress", "addressComponents", "location"],
-        });
-        const parsed = parsePlace(place);
-        if (parsed && parsed.indirizzo && parsed.citta && parsed.cap && parsed.provincia) {
-          onSelectRef.current?.(parsed);
-        } else {
-          // Place senza dati sufficienti (raro: risultato ambiguo).
-          onSelectRef.current?.(null);
-        }
-      } catch (err) {
-        console.error("[VendiForm] gmp-select handler error:", err);
-        onSelectRef.current?.(null);
-      }
-    };
-
-    // L'evento `input` bubblando dallo shadow DOM ci permette di rilevare
-    // quando l'utente sta digitando (per mostrare l'errore inline
-    // "Seleziona un indirizzo dai suggerimenti").
-    const onInput = (e) => {
-      const v = e.composedPath?.()[0]?.value ?? "";
-      if (v) onUserTypeRef.current?.(v);
-    };
-
-    picker.addEventListener("gmp-select", onSelectEvent);
-    picker.addEventListener("input", onInput);
 
     return () => {
-      picker.removeEventListener("gmp-select", onSelectEvent);
-      picker.removeEventListener("input", onInput);
+      mounted = false;
+      if (createdElement) {
+        if (onSelectEvent) createdElement.removeEventListener("gmp-select", onSelectEvent);
+        if (onInput) createdElement.removeEventListener("input", onInput);
+        if (createdElement.parentNode) {
+          createdElement.parentNode.removeChild(createdElement);
+        }
+      }
     };
-  }, [scriptStatus]);
+  }, [apiKey]);
 
   if (scriptStatus === "error") {
     return (
@@ -415,33 +454,25 @@ function AddressAutocomplete({ apiKey, onSelect, onUserType }) {
     );
   }
 
+  // Container SEMPRE renderizzato (anche durante loading): containerRef
+  // deve essere disponibile prima dell'appendChild dell'effect. Quando
+  // scriptStatus === "loading" mostriamo un placeholder di sibling, e
+  // nascondiamo il container con display:none. Quando ready, mostriamo
+  // il container (che ora contiene il custom element programmatico) e
+  // rimuoviamo il placeholder. React NON tocca i figli del container
+  // perché in JSX non ha figli — quindi il <gmp-place-autocomplete> che
+  // abbiamo iniettato resta intatto attraverso i re-render.
   return (
     <>
-      {scriptStatus === "ready" ? (
-        // Web Component nativo della Places API (New). Lo styling dell'input
-        // interno (shadow DOM chiuso) è limitato a CSS variables e shadow
-        // parts esposti da Google: --gmp-mat-* è il set Material delle
-        // Places UI Kit.
-        <gmp-place-autocomplete
-          ref={pickerRef}
-          placeholder="Inizia a digitare via, città..."
-          style={{
-            "--gmp-mat-color-surface": "rgba(247,245,240,0.04)",
-            "--gmp-mat-color-on-surface": "var(--white)",
-            "--gmp-mat-color-on-surface-variant": "rgba(247,245,240,0.5)",
-            "--gmp-mat-color-primary": "var(--red)",
-            "--gmp-mat-color-outline": "rgba(247,245,240,0.1)",
-            "--gmp-mat-font-family": "'DM Sans', sans-serif",
-            "--gmp-mat-font-body-medium": "0.95rem",
-            width: "100%",
-            display: "block",
-          }}
-        />
-      ) : (
+      {scriptStatus === "loading" && (
         <div className="vendi-input" style={{ color: "rgba(247,245,240,0.4)", display: "flex", alignItems: "center" }}>
           Caricamento suggerimenti...
         </div>
       )}
+      <div
+        ref={containerRef}
+        style={{ width: "100%", display: scriptStatus === "ready" ? "block" : "none" }}
+      />
       <div style={{ fontSize: "0.7rem", color: "rgba(247,245,240,0.35)", marginTop: "0.4rem" }}>
         Powered by Google — i suggerimenti arrivano dai server Google Maps.
       </div>
