@@ -1015,7 +1015,14 @@ export default function ImmobilePage() {
                 <span>✦</span>
                 <span>Ogni messaggio è revisionato dall&apos;AI prima di essere consegnato. Nessuna sorpresa, nessuna tensione.</span>
               </div>
-              <AiChat user={user} immobileId={immobile.id} immobileDb={immobileDb} />
+              {/* key={immobileId} forza il remount al cambio URL: state, sessione_id e
+                  storico chat ripartono da zero. Senza key, navigando da /immobili/1 a
+                  /immobili/4 il componente rimaneva con i messaggi di Capecelatro
+                  perché la query Supabase per immobile_id=4 ritornava vuota e setMessages
+                  non veniva chiamato. immobileId viene da useParams (stable, sempre il
+                  vero id URL), non da immobile.id che al primo render è 1 perché immobile
+                  viene da {...IMMOBILE_FALLBACK, ...immobileDb} con immobileDb null. */}
+              <AiChat key={immobileId} user={user} immobileId={immobileId} immobileDb={immobileDb} />
             </div>
           )}
 
