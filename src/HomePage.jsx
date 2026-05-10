@@ -134,12 +134,13 @@ export default function HomePage() {
     <>
       <Nav />
       <section className="hero">
+        <div className="hero-bg-number">NO.</div>
         <div className="hero-eyebrow">Piattaforma AI · Compra e vendi casa</div>
         <h1 className="hero-h1">
           Hai davvero bisogno di un&apos;agenzia?<br />
           No.
         </h1>
-        <p className="hero-challenge">Che scusa hai per non usare RealAIstate?</p>
+        <p className="hero-challenge">Che scusa hai per non usare <span style={{ color: 'var(--white)' }}>RealAIstate</span>?</p>
         <p className="hero-sub">La piattaforma AI per comprare e vendere casa in autonomia. Valutazione, documenti e professionisti — tutto incluso. Anche il risparmio. In trasparenza.</p>
         <div className="hero-cost">
           <div style={{ width: "100%" }}>
