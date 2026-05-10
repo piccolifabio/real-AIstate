@@ -19,6 +19,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [confirmEmail, setConfirmEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [nome, setNome] = useState('')
   const [cognome, setCognome] = useState('')
   const [status, setStatus] = useState('idle')
@@ -33,6 +34,10 @@ export default function LoginPage() {
       }
       if (email.trim().toLowerCase() !== confirmEmail.trim().toLowerCase()) {
         setError('Le due email non coincidono. Controlla di averle scritte uguali.')
+        return
+      }
+      if (password !== confirmPassword) {
+        setError('Le password non coincidono.')
         return
       }
     }
@@ -57,6 +62,7 @@ export default function LoginPage() {
     setMode(mode === 'login' ? 'register' : 'login')
     setError('')
     setConfirmEmail('')
+    setConfirmPassword('')
   }
 
   const inputStyle = {
@@ -152,8 +158,27 @@ export default function LoginPage() {
               onChange={e => setPassword(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handle()}
               autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-              style={{ ...inputStyle, marginBottom: '1.5rem' }}
+              style={{ ...inputStyle, marginBottom: mode === 'register' ? '1rem' : '1.5rem' }}
             />
+            {mode === 'register' && (
+              <>
+                <input
+                  type="password"
+                  placeholder="Conferma password"
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handle()}
+                  onPaste={e => e.preventDefault()}
+                  autoComplete="new-password"
+                  style={{ ...inputStyle, marginBottom: confirmPassword && password !== confirmPassword ? '0.4rem' : '1.5rem' }}
+                />
+                {confirmPassword && password !== confirmPassword && (
+                  <div style={{ color: '#d93025', fontSize: '0.78rem', marginBottom: '1rem' }}>
+                    Le password non coincidono.
+                  </div>
+                )}
+              </>
+            )}
             {error && (
               <div style={{ color: '#d93025', fontSize: '0.82rem', marginBottom: '1rem' }}>
                 {error}
