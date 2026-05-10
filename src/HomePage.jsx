@@ -141,9 +141,6 @@ export default function HomePage() {
         </h1>
         <p className="hero-challenge">La piattaforma AI che lavora per te, non per l&apos;agenzia.</p>
         <p className="hero-sub">Valutazione, documenti, professionisti — tutto incluso. Risparmio reale, in piena trasparenza.</p>
-        <div className="hero-actions">
-          <a href="/scuse" className="btn-red">Smonta la tua scusa →</a>
-        </div>
         <div className="hero-cost">
           <div style={{ width: "100%" }}>
             <div style={{ fontSize: "0.65rem", fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--red)", marginBottom: "1rem" }}>SE COMPRI</div>
