@@ -1220,7 +1220,13 @@ export default function ImmobilePage() {
                       Fai una proposta →
                     </button>
                   ) : (
-                    <a href="/login" className="btn-secondary">Accedi per fare una proposta</a>
+                    <a
+                      href={`/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`}
+                      className="btn-primary"
+                      style={{ background: '#2d6a4f', textAlign: 'center', textDecoration: 'none' }}
+                    >
+                      Accedi per fare una proposta →
+                    </a>
                   )}
                 </>
               )}
