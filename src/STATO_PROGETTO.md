@@ -1,5 +1,5 @@
 # RealAIstate — Stato del progetto
-Aggiornato: 10/05/2026 (settimana 7 — batch 2: chat AI anonimo invita registrazione, nome/cognome separati, documenti minimi su tutti gli immobili, Google Places Autocomplete in /vendi)
+Aggiornato: 10/05/2026 (settimana 7 — batch 2 + post-fix Places API New: chat AI anonimo invita registrazione, nome/cognome separati, documenti minimi su tutti gli immobili, Google Places Autocomplete in /vendi migrato a PlaceAutocompleteElement)
 
 ## Stack
 - Frontend: React + Vite, deploy su Vercel
@@ -509,6 +509,74 @@ emersi nel walkthrough UX 10/05.
     precisa. `luogoLabel` (sopra il titolo) preferisce
     `città · zona` se disponibili.
 
+### Settimana 7 — batch 2 post-fix ✅ — completata 10/05/2026 (Places API New migration)
+Il batch 2 task 2.D era stato implementato con `google.maps.places.Autocomplete`
+(API legacy). In produzione (verificato 10/05) si è scoperto che il progetto
+Google Cloud RealAIstate ha abilitata SOLO la **Places API (New)**, NON la
+legacy: console error "You're calling a legacy API, which is not enabled for
+your project" e dropdown vuoto al digitare. Decisione di prodotto: NON
+abilitare la legacy (debito tecnico), refactorare a Places API (New).
+
+- [x] **Migrazione autocomplete legacy → Places API (New)** ✅
+  - Sintomo: `google.maps.places.Autocomplete` (caricato via
+    `&libraries=places`) faceva fallire la richiesta autocomplete nel
+    momento in cui l'utente digitava 2+ caratteri. Errore in console
+    Google + dropdown vuoto = step 1 indirizzo bloccato.
+  - **Decisione di design (rivista)**: usato `PlaceAutocompleteElement`
+    nativo (Web Component `<gmp-place-autocomplete>`) della Places API
+    (New) ufficiale Google Maps JS, NON la libreria
+    `@googlemaps/extended-component-library` (`<gmpx-place-picker>`).
+    Razionale: a 10/05/2026 la extended-component-library è ancora
+    basata sulla legacy API
+    ([Issue #283](https://github.com/googlemaps/extended-component-library/issues/283)
+    "PlacePicker still uses legacy api" — ancora aperta) → avrebbe avuto
+    lo stesso bug. Il Web Component nativo Google
+    `<gmp-place-autocomplete>` invece è fatto apposta per la Places API
+    (New) ed è incluso nel Maps JavaScript SDK. Niente nuove dipendenze
+    npm.
+  - `loadGoogleMapsScript` (ex `loadGooglePlacesScript`):
+    - URL aggiornato a `&v=weekly&loading=async&libraries=places&language=it`
+      (il pattern raccomandato da Google per l'import dinamico).
+    - Cache via `document.getElementById("gmaps-script")` come prima.
+  - `parsePlace` riscritto per la struttura Places API (New):
+    - `addressComponents` (camelCase) invece di `address_components`.
+    - Ogni component ha `longText`/`shortText`/`types` invece di
+      `long_name`/`short_name`/`types`.
+    - `place.location.lat()/lng()` direttamente (non più
+      `place.geometry.location.lat()`); fallback difensivo se
+      `location.lat` è una property numerica invece di una funzione.
+    - `formattedAddress` (camelCase) invece di `formatted_address`.
+  - `AddressAutocomplete` riscritto:
+    - Crea programmaticamente `new PlaceAutocompleteElement({
+      includedRegionCodes: ['it'], includedPrimaryTypes: ['address'] })`
+      via `await google.maps.importLibrary("places")`.
+    - Appende l'elemento custom al container div con `appendChild`.
+    - Listener `gmp-select` (nuovo evento, era `place_changed`).
+      L'evento porta `event.placePrediction.toPlace()` che ritorna un
+      Place "vuoto" — bisogna chiamare
+      `place.fetchFields({ fields: ['formattedAddress',
+      'addressComponents', 'location'] })` PRIMA di leggere i campi
+      (pattern Place class New API).
+    - Listener `input` bubbling dallo shadow DOM per intercettare
+      digitazione utente (alimenta `onUserType` come prima).
+    - Callback `onSelect`/`onUserType` messe in ref per non rimontare
+      il Web Component ad ogni render del parent.
+    - Cleanup completo dell'effect: removeEventListener + removeChild.
+  - **Styling Web Component**: input interno è in shadow DOM CHIUSO
+    (no `::part`, no override CSS diretto). Disponibili solo le CSS
+    variables Material Google: `--gmp-mat-color-surface`,
+    `--gmp-mat-color-on-surface`, `--gmp-mat-color-on-surface-variant`,
+    `--gmp-mat-color-primary`, `--gmp-mat-color-outline`,
+    `--gmp-mat-font-family`, `--gmp-mat-font-body-medium`. Settate
+    inline sul container per matching del tema scuro RealAIstate.
+    Padding/border interni dell'input non sono customizzabili — il
+    Web Component impone il proprio layout.
+  - Tutto il resto invariato: `canProceed` step 0 ancora richiede
+    `addressVerified=true`, box "✓ Indirizzo verificato" identico,
+    bottone "Cambia" identico, validazione server-side in vendi-submit
+    invariata, schema DB invariato (cap/citta/provincia/lat/lng già
+    aggiunti dal batch 2). Nessuna nuova migration SQL necessaria.
+
 ## File chiave
 - src/HomePage.jsx — home page con Nav e CTA
 - src/ScusePage.jsx — pagina scuse separata
@@ -525,10 +593,12 @@ emersi nel walkthrough UX 10/05.
   Conferma email in signup; legge ?redirect= post-login con open-redirect protection)
 - src/ProtectedRoute.jsx — gate auth, propaga destination come ?redirect=
 - src/VendiForm.jsx — form 5 step con auth gate, salva immobile draft + lead.
-  Step 1 indirizzo via Google Places Autocomplete (componentRestrictions IT,
-  types address) — popola indirizzo+cap+città+provincia+zona+lat/lng.
-  Step 4 contatti pre-popola nome+cognome separati ed email da user; email
-  read-only; conferma email obbligatoria; cognome obbligatorio
+  Step 1 indirizzo via Places API (New) `<gmp-place-autocomplete>` Web
+  Component nativo (`includedRegionCodes: ['it']`,
+  `includedPrimaryTypes: ['address']`) — popola
+  indirizzo+cap+città+provincia+zona+lat/lng. Step 4 contatti pre-popola
+  nome+cognome separati ed email da user; email read-only; conferma email
+  obbligatoria; cognome obbligatorio
 - src/Admin.jsx — pannello admin con tab Pubblicazioni | Scuse, bottoni
   Approva/Rifiuta sugli immobili pending_review
 - src/AuthContext.jsx — gestione sessione + signUp(email, password, nome, cognome)
@@ -759,19 +829,23 @@ emersi nel walkthrough UX 10/05.
   one-shot in /migrations/2026-05-10-split-nome-cognome.sql (idempotente,
   fallback runtime nel frontend per utenti pre-migrazione).
 - **Indirizzo immobile = struttura, non testo libero** (decisione 10/05/2026
-  batch 2 task 2.D). /vendi step 1 usa Google Places Autocomplete classico
-  (`google.maps.places.Autocomplete`) per popolare cap/citta/provincia/zona/
-  lat/lng come campi DB strutturati. Razionale:
+  batch 2 task 2.D, refactor post-fix 10/05/2026). /vendi step 1 usa la
+  **Places API (New)** ufficiale Google via `PlaceAutocompleteElement`
+  (Web Component `<gmp-place-autocomplete>`) per popolare
+  cap/citta/provincia/zona/lat/lng come campi DB strutturati. Razionale:
   (a) impossibile pubblicare immobili con indirizzi inventati o errati;
   (b) FPS dinamico futuro avrà bisogno di geocoding preciso;
   (c) ricerca per zona / mappa centrata richiedono lat/lng;
   (d) il rendering della scheda mostra "Via X, CAP Città (Prov)" pulito.
   Validazione frontend (canProceed step 0 richiede addressVerified) +
   validazione server-side (vendi-submit rifiuta 400 se cap/citta/provincia
-  mancanti). Niente nuove dipendenze npm — script Google Maps caricato
+  mancanti). Niente nuove dipendenze npm — script Maps JS API caricato
   dinamicamente con la stessa key VITE_GOOGLE_MAPS_KEY già usata per
-  Maps Embed. La key richiede Places API (New) abilitata sul progetto
-  Google Cloud. Restrizione paese 'it', types 'address' (esclude POI).
+  Maps Embed. Restrizione paese `includedRegionCodes: ['it']`, tipo
+  `includedPrimaryTypes: ['address']` (esclude POI). **NON usare la
+  legacy `google.maps.places.Autocomplete`**: il progetto Google Cloud
+  RealAIstate ha solo la Places API (New) abilitata, la legacy non è
+  più disponibile per nuovi customer.
 - **Sezione Documenti = sempre visibile su immobili published** (decisione
   10/05/2026 batch 2 task 2.C). Capecelatro mostra la lista hardcoded di
   6 documenti verificati (demo). Altri immobili mostrano solo Template
@@ -906,17 +980,33 @@ emersi nel walkthrough UX 10/05.
   prop tipo "id corrente", usa la fonte autoritativa stable (es. il
   param URL da `useParams()`) invece di una prop derivata che dipende
   dal fetch async.
-- **Google Places Autocomplete classic (`google.maps.places.Autocomplete`)**:
-  l'API legacy è ancora supportata e ben documentata. Va caricata via
-  `<script src="https://maps.googleapis.com/maps/api/js?key=X&libraries=places&language=it">`
-  *dinamicamente* (non in index.html: pesante per pagine che non lo usano).
-  Inizializzazione: `new window.google.maps.places.Autocomplete(input, {
-  componentRestrictions: { country: 'it' }, fields: [...], types: ['address']
-  })` + `addListener('place_changed', cb)`. Il listener riceve
-  `getPlace()` con `address_components` (array di parti tipo route,
-  street_number, postal_code, locality, ecc.) + `geometry.location.lat()/lng()`.
-  Pattern parsing: `place.address_components.find(c => c.types.includes('postal_code'))?.long_name`.
-  Gotcha: `lat()` e `lng()` sono FUNZIONI, non property — chiamate con `()`.
+- **Google Places API (New) richiede `PlaceAutocompleteElement`, NON
+  `@googlemaps/extended-component-library` né la legacy
+  `google.maps.places.Autocomplete`** (lezione 10/05/2026, post-fix
+  batch 2). Per nuovi progetti Google Cloud (creati dopo metà 2024 o
+  che non hanno mai abilitato la legacy) la legacy
+  `google.maps.places.Autocomplete` lancia in console
+  *"You're calling a legacy API, which is not enabled for your project"*
+  e l'autocomplete non funziona. La libreria
+  `@googlemaps/extended-component-library` (Web Components `<gmpx-*>`) a
+  10/05/2026 è ancora basata sulla legacy
+  ([Issue #283 aperta](https://github.com/googlemaps/extended-component-library/issues/283))
+  → **non usarla**. La soluzione corretta è il Web Component nativo
+  Google `<gmp-place-autocomplete>` (`PlaceAutocompleteElement`)
+  ottenuto via `await google.maps.importLibrary("places")`. Pattern
+  inizializzazione: `new PlaceAutocompleteElement({
+  includedRegionCodes: ['it'], includedPrimaryTypes: ['address'] })` +
+  `appendChild`. Evento `gmp-select` (NON `place_changed`) →
+  `event.placePrediction.toPlace()` ritorna un Place vuoto: chiamare
+  `await place.fetchFields({ fields: ['formattedAddress',
+  'addressComponents', 'location'] })` PRIMA di leggere i campi.
+  Struttura nuova: `addressComponents` (camelCase) con
+  `longText`/`shortText`/`types` invece di `address_components` con
+  `long_name`/`short_name`. `place.location.lat()/lng()` sono ancora
+  funzioni. Lo script Maps JS si carica con
+  `&v=weekly&loading=async&libraries=places&language=it`. Styling:
+  shadow DOM CHIUSO (no `::part`), solo CSS variables Material
+  `--gmp-mat-color-*` e `--gmp-mat-font-*` esposte.
 - **Frase canonica come segnale machine-readable nel prompt AI**: pattern
   riusabile per riconoscere lato server quando l'AI ha emesso una specifica
   intent (invito registrazione, conferma inoltro, ecc.). Nel prompt
@@ -1013,11 +1103,15 @@ Steps:
        SOLO Template Proposta + box "documentazione su richiesta".
        Nessun badge "Immobile Verificato" sopra la gallery, nessuna
        verified-box nella sticky-card.
-  4. **Task 2.D — Google Places Autocomplete in /vendi**:
-     - /vendi step 1: campo "Indirizzo" con placeholder "Inizia a
-       digitare via, città...". Digita "Via Pinturicchio Milano".
-       Devono apparire suggerimenti dropdown da Google. Click su
-       "Via Pinturicchio, 20133 Milano MI".
+  4. **Task 2.D — Google Places Autocomplete in /vendi (Places API New)**:
+     - /vendi step 1: il campo Indirizzo ora è il Web Component
+       `<gmp-place-autocomplete>` (rendering Material Google con tema
+       scuro tramite CSS variables). NIENTE errore in console
+       "You're calling a legacy API" che si vedeva con la versione
+       legacy (verificato 10/05).
+     - Digita "Via Pinturicchio Milano". Devono apparire suggerimenti
+       dropdown della Places API (New) — solo indirizzi italiani,
+       niente POI. Click su "Via Pinturicchio, 20133 Milano MI".
      - Box verde "✓ Indirizzo verificato" si popola con: indirizzo,
        "20133 Milano (MI)", zona se disponibile, bottone "Cambia".
      - Continua bloccato finché non hai selezionato (canProceed false).
@@ -1030,6 +1124,9 @@ Steps:
      - **Test con indirizzo edge case**: piccolo paese senza
        sublocality (es. "Via Roma 10, San Daniele del Friuli UD") →
        zona deve fare fallback al nome città.
+     - **Network tab**: deve esserci una chiamata
+       `places.googleapis.com/v1/...` (Places API New endpoint), NON
+       `maps.googleapis.com/maps/api/place/autocomplete/...` (legacy).
 - **Test E2E walkthrough — verifica i fix batch 1 e 1.5 su preview/prod**:
   1. Registra nuovo account (email Gmail con sub-addressing per tracciare):
      - Compila /vendi 5 step → submit step 5 → verifica niente 500,

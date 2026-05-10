@@ -148,22 +148,30 @@ function Tooltip({ text }) {
   );
 }
 
-// Carica una sola volta lo script Google Maps con Places library. Cache via
-// document, così tornando a step 0 non ricarichiamo niente. La key è
-// VITE_GOOGLE_MAPS_KEY, già usata per Maps Embed in Immobile.jsx — il founder
-// l'ha estesa con Places API (New) sul progetto Google Cloud.
-function loadGooglePlacesScript(apiKey) {
+// Carica una sola volta lo script Maps JavaScript API + libreria 'places'.
+// Cache via document (idempotente). La key è VITE_GOOGLE_MAPS_KEY, già usata
+// per Maps Embed in Immobile.jsx — il founder ha abilitato Places API (New)
+// sul progetto Google Cloud.
+//
+// IMPORTANTE: il progetto Google Cloud RealAIstate ha SOLO la Places API (New)
+// abilitata (NON la legacy). Per questo qui usiamo PlaceAutocompleteElement
+// (Web Component nativo `<gmp-place-autocomplete>`) e NON l'API legacy
+// `google.maps.places.Autocomplete`. Riferimento:
+// https://developers.google.com/maps/documentation/javascript/place-autocomplete-new
+function loadGoogleMapsScript(apiKey) {
   return new Promise((resolve, reject) => {
-    if (window.google?.maps?.places) return resolve();
-    const existing = document.getElementById("gmaps-places-script");
+    if (window.google?.maps?.importLibrary) return resolve();
+    const existing = document.getElementById("gmaps-script");
     if (existing) {
       existing.addEventListener("load", () => resolve());
       existing.addEventListener("error", () => reject(new Error("Script load error")));
       return;
     }
     const script = document.createElement("script");
-    script.id = "gmaps-places-script";
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&language=it`;
+    script.id = "gmaps-script";
+    // v=weekly + loading=async è il pattern raccomandato da Google per la
+    // dynamic library import (evita warning "loading=async" in console).
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&v=weekly&loading=async&libraries=places&language=it`;
     script.async = true;
     script.defer = true;
     script.onload = () => resolve();
@@ -172,12 +180,17 @@ function loadGooglePlacesScript(apiKey) {
   });
 }
 
-// Estrae i campi strutturati dall'oggetto Place restituito dall'API Places.
-// Mappa di componenti restituiti da Google → schema DB immobili.
+// Estrae i campi strutturati dal Place della Places API (New).
+// La struttura è diversa dalla legacy:
+// - `addressComponents` (camelCase, era address_components)
+// - ogni component ha `longText`/`shortText`/`types` (erano long_name/short_name)
+// - `location.lat()`/`lng()` sono FUNZIONI (come prima, ma ora su place.location
+//   direttamente, non più place.geometry.location)
+// - `formattedAddress` (camelCase, era formatted_address)
 function parsePlace(place) {
-  if (!place || !place.address_components) return null;
-  const get = (type) => place.address_components.find((c) => c.types.includes(type))?.long_name || null;
-  const getShort = (type) => place.address_components.find((c) => c.types.includes(type))?.short_name || null;
+  if (!place || !place.addressComponents) return null;
+  const get = (type) => place.addressComponents.find((c) => c.types?.includes(type))?.longText || null;
+  const getShort = (type) => place.addressComponents.find((c) => c.types?.includes(type))?.shortText || null;
   const route = get("route");
   const number = get("street_number");
   const indirizzo = [route, number].filter(Boolean).join(" ").trim();
@@ -185,60 +198,131 @@ function parsePlace(place) {
   // zona: sublocality (es. "Città Studi") o neighborhood. Fallback al comune
   // per piccoli paesi che non hanno sotto-aree riconosciute da Google.
   const zona = get("sublocality_level_1") || get("neighborhood") || citta;
+  // place.location può essere LatLng (con metodi lat()/lng()) o un literal
+  // {lat, lng} a seconda del contesto. Difensivi: gestiamo entrambi.
+  let latitudine = null;
+  let longitudine = null;
+  if (place.location) {
+    if (typeof place.location.lat === "function") {
+      latitudine = place.location.lat();
+      longitudine = place.location.lng();
+    } else if (typeof place.location.lat === "number") {
+      latitudine = place.location.lat;
+      longitudine = place.location.lng;
+    }
+  }
   return {
     indirizzo,
     cap: get("postal_code"),
     citta,
     provincia: getShort("administrative_area_level_2"),
     zona,
-    latitudine: place.geometry?.location?.lat?.() ?? null,
-    longitudine: place.geometry?.location?.lng?.() ?? null,
-    formatted: place.formatted_address || null,
+    latitudine,
+    longitudine,
+    formatted: place.formattedAddress || null,
   };
 }
 
-// Componente Autocomplete dell'indirizzo. Quando l'utente seleziona un Place
-// dai suggerimenti, chiama onSelect con l'oggetto strutturato. NON usa
-// stato proprio per il valore dell'input: lo gestisce il DOM nativo, e la
-// fonte di verità rimane il form parent (popolato solo dopo la selezione).
+// Componente Autocomplete dell'indirizzo. Usa PlaceAutocompleteElement
+// (Web Component `<gmp-place-autocomplete>`) della Places API (New).
+// Crea programmaticamente l'elemento e lo appende al container ref. Quando
+// l'utente seleziona un Place, fetcha i fields e chiama onSelect con l'oggetto
+// strutturato. La fonte di verità rimane il form parent (popolato solo dopo
+// la selezione).
 function AddressAutocomplete({ apiKey, onSelect, onUserType }) {
-  const inputRef = useRef(null);
-  const acRef = useRef(null);
+  const containerRef = useRef(null);
   const [scriptStatus, setScriptStatus] = useState("loading");
+  // Le callback cambiano ad ogni render del parent (non sono memoizzate).
+  // Le mettiamo in ref per evitare di rimontare il picker ad ogni render.
+  const onSelectRef = useRef(onSelect);
+  const onUserTypeRef = useRef(onUserType);
+  useEffect(() => {
+    onSelectRef.current = onSelect;
+    onUserTypeRef.current = onUserType;
+  });
 
   useEffect(() => {
     if (!apiKey) {
       setScriptStatus("error");
       return;
     }
-    loadGooglePlacesScript(apiKey)
-      .then(() => setScriptStatus("ready"))
-      .catch(() => setScriptStatus("error"));
-  }, [apiKey]);
+    let mounted = true;
+    let pickerEl = null;
+    let cleanup = () => {};
 
-  useEffect(() => {
-    if (scriptStatus !== "ready" || !inputRef.current || acRef.current) return;
-    const ac = new window.google.maps.places.Autocomplete(inputRef.current, {
-      componentRestrictions: { country: "it" },
-      fields: ["address_components", "geometry", "formatted_address"],
-      types: ["address"],
-    });
-    acRef.current = ac;
-    const listener = ac.addListener("place_changed", () => {
-      const place = ac.getPlace();
-      const parsed = parsePlace(place);
-      if (parsed && parsed.indirizzo && parsed.citta && parsed.cap && parsed.provincia) {
-        onSelect(parsed);
-      } else {
-        // Place senza dati sufficienti (raro: l'utente ha cliccato un risultato
-        // ambiguo). Lo segnaliamo al parent come "non verificato".
-        onSelect(null);
+    (async () => {
+      try {
+        await loadGoogleMapsScript(apiKey);
+        // importLibrary è la modalità raccomandata da Google per ottenere
+        // PlaceAutocompleteElement nella Places API (New).
+        const placesLib = await window.google.maps.importLibrary("places");
+        if (!mounted || !containerRef.current) return;
+        const PlaceAutocompleteElement = placesLib.PlaceAutocompleteElement;
+        if (!PlaceAutocompleteElement) {
+          throw new Error("PlaceAutocompleteElement non disponibile");
+        }
+        pickerEl = new PlaceAutocompleteElement({
+          // Restrizione paese (Italia) — equivalente al vecchio
+          // componentRestrictions: { country: 'it' }.
+          includedRegionCodes: ["it"],
+          // Solo indirizzi (esclude POI, business, ecc.) — equivalente al
+          // vecchio types: ['address'].
+          includedPrimaryTypes: ["address"],
+        });
+        pickerEl.placeholder = "Inizia a digitare via, città...";
+        // Hint per allargare l'elemento al 100% del container parent.
+        pickerEl.style.width = "100%";
+
+        const onSelectEvent = async (event) => {
+          try {
+            // Nuovo flow API (New): l'evento porta una placePrediction;
+            // toPlace() ritorna un Place "vuoto" che va popolato con
+            // fetchFields prima di leggere addressComponents/location.
+            const place = event.placePrediction.toPlace();
+            await place.fetchFields({
+              fields: ["formattedAddress", "addressComponents", "location"],
+            });
+            const parsed = parsePlace(place);
+            if (parsed && parsed.indirizzo && parsed.citta && parsed.cap && parsed.provincia) {
+              onSelectRef.current?.(parsed);
+            } else {
+              // Place senza dati sufficienti (es. l'utente ha cliccato un
+              // risultato ambiguo). Segnaliamo al parent come non verificato.
+              onSelectRef.current?.(null);
+            }
+          } catch {
+            onSelectRef.current?.(null);
+          }
+        };
+
+        // L'evento `input` bubblando dallo shadow DOM ci permette di
+        // rilevare quando l'utente sta digitando (per mostrare l'errore
+        // inline "Seleziona un indirizzo dai suggerimenti").
+        const onInput = (e) => {
+          const v = e.composedPath?.()[0]?.value ?? "";
+          if (v) onUserTypeRef.current?.(v);
+        };
+
+        pickerEl.addEventListener("gmp-select", onSelectEvent);
+        pickerEl.addEventListener("input", onInput);
+        containerRef.current.appendChild(pickerEl);
+        if (mounted) setScriptStatus("ready");
+
+        cleanup = () => {
+          pickerEl.removeEventListener("gmp-select", onSelectEvent);
+          pickerEl.removeEventListener("input", onInput);
+          if (pickerEl.parentNode) pickerEl.parentNode.removeChild(pickerEl);
+        };
+      } catch {
+        if (mounted) setScriptStatus("error");
       }
-    });
+    })();
+
     return () => {
-      window.google?.maps?.event?.removeListener?.(listener);
+      mounted = false;
+      cleanup();
     };
-  }, [scriptStatus, onSelect]);
+  }, [apiKey]);
 
   if (scriptStatus === "error") {
     return (
@@ -250,14 +334,31 @@ function AddressAutocomplete({ apiKey, onSelect, onUserType }) {
 
   return (
     <>
-      <input
-        ref={inputRef}
-        className="vendi-input"
-        placeholder={scriptStatus === "ready" ? "Inizia a digitare via, città..." : "Caricamento suggerimenti..."}
-        autoComplete="off"
-        onChange={(e) => onUserType?.(e.target.value)}
-        disabled={scriptStatus !== "ready"}
+      {/* Container per il Web Component <gmp-place-autocomplete>. Lo styling
+          dell'input interno (in shadow DOM chiuso) è limitato a CSS variables
+          e shadow parts esposti da Google. Le var --gmp-mat-* sono il sistema
+          Material delle Places UI Kit. */}
+      <div
+        ref={containerRef}
+        className="vendi-place-autocomplete"
+        style={{
+          // Variabili Material di Google per dark theme:
+          "--gmp-mat-color-surface": "rgba(247,245,240,0.04)",
+          "--gmp-mat-color-on-surface": "var(--white)",
+          "--gmp-mat-color-on-surface-variant": "rgba(247,245,240,0.5)",
+          "--gmp-mat-color-primary": "var(--red)",
+          "--gmp-mat-color-outline": "rgba(247,245,240,0.1)",
+          "--gmp-mat-font-family": "'DM Sans', sans-serif",
+          "--gmp-mat-font-body-medium": "0.95rem",
+          width: "100%",
+          minHeight: "48px",
+        }}
       />
+      {scriptStatus !== "ready" && (
+        <div style={{ fontSize: "0.8rem", color: "rgba(247,245,240,0.4)", marginTop: "0.4rem" }}>
+          Caricamento suggerimenti...
+        </div>
+      )}
       <div style={{ fontSize: "0.7rem", color: "rgba(247,245,240,0.35)", marginTop: "0.4rem" }}>
         Powered by Google — i suggerimenti arrivano dai server Google Maps.
       </div>
