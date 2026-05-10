@@ -744,10 +744,16 @@ export default function ImmobilePage() {
   const haAiSummary = !!immobileDb?.ai_summary;
   const haPuntiForza = Array.isArray(immobileDb?.punti_forza) && immobileDb.punti_forza.length > 0;
   const haDomande = Array.isArray(immobileDb?.domande_consigliate) && immobileDb.domande_consigliate.length > 0;
-  // Documenti e comparabili sono ancora hardcoded nel fallback (non esistono come colonne DB).
-  // Per ora visibili solo su Capecelatro; futuro task dedicato.
-  const haDocumenti = immobileDb?.id === 1;
-  const haComparabili = immobileDb?.id === 1;
+  // Capecelatro è la demo perfetta — id=1 ha lista hardcoded di 6 documenti
+  // verificati + comparabili. Per gli altri immobili published non abbiamo
+  // ancora colonne DB dedicate (documenti_immobile / comparabili sono nel
+  // backlog post-MVP), ma mostriamo comunque la sezione Documenti con il
+  // template proposta + un placeholder "documenti su richiesta" così la
+  // scheda non sembra vuota e il compratore sa che può richiedere il resto
+  // via chat (decisione walkthrough batch 2 — task 2.C).
+  const isCapecelatroDemo = immobileDb?.id === 1;
+  const haDocumentiSezione = !!immobileDb;        // sempre visibile per immobili published
+  const haComparabili = isCapecelatroDemo;        // solo demo finché non avremo colonne DB
 
   const docsVerified = immobile.documenti.filter(d => d.verificato).length;
   const docsTotal = immobile.documenti.length;
@@ -805,10 +811,14 @@ export default function ImmobilePage() {
             </div>
           )}
           <div className="gallery-badge">
-            {allVerified
-              ? <span className="badge badge-verified">✓ Immobile Verificato</span>
-              : <span className="badge badge-score">{docsVerified}/{docsTotal} Documenti</span>
-            }
+            {/* Badge "Immobile Verificato" solo per Capecelatro demo: gli altri
+                immobili non hanno una lista documenti reale in DB e mostrarne uno
+                falserebbe la verifica. */}
+            {isCapecelatroDemo && (
+              allVerified
+                ? <span className="badge badge-verified">✓ Immobile Verificato</span>
+                : <span className="badge badge-score">{docsVerified}/{docsTotal} Documenti</span>
+            )}
             <span className="badge badge-score">Fair Price {immobile.scores.prezzo}/100</span>
             <span className="badge badge-new">Nuovo</span>
           </div>
@@ -934,68 +944,92 @@ export default function ImmobilePage() {
           )}
 
           {/* DOCUMENTS */}
-          {haDocumenti && (
+          {haDocumentiSezione && (
             <div className="docs-section">
               <h2 className="section-title">Documenti</h2>
-              <div style={{ fontSize: "0.82rem", color: "var(--muted)", marginBottom: "1rem" }}>
-                {docsVerified} su {docsTotal} documenti verificati.
-                {!allVerified && <span style={{ color: "var(--gold)" }}> Il venditore ha 30 giorni per completare la documentazione.</span>}
-              </div>
-              {!user && (
-                <div style={{ background: "rgba(217,48,37,0.08)", border: "1px solid rgba(217,48,37,0.2)", borderRadius: 3, padding: "1.2rem 1.5rem", marginBottom: "1rem", display: "flex", alignItems: "center", gap: "1rem" }}>
-                  <span style={{ fontSize: "1.2rem" }}>🔒</span>
-                  <div>
-                    <div style={{ fontSize: "0.82rem", fontWeight: 600, color: "#f7f5f0", marginBottom: "0.3rem" }}>Accedi per scaricare i documenti</div>
-                    <div style={{ fontSize: "0.78rem", color: "rgba(247,245,240,0.5)" }}>
-                      Registrati gratuitamente per accedere a planimetria, visura catastale e APE.{" "}
-                      <a href="/login" style={{ color: "var(--red)", textDecoration: "none", fontWeight: 600 }}>Accedi →</a>
+              {isCapecelatroDemo ? (
+                <>
+                  <div style={{ fontSize: "0.82rem", color: "var(--muted)", marginBottom: "1rem" }}>
+                    {docsVerified} su {docsTotal} documenti verificati.
+                    {!allVerified && <span style={{ color: "var(--gold)" }}> Il venditore ha 30 giorni per completare la documentazione.</span>}
+                  </div>
+                  {!user && (
+                    <div style={{ background: "rgba(217,48,37,0.08)", border: "1px solid rgba(217,48,37,0.2)", borderRadius: 3, padding: "1.2rem 1.5rem", marginBottom: "1rem", display: "flex", alignItems: "center", gap: "1rem" }}>
+                      <span style={{ fontSize: "1.2rem" }}>🔒</span>
+                      <div>
+                        <div style={{ fontSize: "0.82rem", fontWeight: 600, color: "#f7f5f0", marginBottom: "0.3rem" }}>Accedi per scaricare i documenti</div>
+                        <div style={{ fontSize: "0.78rem", color: "rgba(247,245,240,0.5)" }}>
+                          Registrati gratuitamente per accedere a planimetria, visura catastale e APE.{" "}
+                          <a href="/login" style={{ color: "var(--red)", textDecoration: "none", fontWeight: 600 }}>Accedi →</a>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 2, padding: "1rem", marginBottom: "1rem", display: "flex", alignItems: "center", gap: "0.8rem" }}>
+                    <div style={{ width: 36, height: 36, borderRadius: 2, background: "rgba(217,48,37,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1rem", flexShrink: 0 }}>📄</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: "0.82rem", fontWeight: 500, color: "var(--white)", marginBottom: "0.2rem" }}>Template Proposta d'Acquisto</div>
+                      <div style={{ fontSize: "0.68rem", letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--green-light)" }}>Disponibile</div>
+                      <a href="/proposta_acquisto_template.html" target="_blank" rel="noopener noreferrer" style={{ fontSize: "0.7rem", color: "var(--red)", fontWeight: 600, textDecoration: "none", display: "block", marginTop: "0.3rem" }}>↓ Visualizza documento</a>
                     </div>
                   </div>
-                </div>
-              )}
-              <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 2, padding: "1rem", marginBottom: "1rem", display: "flex", alignItems: "center", gap: "0.8rem" }}>
-                <div style={{ width: 36, height: 36, borderRadius: 2, background: "rgba(217,48,37,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1rem", flexShrink: 0 }}>📄</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: "0.82rem", fontWeight: 500, color: "var(--white)", marginBottom: "0.2rem" }}>Template Proposta d'Acquisto</div>
-                  <div style={{ fontSize: "0.68rem", letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--green-light)" }}>Disponibile</div>
-                  <a href="/proposta_acquisto_template.html" target="_blank" rel="noopener noreferrer" style={{ fontSize: "0.7rem", color: "var(--red)", fontWeight: 600, textDecoration: "none", display: "block", marginTop: "0.3rem" }}>↓ Visualizza documento</a>
-                </div>
-              </div>
-              <div className="docs-grid">
-                {immobile.documenti.map((doc, i) => {
-                  const pubblico = ["Visura Catastale", "Planimetria Catastale", "APE — Classe Energetica C"].includes(doc.nome)
-                  return (
-                    <div className="doc-item" key={i}>
-                      <div className={`doc-icon ${doc.verificato ? "verified" : "missing"}`}>
-                        {doc.verificato ? "✓" : "✗"}
-                      </div>
-                      <div className="doc-info">
-                        <div className="doc-name">{doc.nome}</div>
-                        <div className={`doc-status ${doc.verificato ? "ok" : "ko"}`}>
-                          {doc.verificato ? "Verificato" : "Mancante"}
-                        </div>
-                        {doc.verificato && (
-                          pubblico ? (
-                            user ? (
-                              <div style={{ fontSize: "0.7rem", color: "var(--red)", marginTop: "0.3rem", cursor: "pointer", fontWeight: 600 }}>
-                                ↓ Scarica
-                              </div>
-                            ) : (
-                              <div style={{ fontSize: "0.7rem", color: "var(--muted)", marginTop: "0.3rem" }}>
-                                🔒 Accedi per scaricare
-                              </div>
-                            )
-                          ) : (
-                            <div style={{ fontSize: "0.7rem", color: "var(--muted)", marginTop: "0.3rem" }}>
-                              Su richiesta
+                  <div className="docs-grid">
+                    {immobile.documenti.map((doc, i) => {
+                      const pubblico = ["Visura Catastale", "Planimetria Catastale", "APE — Classe Energetica C"].includes(doc.nome)
+                      return (
+                        <div className="doc-item" key={i}>
+                          <div className={`doc-icon ${doc.verificato ? "verified" : "missing"}`}>
+                            {doc.verificato ? "✓" : "✗"}
+                          </div>
+                          <div className="doc-info">
+                            <div className="doc-name">{doc.nome}</div>
+                            <div className={`doc-status ${doc.verificato ? "ok" : "ko"}`}>
+                              {doc.verificato ? "Verificato" : "Mancante"}
                             </div>
-                          )
-                        )}
-                      </div>
+                            {doc.verificato && (
+                              pubblico ? (
+                                user ? (
+                                  <div style={{ fontSize: "0.7rem", color: "var(--red)", marginTop: "0.3rem", cursor: "pointer", fontWeight: 600 }}>
+                                    ↓ Scarica
+                                  </div>
+                                ) : (
+                                  <div style={{ fontSize: "0.7rem", color: "var(--muted)", marginTop: "0.3rem" }}>
+                                    🔒 Accedi per scaricare
+                                  </div>
+                                )
+                              ) : (
+                                <div style={{ fontSize: "0.7rem", color: "var(--muted)", marginTop: "0.3rem" }}>
+                                  Su richiesta
+                                </div>
+                              )
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Variante minima per immobili published non-demo: solo template
+                      proposta + placeholder "documenti su richiesta". Non abbiamo ancora
+                      colonne DB per documenti per-immobile, ma la sezione non deve
+                      sembrare vuota o assente. */}
+                  <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 2, padding: "1rem", marginBottom: "1rem", display: "flex", alignItems: "center", gap: "0.8rem" }}>
+                    <div style={{ width: 36, height: 36, borderRadius: 2, background: "rgba(217,48,37,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1rem", flexShrink: 0 }}>📄</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: "0.82rem", fontWeight: 500, color: "var(--white)", marginBottom: "0.2rem" }}>Template Proposta d'Acquisto</div>
+                      <div style={{ fontSize: "0.68rem", letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--green-light)" }}>Disponibile</div>
+                      <a href="/proposta_acquisto_template.html" target="_blank" rel="noopener noreferrer" style={{ fontSize: "0.7rem", color: "var(--red)", fontWeight: 600, textDecoration: "none", display: "block", marginTop: "0.3rem" }}>↓ Visualizza documento</a>
                     </div>
-                  )
-                })}
-              </div>
+                  </div>
+                  <div style={{ background: "rgba(247,245,240,0.03)", border: "1px solid var(--border)", borderRadius: 3, padding: "1.2rem 1.4rem", fontSize: "0.85rem", color: "rgba(247,245,240,0.65)", lineHeight: 1.7 }}>
+                    Documentazione completa (visura catastale, planimetria, APE, atto di provenienza,
+                    regolamento condominiale) <strong style={{ color: "var(--white)" }}>disponibile su richiesta</strong>.
+                    Contatta il venditore via chat per riceverli.
+                  </div>
+                </>
+              )}
             </div>
           )}
 
@@ -1134,7 +1168,7 @@ export default function ImmobilePage() {
               ))}
             </div>
 
-            {haDocumenti && (
+            {isCapecelatroDemo && (
               <div className="verified-box">
                 <div className="verified-box-title">
                   {allVerified ? "✓ Immobile Verificato" : `⚠ ${docsVerified}/${docsTotal} Documenti`}
