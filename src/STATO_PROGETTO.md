@@ -1,5 +1,5 @@
 # RealAIstate — Stato del progetto
-Aggiornato: 10/05/2026 (settimana 7 — batch 2 + 7 post-fix Places API New + ROLLBACK ottavo fix a Places API legacy + batch 3 polish UX/copy: nuovo claim home positivo "Comprare e vendere casa, indipendentemente", risposte scuse 05/06/08 ricalibrate, conferma password in registrazione, bottone proposta verde uniforme)
+Aggiornato: 10/05/2026 sera (settimana 7 — batch 2 + 7 post-fix Places API New + ROLLBACK ottavo fix a Places API legacy + batch 3 polish UX/copy + revisione hero dal founder + hygiene @import CSS: copy hero finale "Hai davvero bisogno di un'agenzia? / No." con "No." rosso via `<span className="highlight">` + "RealAIstate" bianco nel sottotitolo, risposte scuse 05/06/08 ricalibrate, conferma password in registrazione, bottone proposta verde uniforme, Monolocale/Bilocale rimossi da tipologia /vendi)
 
 ## Stack
 - Frontend: React + Vite, deploy su Vercel
@@ -840,20 +840,57 @@ il rollback Places. Nessun task critico, ma insieme alzano la qualità
 percepita per l'onboarding venditore beta. Branch `feat/copy-ux-polish`,
 un commit per task. Tempo effettivo: ~70 min.
 
-- [x] **Task 3.A: nuovo claim home positivo** ✅
-  - `src/HomePage.jsx` hero section. Sostituito il claim antagonista
-    "Hai davvero bisogno di un'agenzia? **No.** Che scusa hai per non
-    usare RealAIstate?" con un claim dichiarativo:
-    - H1: "Comprare e vendere casa, indipendentemente."
-    - Sottotitolo (`hero-challenge`): "La piattaforma AI che lavora per
-      te, non per l'agenzia."
-    - Descrizione (`hero-sub`): "Valutazione, documenti, professionisti
-      — tutto incluso. Risparmio reale, in piena trasparenza."
-  - **Decisione di design**: rimossi anche il `hero-bg-number` "NO."
-    (giant background letter) e l'`hero-answer` "No." perché
-    visivamente ancorati al vecchio framing antagonista. Il nuovo tono
-    è positivo/dichiarativo, non più "smonta-le-scuse". L'`hero-eyebrow`
-    "Piattaforma AI · Compra e vendi casa" resta — neutro/descrittivo.
+- [x] **Task 3.A: copy hero rivisto dal founder (iterazione 10/05 sera)** ✅
+  - **Stato iniziale (commit `e81356b`)**: claim dichiarativo positivo
+    proposto in originale dal task 3.A ("Comprare e vendere casa,
+    indipendentemente." / "La piattaforma AI che lavora per te, non
+    per l'agenzia." / "Valutazione, documenti, professionisti — tutto
+    incluso. Risparmio reale, in piena trasparenza."). `hero-bg-number`
+    e `hero-answer` rimossi.
+  - **Founder revision finale (commit `c463a14`)**: il founder ha
+    rivisto in pre-merge e ha scelto di tornare a un claim antagonista
+    + polish — più aderente alla brand identity "smonta-l'agenzia". Lo
+    stato finale del hero è:
+    - H1 (due righe, `Bebas Neue` 7.5rem): "Hai davvero bisogno di
+      un'agenzia? / **No.**" — la domanda + risposta dismissive
+      consolidata dentro l'H1 (ex `hero-answer` separato).
+    - Sottotitolo (`hero-challenge`, DM Serif Display italic):
+      "Che scusa hai per non usare **RealAIstate**?" — retorico, la
+      sezione scuse arriva scrollando.
+    - Descrizione (`hero-sub`): "La piattaforma AI per comprare e
+      vendere casa **in autonomia**. Valutazione, documenti e
+      professionisti — tutto incluso. Anche il risparmio. In
+      trasparenza." (ex "senza agenzia" → "in autonomia": meno
+      antagonista nell'aggettivo che specifica il modus operandi).
+  - **Polish visivo finale (commit `ca95317`)**:
+    - "**No.**" nella seconda riga dell'H1 wrappato in
+      `<span className="highlight">` — sfrutta la regola CSS
+      `.hero-h1 .highlight { color: var(--red); }` già definita in
+      `src/App.jsx` (residuo design system pre-batch). Niente CSS
+      nuovo, niente inline style.
+    - "**RealAIstate**" nel sottotitolo wrappato in `<span style={{
+      color: 'var(--white)' }}>` — NON un `<strong>`: il selector
+      `.hero-challenge strong` esistente cambia anche `font-family:
+      'DM Sans'` e `font-style: normal`, e il founder voleva mantenere
+      il font del sottotitolo (DM Serif Display italic). Lo span con
+      inline style override surgical solo il colore.
+    - `hero-bg-number` "NO." giant background letter ripristinato (era
+      stato rimosso nel commit iniziale `e81356b`). Colore originale
+      `rgba(247,245,240,0.025)` conservato — signature ghost
+      off-white quasi-invisibile contro `--black` (#0a0a0a).
+  - **Iterazioni misinterpretate (per memoria)**: due commit interim
+    (`8608168` e `205658b`) hanno tentato di colorare di rosso il
+    `hero-bg-number` partendo dal request "il NO grande deve essere
+    rosso". Il founder intendeva il "**No.**" inline nell'H1, non il
+    bg-number giant. Il commit `ca95317` ha invertito: bg-number torna
+    off-white, "No." inline diventa rosso via highlight class.
+  - **`hero-eyebrow`** "Piattaforma AI · Compra e vendi casa" resta
+    invariato in tutto il flusso — neutro/descrittivo, non agganciato
+    al framing antagonista.
+  - **`hero-actions` "Smonta la tua scusa"** rimosso definitivamente
+    (vedi Task 3.C). Il claim antagonista è tornato MA senza CTA
+    rosso prominente nel hero — il sottotitolo "Che scusa hai..." è
+    retorico, la sezione scuse arriva scrollando.
 
 - [x] **Task 3.B: box "Per te" — onestà su prodotto e copy professionista** ✅
   - `src/HomePage.jsx` array `cards`:
@@ -959,11 +996,31 @@ un commit per task. Tempo effettivo: ~70 min.
     immobile e può cliccare di nuovo "Fai una proposta".
   - Aggiunta freccia "→" al testo per uniformità col gemello verde.
 
-- [x] **Build & QA**: `npm run build` passa pulito (1.7-1.8s, 0
-  errori, solo il warning standard sul chunk size già esistente prima
-  del batch). Un commit per task, branch `feat/copy-ux-polish` su
-  origin. NON pushato su main — il founder mergia manualmente al
-  rientro come per gli altri batch.
+- [x] **Hygiene CSS @import order (commit `ab2e785`)** ✅
+  - Vercel deployment log mostrava warning pre-esistente
+    `[vite:css] @import must precede all other statements`. Causa:
+    `src/index.css` aveva `html { scroll-behavior: auto; }` come riga 1
+    e `@import url(fonts.googleapis.com)` come riga 2 — viola la regola
+    CSS spec che richiede `@import` come prima dichiarazione. A regola
+    di spec, l'@import veniva ignorato dal browser e i font Google non
+    avrebbero dovuto caricare; funzionava lo stesso perché Vite
+    inline/bundle i font in fase di build (vedi
+    `dist/assets/index-*.css`).
+  - Fix: swap delle due righe. `@import` prima, `html { scroll-behavior:
+    auto; }` dopo. Build pulita, warning sparito, comportamento browser
+    invariato. Fuori scope dal batch 3 (era hygiene pre-esistente
+    emersa dal log Vercel).
+
+- [x] **Build & QA**: `npm run build` passa pulito (1.7-2.0s, 0
+  errori, 0 warning Vite — solo il warning standard sul chunk size
+  che è informativo e pre-esistente). 14 commit totali sul branch
+  `feat/copy-ux-polish` (8 task batch 3 + 1 doc + 1 founder revision
+  + 3 polish iterativi sul rosso H1 + 1 hygiene @import). Branch
+  pushato su origin, NON merged su main — il founder mergia
+  manualmente come per gli altri batch (raccomandato `--no-ff` per
+  preservare la storia atomica per-task per eventuali revert
+  selettivi). PR draft suggerita:
+  https://github.com/piccolifabio/real-AIstate/pull/new/feat/copy-ux-polish
 
 ## File chiave
 - src/HomePage.jsx — home page con Nav e CTA
