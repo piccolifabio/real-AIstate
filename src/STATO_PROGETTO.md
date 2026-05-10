@@ -1,5 +1,5 @@
 # RealAIstate — Stato del progetto
-Aggiornato: 10/05/2026 (settimana 7 — fix 3 blocker walkthrough: vani→locali, AI no-leak, chat JWT)
+Aggiornato: 10/05/2026 (settimana 7 — fix walkthrough batch 1 + 1.5: vani→locali, AI no-leak, chat JWT, isolamento storico chat per immobile, AI genera titolo)
 
 ## Stack
 - Frontend: React + Vite, deploy su Vercel
@@ -303,6 +303,53 @@ beta. Tutti chiusi in branch `feat/blocker-fixes-walkthrough`.
   - Frontend `AiChat`: `supabase.auth.getSession()` + `Authorization: Bearer`
     se loggato.
 
+### Settimana 7 — batch 1.5 ✅ — completata 10/05/2026 (test E2E post-batch-1)
+Test E2E del Batch 1 in produzione hanno rivelato 2 bug residui indipendenti
+dai precedenti. Chiusi in branch `fix/walkthrough-tier-1-5`.
+
+- [x] **Fix 1.5.A: chat AI mostrava storico Capecelatro su altri immobili** ✅
+  - Sintomo: utente loggato apre /immobili/4 → chat AI parte già con
+    messaggi di Capecelatro id=1.
+  - Causa: la prop di `<AiChat>` era `immobileId={immobile.id}`, ma
+    `immobile = {...IMMOBILE_FALLBACK, ...immobileDb-cherry-pick}` con
+    `IMMOBILE_FALLBACK.id = 1`. Al primo render `immobileDb` è null, quindi
+    la prop arriva a 1. L'useEffect `loadHistory` query
+    `chat_messages WHERE immobile_id=1 AND user_id=…` carica i messaggi
+    Capecelatro. Quando `immobileDb` arriva con id=4, useEffect rilancia
+    ma per immobile 4 il query torna vuoto e il codice ha
+    `if data && length > 0 setMessages` senza else → state resta sui
+    Capecelatro caricati al primo render.
+  - Fix:
+    - Prop `immobileId={immobileId}` (param URL da `useParams()`, sempre
+      il vero id fin dal primo render).
+    - `key={immobileId}` su `<AiChat>` per forzare il remount al cambio
+      URL → state, sessione_id, prevLenChat ripartono fresh.
+- [x] **Fix 1.5.B: titolo "Appartamento con garage e terrazzino" su qualsiasi immobile** ✅
+  - Sintomo: nuovo immobile creato via /vendi (senza garage, senza terrazzo)
+    appariva con titolo "Appartamento con garage e terrazzino" sulla scheda.
+  - Diagnosi vera: NON era hallucination AI. Il titolo NON veniva generato
+    da nessuna AI. `_lib/ai-content.js` faceva solo ai_summary/punti/
+    domande, e per qualsiasi immobile con `titolo=null` in DB il merge
+    in `Immobile.jsx:643` `titolo: immobileDb.titolo ?? IMMOBILE_FALLBACK.titolo`
+    cadeva sul fallback Capecelatro.
+  - Doppio fix:
+    1. `_lib/ai-content.js` ora genera anche `titolo`. Prompt rinforzato:
+       max 60 caratteri, SOLO caratteristiche reali nei dati (no garage/
+       terrazzo/giardino/ascensore se i campi non sono presenti o sono
+       null/false), no superlativi vuoti, fallback neutri tipo
+       "{tipologia} in {zona}" se mancano tratti distintivi. Shape JSON
+       e validation includono `titolo`, PATCH DB lo salva.
+    2. `admin/[op].js`: `aiMissing` check include `!immobile.titolo` →
+       l'AI riparte alla pubblicazione anche se solo il titolo manca.
+    3. `Immobile.jsx`: il merge passa da `?? IMMOBILE_FALLBACK.titolo` a
+       `?? null`. Render h1 e modal proposta usano
+       `immobile.titolo || immobile.indirizzo` come fallback runtime.
+       IMMOBILE_FALLBACK.titolo resta nell'oggetto (parte della demo
+       Capecelatro) ma non viene più merged in altri immobili.
+  - Per immobili già pubblicati con titolo=null pre-fix: ri-triggerare
+    `/api/generate-immobile-ai` con JWT venditore (o X-Admin-Secret),
+    oppure UPDATE manuale del titolo su Supabase.
+
 ## File chiave
 - src/HomePage.jsx — home page con Nav e CTA
 - src/ScusePage.jsx — pagina scuse separata
@@ -491,6 +538,27 @@ beta. Tutti chiusi in branch `feat/blocker-fixes-walkthrough`.
   /auth/v1/user; if ok set authedEmail/authedNome } catch { /* anon */ }`.
   Niente 401 se token mancante — diversamente dalle API JWT-required
   (proposta-submit, vendi-submit, ecc.).
+- **Componenti scoped per entità: `key={entityId}` per garantire
+  rimount al cambio entità** (decisione 10/05/2026 batch 1.5). React
+  Router riusa lo stesso componente quando il path cambia ma il
+  pattern di route è uguale — lo state interno persiste. Per chat,
+  liste o widget legati a un'entità (immobile, proposta, sessione),
+  passare `key={id}` sul componente garantisce remount → state, ref,
+  useState init e sessionId rinascono fresh. Vedi `<AiChat
+  key={immobileId} ... />` in Immobile.jsx. Senza, il componente
+  mostra dati dell'entità precedente finché il fetch nuovo non
+  sovrascrive — e se il fetch torna vuoto (es. nessuna chat su
+  immobile 4) i dati vecchi restano.
+- **Generazione titolo immobile = compito AI, NO fallback hardcoded**
+  (decisione 10/05/2026 batch 1.5). Il titolo viene generato da
+  `_lib/ai-content.js` insieme a ai_summary/punti/domande, al
+  passaggio pending_review → published. Il fallback hardcoded
+  Capecelatro era un leak — qualsiasi immobile con titolo=null
+  mostrava "Appartamento con garage e terrazzino" anche senza garage
+  né terrazzo. La generazione AI è guidata da regole strict (no
+  garage/terrazzo se non in dati, fallback neutri tipo "{tipologia}
+  in {zona}"). Il render frontend usa `titolo || indirizzo` come
+  fallback runtime, mai un titolo "demo".
 
 ## Memo tecnici (gotchas già imparati — non ripetere errori)
 - **Yousign `template_placeholders.signers[].label`**: case-sensitive
@@ -599,6 +667,23 @@ beta. Tutti chiusi in branch `feat/blocker-fixes-walkthrough`.
   specificato" → il system prompt istruisce l'AI a NON inventare e
   proporre l'inoltro al venditore. Quando aggiungerai una nuova API
   AI: stesso pattern, niente shortcut.
+- **React Router riusa lo stesso componente cambiando solo path param**.
+  Andando da `/immobili/1` a `/immobili/4`, `<ImmobilePage>` non
+  rimonta — gli state interni (incluso lo state di componenti figli
+  come AiChat) sopravvivono. Se la query Supabase di refresh torna
+  vuota e il codice non ha branch `else setMessages(initialMessages)`,
+  vedi i dati dell'entità precedente. Pattern di prevenzione:
+  `key={entityId}` sul componente figlio ogni volta che è scoped
+  per entità (chat, lista messaggi, sessione). Lezione 10/05 batch
+  1.5 con `<AiChat key={immobileId} ...>`.
+- **Prop derivata da merged con fallback = bug sottile al primo
+  render**. In `Immobile.jsx`, `immobile.id` parte come `IMMOBILE_FALLBACK.id`
+  (=1) finché `immobileDb` non arriva dal fetch. Se passi `immobile.id`
+  come prop a un componente che query DB, il primo render fa il query
+  per id=1 → mismatch con l'entità reale. Pattern di prevenzione: per
+  prop tipo "id corrente", usa la fonte autoritativa stable (es. il
+  param URL da `useParams()`) invece di una prop derivata che dipende
+  dal fetch async.
 
 ## ⚠️ Bug aperti
 Nessuno noto. (Bug scroll /immobili/:id non riproducibile dopo 08/05 sera —
@@ -626,7 +711,7 @@ Steps:
   Editor eseguire `NOTIFY pgrst, 'reload schema';` per pulire la cache
   PostgREST. Senza questo step il fix vani→locali del 10/05 potrebbe
   ancora vedere lo schema stale e fallire.
-- **Test E2E walkthrough — verifica i 3 fix su preview/prod**:
+- **Test E2E walkthrough — verifica i fix batch 1 e 1.5 su preview/prod**:
   1. Registra nuovo account (email Gmail con sub-addressing per tracciare):
      - Compila /vendi 5 step → submit step 5 → verifica niente 500,
        redirect a /venditore, riga in `immobili` con `locali` popolato.
@@ -641,6 +726,22 @@ Steps:
        SENZA chiedere nome/email.
      - Verifica email a info@realaistate.ai: nome/email del compratore
        devono essere quelli dell'account loggato, non un placeholder.
+  4. **Batch 1.5 — isolamento storico chat per immobile**:
+     - Loggato su /immobili/1 (Capecelatro) chatta con almeno un
+       messaggio. Naviga (link interno o digita URL) a /immobili/4 (o
+       altro non-Capecelatro): la chat AI deve partire dal messaggio di
+       benvenuto, NON dai messaggi di Capecelatro. Torna su /immobili/1:
+       i messaggi di Capecelatro devono ricomparire (riletti dal DB).
+  5. **Batch 1.5 — titolo realistico**:
+     - Crea draft via /vendi senza spuntare garage/terrazzo →
+       "Richiedi pubblicazione" → /admin → "Approva". Verifica su
+       Supabase che `immobili.titolo` rifletta SOLO le caratteristiche
+       reali (es. "Bilocale ristrutturato in zona X" o
+       "{tipologia} di {superficie}mq"), NON "Appartamento con garage
+       e terrazzino".
+     - Per immobili già pubblicati pre-fix con titolo=null/Capecelatro:
+       chiamare `/api/generate-immobile-ai` con header X-Admin-Secret e
+       body `{ "immobile_id": <id> }` per rigenerare titolo+contenuto.
 - **Confermare cancellazione proposta-fantasma**: il founder deve eseguire
   manualmente via Supabase SQL Editor (query fornita 09/05, sotto è il backup):
   ```sql
