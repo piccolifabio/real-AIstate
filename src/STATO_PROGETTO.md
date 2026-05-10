@@ -1,5 +1,5 @@
 # RealAIstate — Stato del progetto
-Aggiornato: 10/05/2026 (settimana 7 — batch 2 + 4 post-fix Places API New: chat AI anonimo invita registrazione, nome/cognome separati, documenti minimi su tutti gli immobili, Google Places Autocomplete in /vendi migrato a `<gmp-place-autocomplete>` come tag JSX nativo)
+Aggiornato: 10/05/2026 (settimana 7 — batch 2 + 5 post-fix Places API New: chat AI anonimo invita registrazione, nome/cognome separati, documenti minimi su tutti gli immobili, Google Places Autocomplete in /vendi migrato a `<gmp-place-autocomplete>` con upgrade-readiness via `importLibrary('places')`)
 
 ## Stack
 - Frontend: React + Vite, deploy su Vercel
@@ -669,6 +669,67 @@ in incognito su realaistate.ai/vendi.
     debug futuro.
   - Build pulita, schema DB invariato, UX invariata.
 
+### Settimana 7 — batch 2 fifth-fix ✅ — completata 10/05/2026 (importLibrary upgrade-readiness)
+Dopo i quattro fix precedenti (legacy → New, mount race, types, JSX), in
+produzione il custom element `<gmp-place-autocomplete>` esisteva nel DOM
+con tutti gli attributi corretti ma **`shadowRoot:null`** — il listbox
+dei suggerimenti non veniva MAI renderizzato anche se le chiamate POST
+a `places.googleapis.com/v1/places:autocomplete` partivano e
+rispondevano 200 a ogni keystroke. Diagnostica founder in incognito:
+
+  document.querySelector('gmp-place-autocomplete') →
+    childrenCount: 0, innerHTML: '', hasShadow: FALSE, visible: 662x50
+
+Il custom element era inerte: la classe era registrata
+(`whenDefined` risolveva), ma il `connectedCallback` non aveva attaccato
+la shadow root quando React aveva montato il tag.
+
+- [x] **Causa root: `whenDefined` ≠ upgrade-readiness completa** ✅
+  - Lo script `&v=weekly&libraries=places&language=it` (eager) registrava
+    il custom element come **stub** mentre `places.js` continuava a
+    inizializzarsi in background. `customElements.whenDefined` risolveva
+    su questo stub registrato, ma la classe non era ancora completa.
+  - I Web Components NON si auto-upgradano retroattivamente: se React
+    monta il tag mentre la classe è incompleta, il browser lo tratta
+    come elemento inerte e caricare la libreria DOPO non recupera la
+    situazione. Il tag resta lì, visibile (con i CSS variables
+    applicati all'host che danno il box), ma `connectedCallback` non
+    parte mai e la shadow root non viene mai attaccata.
+  - La race era invisibile alla diagnostica: console pulita, network
+    OK, `whenDefined` risolto — solo `shadowRoot:null` rivelava il
+    problema.
+
+- [x] **Fix: pattern ufficiale Google `loading=async` + `importLibrary`** ✅
+  - `loadGoogleMapsScript`:
+    - URL cambiato a `&v=weekly&loading=async&language=it` (rimosso
+      `&libraries=places`).
+    - Check di "già caricato": ora verifica
+      `typeof window.google?.maps?.importLibrary === "function"`
+      (con loading=async la funzione bootstrap viene esposta dallo
+      script base, prima ancora che qualsiasi libreria sia caricata).
+    - Caso script tag già presente: ascolta il suo `onload` invece di
+      risolvere subito (più sicuro contro race tra mount).
+  - `AddressAutocomplete` useEffect:
+    - Dopo `loadGoogleMapsScript`: sanity check
+      `if (typeof window.google?.maps?.importLibrary !== "function")
+       throw "...non disponibile dopo script load"`.
+    - **Aggiunto `await window.google.maps.importLibrary("places")`**:
+      è il pattern ufficiale Google per la Places API (New). La
+      promise risolve SOLO quando la libreria è completamente caricata
+      E inizializzata, e il custom element è registrato CON la sua
+      classe completa (incluso il `connectedCallback` che attacca
+      la shadow root). Niente race condition possibile.
+    - `whenDefined` mantenuto come doppia sicurezza (ritorna
+      immediatamente in questo punto perché `importLibrary` ha già
+      garantito la registrazione).
+    - Tutti gli await wrappati in `Promise.race([..., timeout(8000)])`
+      per evitare hang infinito su network lento.
+  - Render condizionale `{scriptStatus === "ready" && <gmp-...>}`:
+    invariato (era già il pattern corretto) — la differenza è che ora
+    `ready` segnala con CERTEZZA upgrade-readiness, non solo registrazione.
+  - Build pulita, schema DB invariato, UX invariata. Branch
+    `fix/places-autocomplete-upgrade`.
+
 ## File chiave
 - src/HomePage.jsx — home page con Nav e CTA
 - src/ScusePage.jsx — pagina scuse separata
@@ -1100,31 +1161,32 @@ in incognito su realaistate.ai/vendi.
   funzioni. Styling: shadow DOM CHIUSO (no `::part`), solo CSS
   variables Material `--gmp-mat-color-*` e `--gmp-mat-font-*` esposte.
 - **Web Components React: usa il TAG JSX, non `new + appendChild`**
-  (lezione 10/05/2026, fourth-fix batch 2). Per integrare un Web
-  Component in React (es. `<gmp-place-autocomplete>` della Places API
-  New) ci sono due pattern:
+  (lezione 10/05/2026, fourth-fix batch 2 — corollario del fifth-fix).
+  Per integrare un Web Component in React (es. `<gmp-place-autocomplete>`
+  della Places API New) ci sono due pattern:
   (a) `<gmp-place-autocomplete ref={r}>` come tag JSX, property/eventi
       settati via ref dopo il mount;
   (b) `new PlaceAutocompleteElement({...})` + `containerRef.current.
       appendChild(picker)` dentro un async useEffect.
-  In teoria sono equivalenti, in pratica solo (a) garantisce il
-  funzionamento corretto. Sintomo (b) provato in prod: input visibile,
-  Network 200 sui fetch autocomplete, ma il listbox non viene MAI
-  renderizzato (innerHTML 0, aria-expanded null) — il custom element
-  resta "dormiente". Sospetto: il `connectedCallback` interno del
-  Web Component non triggera correttamente quando il mount è
-  programmatico dentro un async iife dopo che React ha completato il
-  layout del container.
-  Pattern (a) corretto: render `<gmp-place-autocomplete ref={r}>`
-  condizionalmente (`{scriptStatus === "ready" && <gmp-...>}`), poi in
-  un useEffect con dep `[scriptStatus]` setta property array via
-  ref (`r.current.includedRegionCodes = ['it']`) e attacca listener
-  custom (`r.current.addEventListener("gmp-select", ...)`). React 18
-  non riconosce eventi custom (`gmp-*`) come prop JSX, quindi
-  addEventListener via ref è obbligatorio. Per stable references delle
-  callback, metterle in ref (onSelectRef/onUserTypeRef) e aggiornarle
-  in useEffect senza deps — così add/remove listener gira UNA volta
-  sola e non rebinding ad ogni render del parent.
+  Pattern (b) provato in prod (commit 0facd4e): input visibile, Network
+  200 sui fetch autocomplete, listbox MAI renderizzato. Pattern (a) è
+  l'API React-idiomatica per i custom elements e si combina meglio col
+  rendering condizionale necessario per garantire l'upgrade-readiness
+  (vedi memo "Web Components NON si auto-upgradano"). **Pre-condizione
+  non-negoziabile per (a)**: il tag JSX va renderizzato SOLO dopo che
+  la libreria che lo definisce ha completato il caricamento atomico
+  (es. `await google.maps.importLibrary('places')`), non solo dopo
+  `customElements.whenDefined`. Pattern completo: in un primo useEffect
+  fai `loadScript → importLibrary → setScriptStatus("ready")`; nel JSX
+  fai `{scriptStatus === "ready" && <gmp-... ref={r}>}`; in un secondo
+  useEffect con dep `[scriptStatus]` setti property array via ref
+  (`r.current.includedRegionCodes = ['it']`) e attacchi listener custom
+  (`r.current.addEventListener("gmp-select", ...)`). React 18 non
+  riconosce eventi custom (`gmp-*`) come prop JSX, quindi addEventListener
+  via ref è obbligatorio. Per stable references delle callback, metterle
+  in ref (onSelectRef/onUserTypeRef) e aggiornarle in useEffect senza
+  deps — così add/remove listener gira UNA volta sola e non rebinding
+  ad ogni render del parent.
 - **Place Types Places API (New) NON sono i `types` legacy** (lezione
   10/05/2026, post-post-post-fix batch 2). Nel classico
   `google.maps.places.Autocomplete` si passava `types: ['address']`
@@ -1140,29 +1202,47 @@ in incognito su realaistate.ai/vendi.
   valori; un valore non riconosciuto fa fallire TUTTA la chiamata
   autocomplete (non solo quel filtro). Quando si migra dalla legacy,
   rivedere SEMPRE i nomi dei types.
+- **Web Components NON si auto-upgradano retroattivamente** (lezione
+  10/05/2026, fifth-fix batch 2 — la più importante della serie). Quando
+  un custom element (es. `<gmp-place-autocomplete>`) viene montato nel
+  DOM PRIMA che la sua classe sia completamente registrata, il browser
+  lo tratta come elemento inerte (HTMLUnknownElement-like). **Caricare
+  la libreria DOPO NON recupera la situazione**: il
+  `connectedCallback` non parte mai, la shadow root non viene mai
+  attaccata, l'elemento resta visibile (con CSS variables host-level)
+  ma è completamente non funzionante. Sintomo specifico:
+  `document.querySelector('gmp-...').shadowRoot === null` anche se
+  `customElements.get('gmp-...')` ritorna una classe e
+  `whenDefined` risolve. Analogia: come dichiarare `<video>` quando il
+  browser non supporta video — caricare un polyfill dopo non installa
+  retroattivamente HTMLVideoElement.prototype sull'istanza esistente.
+  **Implicazione critica**: per ogni Web Component caricato via
+  libreria esterna, il render del tag DEVE essere sospeso finché la
+  libreria non garantisce upgrade-readiness completa. Per Google
+  Places: `await google.maps.importLibrary('places')` (atomico:
+  carica + inizializza + registra completo). Per altre librerie: il
+  segnale di readiness varia, leggere la doc. `customElements.whenDefined`
+  da solo NON BASTA: può risolvere su uno stub registrato in fase di
+  bootstrap. Pattern React: `scriptStatus="loading" → importLibrary →
+  scriptStatus="ready" → render condizionale del tag JSX`.
 - **`&libraries=places` + `&loading=async` = combinazione conflittuale**
-  (lezione 10/05/2026, post-post-fix batch 2). I due parametri sullo
-  script `https://maps.googleapis.com/maps/api/js?...` sono mutualmente
-  esclusivi: `&loading=async` aspetta `await
-  google.maps.importLibrary(...)` per caricare le librerie on-demand,
-  mentre `&libraries=X` carica eager bypassando il bootstrap di
-  `importLibrary`. Mescolarli può lasciare `google.maps.importLibrary`
-  `undefined` quando lo `script.onload` triggera, perché lo script ha
-  finito ma `places.js` (carica in background) non ha ancora attaccato
-  `importLibrary` né `PlaceAutocompleteElement`. Sintomo: `await
-  google.maps.importLibrary("places")` → TypeError silenzioso in catch
-  → l'utente vede l'errore di fallback ma il debug è impossibile senza
-  console.error nel catch. **Fix raccomandato**: scegliere UNA delle
-  due strategie:
-  (a) `&libraries=places` (eager) + accesso diretto a
-  `google.maps.places.PlaceAutocompleteElement`, attesa via
-  `customElements.whenDefined("gmp-place-autocomplete")` con timeout —
-  semplice, robusto, senza importLibrary;
-  (b) NIENTE `&libraries=`, solo `&loading=async`, poi `await
-  google.maps.importLibrary("places")` per ogni libreria — pattern
-  moderno raccomandato Google ma richiede che importLibrary sia
-  effettivamente disponibile quando viene chiamato.
-  Noi usiamo (a) in VendiForm.jsx. **Best practice generale**: sempre
+  (lezione 10/05/2026, post-post-fix batch 2 + aggiornata fifth-fix).
+  I due parametri sullo script `https://maps.googleapis.com/maps/api/js?...`
+  sono mutualmente esclusivi: `&loading=async` aspetta `await
+  google.maps.importLibrary(...)` per caricare le librerie on-demand
+  in modo atomico, mentre `&libraries=X` carica eager bypassando il
+  bootstrap di `importLibrary`. **Mescolarli** lascia `importLibrary`
+  `undefined` quando `script.onload` triggera (TypeError nel catch,
+  fallback rosso utente). **Solo `&libraries=X`** (eager) registra il
+  custom element come stub durante l'init di places.js — `whenDefined`
+  risolve troppo presto, React monta un tag inerte, `shadowRoot:null`
+  in produzione. **Solo `&loading=async`** (modern Google pattern):
+  bootstrap loader puro, poi `await google.maps.importLibrary('places')`
+  garantisce che la classe sia completa PRIMA di risolvere → custom
+  element upgrade-ready quando React lo monta. **Fix raccomandato e
+  attivo in VendiForm.jsx (fifth-fix)**: solo `&loading=async`, niente
+  `&libraries=`, e `await importLibrary('places')` esplicito prima di
+  `setScriptStatus("ready")`. **Best practice generale**: sempre
   `console.error(err)` nel catch di un init async che mostra fallback
   utente — senza, in produzione il debug è cieco.
 - **Frase canonica come segnale machine-readable nel prompt AI**: pattern

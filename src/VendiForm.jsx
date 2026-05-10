@@ -148,7 +148,7 @@ function Tooltip({ text }) {
   );
 }
 
-// Carica una sola volta lo script Maps JavaScript API + libreria 'places'.
+// Carica una sola volta il bootstrap loader della Maps JavaScript API.
 // Cache via document (idempotente). La key è VITE_GOOGLE_MAPS_KEY, già usata
 // per Maps Embed in Immobile.jsx — il founder ha abilitato Places API (New)
 // sul progetto Google Cloud.
@@ -159,32 +159,40 @@ function Tooltip({ text }) {
 // `google.maps.places.Autocomplete`. Riferimento:
 // https://developers.google.com/maps/documentation/javascript/place-autocomplete-new
 //
-// Gotcha caricamento: la combinazione `&libraries=places` (eager) +
-// `&loading=async` (dynamic import) è in conflitto. Con eager, `importLibrary`
-// può NON essere definito; con async, `&libraries=` è ignorato. Usiamo solo
-// eager (`&libraries=places`), accedendo poi direttamente a
-// `google.maps.places.PlaceAutocompleteElement` senza passare per
-// `importLibrary`. Lo `script.onload` può anticipare la registrazione del
-// custom element, quindi il chiamante deve fare `customElements.whenDefined`
-// per essere sicuro che `<gmp-place-autocomplete>` sia pronto.
+// Pattern di caricamento (Google ufficiale per Places API New): URL con
+// `&loading=async` SENZA `&libraries=`. Lo script base espone
+// `google.maps.importLibrary`, e il chiamante fa
+// `await google.maps.importLibrary('places')` per caricare E inizializzare
+// la libreria places in modo ATOMICO. Questo è cruciale: la combinazione
+// "eager `&libraries=places`" che usavamo prima registrava il custom element
+// come stub PRIMA che la classe fosse completamente inizializzata, e
+// `customElements.whenDefined` risolveva troppo presto. Risultato: React
+// montava il tag JSX, ma `connectedCallback` non attaccava lo shadow root
+// (`hasShadow:false` in produzione) → input visibile ma listbox mai
+// renderizzato. Con `loading=async + importLibrary`, la promise risolve
+// SOLO quando la classe è completa e il custom element è upgrade-ready.
+// Diagnosi 10/05/2026 dopo il 4° tentativo (commit 317189f).
 function loadGoogleMapsScript(apiKey) {
   return new Promise((resolve, reject) => {
-    // Se il custom element è già registrato, lo script ha già completato il
-    // caricamento di places (check più affidabile di window.google.maps,
-    // che può essere parzialmente popolato durante l'init).
-    if (window.customElements?.get?.("gmp-place-autocomplete")) return resolve();
+    // Già caricato (re-mount dopo "Cambia indirizzo" o navigazione interna):
+    // `google.maps.importLibrary` è la funzione bootstrap esposta dallo
+    // script con `loading=async`. Se è una function, lo script ha
+    // completato il bootstrap e il chiamante può chiamare importLibrary
+    // direttamente. Check più affidabile del custom element, che con
+    // loading=async non viene registrato finché qualcuno non chiama
+    // importLibrary('places').
+    if (typeof window.google?.maps?.importLibrary === "function") return resolve();
     const existing = document.getElementById("gmaps-script");
     if (existing) {
-      // Script già appeso da un mount precedente (ritorno step 0 dopo
-      // "Cambia indirizzo"). onload potrebbe già essersi triggerato:
-      // risolviamo subito, il chiamante poi attende whenDefined.
-      existing.addEventListener("error", () => reject(new Error("Script load error")));
-      resolve();
+      // Script già appeso da un mount precedente ma non ancora caricato
+      // (race tra due mount molto vicini). Ascoltiamo il suo onload.
+      existing.addEventListener("load", () => resolve(), { once: true });
+      existing.addEventListener("error", () => reject(new Error("Script load error")), { once: true });
       return;
     }
     const script = document.createElement("script");
     script.id = "gmaps-script";
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&v=weekly&libraries=places&language=it`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&v=weekly&loading=async&language=it`;
     script.async = true;
     script.defer = true;
     script.onload = () => resolve();
@@ -239,16 +247,17 @@ function parsePlace(place) {
 // Componente Autocomplete dell'indirizzo. Usa PlaceAutocompleteElement
 // (Web Component `<gmp-place-autocomplete>`) della Places API (New).
 //
-// Pattern di mount: rendiamo il custom element DIRETTAMENTE come tag JSX
-// (non più `new PlaceAutocompleteElement(...) + appendChild` programmatico
-// in useEffect). Il pattern programmatico in produzione non triggherava
-// il rendering del listbox dei suggerimenti: il componente riceveva i
-// dati da Google (Network 200 su places:autocomplete) ma DOM rimaneva
-// vuoto (innerHTML 0, aria-expanded null). Diagnosi 10/05/2026.
+// Pattern di mount: il tag JSX `<gmp-place-autocomplete>` viene renderizzato
+// SOLO dopo che `google.maps.importLibrary('places')` ha risolto. Questo
+// è non-negoziabile: i Web Components NON si auto-upgradano retroattivamente.
+// Se React monta il tag PRIMA che la classe del custom element sia
+// completamente inizializzata, il browser tratta l'elemento come stub
+// inerte (HTMLUnknownElement-like): nessun shadow root, nessun
+// connectedCallback funzionante, anche caricando la libreria DOPO non
+// si recupera. Per questo `scriptStatus="ready"` segnala con certezza
+// che il custom element è upgrade-ready.
 //
-// Con il tag JSX il browser gestisce nativamente il lifecycle del custom
-// element (connectedCallback, attributeChangedCallback) e il rendering
-// interno funziona. Le property che richiedono array (includedRegionCodes,
+// Le property che richiedono array (includedRegionCodes,
 // includedPrimaryTypes) vengono settate via ref dopo il mount, perché gli
 // attributi HTML sono stringhe e non garantiscono il parsing come array.
 function AddressAutocomplete({ apiKey, onSelect, onUserType }) {
@@ -265,8 +274,10 @@ function AddressAutocomplete({ apiKey, onSelect, onUserType }) {
     onUserTypeRef.current = onUserType;
   });
 
-  // Step 1 — carica lo script Maps API e attendi la registrazione del
-  // custom element. Quando ready, React renderizza <gmp-place-autocomplete>.
+  // Step 1 — carica lo script bootstrap, importa la libreria places in
+  // modo ATOMICO, attendi che il custom element sia completamente
+  // upgrade-ready. Solo a quel punto setta scriptStatus="ready" → React
+  // renderizza il tag JSX.
   useEffect(() => {
     if (!apiKey) {
       setScriptStatus("error");
@@ -275,14 +286,28 @@ function AddressAutocomplete({ apiKey, onSelect, onUserType }) {
     let mounted = true;
     (async () => {
       try {
-        await loadGoogleMapsScript(apiKey);
         const TIMEOUT_MS = 8000;
+        const timeout = (ms, label) => new Promise((_, rej) =>
+          setTimeout(() => rej(new Error(`Timeout ${label} dopo ${ms}ms`)), ms)
+        );
+        await Promise.race([loadGoogleMapsScript(apiKey), timeout(TIMEOUT_MS, "loadGoogleMapsScript")]);
+        // Sanity check: dopo loadGoogleMapsScript il bootstrap loader DEVE
+        // aver esposto importLibrary. Se manca, lo script ha problemi
+        // (es. key invalida, dominio non whitelistato, network bloccato).
+        if (typeof window.google?.maps?.importLibrary !== "function") {
+          throw new Error("google.maps.importLibrary non disponibile dopo script load");
+        }
+        // importLibrary('places') è il pattern ufficiale Google per la
+        // Places API (New): carica E inizializza la libreria, registra
+        // il custom element CON la sua classe completa (incluso il
+        // connectedCallback che attacca lo shadow root). La promise risolve
+        // SOLO quando tutto è pronto — niente race condition.
+        await Promise.race([window.google.maps.importLibrary("places"), timeout(TIMEOUT_MS, "importLibrary('places')")]);
+        // Doppia sicurezza: in teoria dopo importLibrary il custom element
+        // è già definito e whenDefined risolve immediatamente.
         await Promise.race([
           window.customElements.whenDefined("gmp-place-autocomplete"),
-          new Promise((_, rej) => setTimeout(
-            () => rej(new Error("Timeout: gmp-place-autocomplete non registrato entro 8s")),
-            TIMEOUT_MS
-          )),
+          timeout(TIMEOUT_MS, "whenDefined('gmp-place-autocomplete')"),
         ]);
         if (mounted) setScriptStatus("ready");
       } catch (err) {
