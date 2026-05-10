@@ -40,7 +40,7 @@ export async function generateAndSaveImmobileAI(immobile) {
     prezzo: immobile.prezzo,
     superficie_catastale: immobile.superficie,
     superficie_calpestabile: immobile.superficie_calpestabile,
-    locali: immobile.vani,
+    locali: immobile.locali,
     bagni: immobile.bagni,
     piano: immobile.piano,
     ascensore: immobile.ascensore,

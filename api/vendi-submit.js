@@ -89,7 +89,7 @@ export default async function handler(req, res) {
       tipologia: dati.tipologia || null,
       piano: dati.piano || null,
       superficie_calpestabile: dati.superficie_calpestabile ? parseFloat(dati.superficie_calpestabile) : null,
-      vani: dati.vani ? parseInt(dati.vani) : null,
+      locali: dati.vani ? parseInt(dati.vani) : null,
       camere: dati.camere ? parseInt(dati.camere) : null,
       bagni: dati.bagni ? parseInt(dati.bagni) : null,
       anno_costruzione: dati.anno_costruzione ? parseInt(dati.anno_costruzione) : null,

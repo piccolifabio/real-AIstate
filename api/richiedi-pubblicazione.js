@@ -109,7 +109,7 @@ export default async function handler(req, res) {
           "<p><strong>Tipologia:</strong> " + e(immobile.tipologia) + " &mdash; " + e(immobile.stato_immobile) + "</p>",
           "<p><strong>Prezzo:</strong> &euro; " + escapeHtml(prezzoFmt) + "</p>",
           "<p><strong>Superficie:</strong> " + e(immobile.superficie) + " mq catastali" + (immobile.superficie_calpestabile ? " / " + e(immobile.superficie_calpestabile) + " mq calpestabili" : "") + "</p>",
-          "<p><strong>Vani:</strong> " + e(immobile.vani) + " | Camere: " + e(immobile.camere) + " | Bagni: " + e(immobile.bagni) + "</p>",
+          "<p><strong>Locali:</strong> " + e(immobile.locali) + " | Camere: " + e(immobile.camere) + " | Bagni: " + e(immobile.bagni) + "</p>",
           "<p><strong>Anno costruzione:</strong> " + e(immobile.anno_costruzione) + " | Classe energetica: " + e(immobile.classe_energetica) + "</p>",
           "<hr/>",
           "<p><strong>Foto (" + (immobile.foto ? immobile.foto.length : 0) + "):</strong></p>",
