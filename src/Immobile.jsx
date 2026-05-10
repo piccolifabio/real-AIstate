@@ -492,7 +492,15 @@ function AiChat({ user, immobileId, immobileDb }) {
       setMessages(prev => [
         ...prev.slice(0, -1),
         { ...prev[prev.length - 1], note: null },
-        { role: "ai", text: data.risposta, note: data.forwarded ? "Inoltrato al venditore — risponderà entro 24h" : null }
+        {
+          role: "ai",
+          text: data.risposta,
+          note: data.forwarded ? "Inoltrato al venditore — risponderà entro 24h" : null,
+          // Settato dall'API solo per anonimi quando la risposta contiene la frase
+          // standard "registrati gratuitamente — bastano 30 secondi": il render
+          // mostra un CTA Registrati sotto la bubble con redirect alla scheda corrente.
+          inviteRegistration: !!data.inviteRegistration,
+        }
       ]);
       if (user) {
         await supabase.from('chat_messages').insert({
@@ -512,13 +520,38 @@ function AiChat({ user, immobileId, immobileDb }) {
   return (
     <div className="chat-box">
       <div className="chat-messages" ref={messagesRef}>
-        {messages.map((m, i) => (
-          <div className={`chat-msg ${m.role}`} key={i}>
-            <div className="chat-msg-sender">{m.role === "ai" ? "✦ AI RealAIstate" : "Tu"}</div>
-            <div className="chat-msg-bubble">{m.text}</div>
-            {m.note && <div className="chat-msg-note">{m.note}</div>}
-          </div>
-        ))}
+        {messages.map((m, i) => {
+          const registerHref = `/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+          return (
+            <div className={`chat-msg ${m.role}`} key={i}>
+              <div className="chat-msg-sender">{m.role === "ai" ? "✦ AI RealAIstate" : "Tu"}</div>
+              <div className="chat-msg-bubble">{m.text}</div>
+              {m.note && <div className="chat-msg-note">{m.note}</div>}
+              {m.inviteRegistration && (
+                <a
+                  href={registerHref}
+                  style={{
+                    alignSelf: "flex-start",
+                    marginTop: "0.4rem",
+                    display: "inline-block",
+                    background: "var(--red)",
+                    color: "white",
+                    padding: "0.55rem 1.1rem",
+                    borderRadius: 2,
+                    textDecoration: "none",
+                    fontSize: "0.78rem",
+                    fontWeight: 600,
+                    letterSpacing: "0.06em",
+                    textTransform: "uppercase",
+                    fontFamily: "DM Sans, sans-serif",
+                  }}
+                >
+                  Registrati gratuitamente →
+                </a>
+              )}
+            </div>
+          );
+        })}
         {loading && (
           <div className="chat-msg ai">
             <div className="chat-msg-sender">✦ AI RealAIstate</div>

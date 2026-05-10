@@ -60,8 +60,15 @@ Descrizione completa fornita dal venditore:
 ${sn(immobile.descrizione)}
   `.trim();
 
-  // Save user message to Supabase
+  // Save user message to Supabase.
+  // BATCH 2 (10/05/2026): scriviamo SOLO per compratori loggati. Per anonimi
+  // niente persistenza — la chat resta utile come funzione discoverability,
+  // ma non genera lead non qualificati né righe in chat_messages senza user_id.
+  // Quando l'utente si registra dopo aver chattato da anonimo, parte una nuova
+  // sessione: lo storico anonimo precedente non viene riassociato (decisione di
+  // scope MVP — niente pattern session-merge complicati).
   const saveMessage = async (mittente, testo, da_inoltrare = false) => {
+    if (!compratoreIdentificato) return;
     if (!SUPABASE_URL || !SUPABASE_KEY) return;
     try {
       await fetch(`${SUPABASE_URL}/rest/v1/chat_messages`, {
@@ -77,10 +84,9 @@ ${sn(immobile.descrizione)}
           mittente,
           testo,
           da_inoltrare,
-          // Se loggato, sovrascriviamo body con JWT (più affidabile e niente
-          // dipendenza dalla buona fede del client).
-          compratore_nome: compratoreIdentificato ? authedNome : (compratore_nome || null),
-          compratore_email: compratoreIdentificato ? authedEmail : (compratore_email || null),
+          // JWT è sempre la fonte autoritativa per nome/email — body ignorato.
+          compratore_nome: authedNome,
+          compratore_email: authedEmail,
         }),
       });
     } catch (e) {
@@ -173,12 +179,14 @@ ${compratoreIdentificato
   ? `Compratore già identificato: ${authedNome || "(nome non in profilo)"} <${authedEmail}>.
 NON chiedere nome ed email — sono già noti. Quando devi inoltrare al venditore, segui questo flusso:
 1. Prima chiedi: "Vuoi che inoltri questa domanda al venditore? Risponderà entro 24 ore."
-2. Se l'utente risponde sì/confermo/inoltro/procedi o simili → rispondi ESATTAMENTE con: "Grazie. Ho inoltrato la tua domanda al venditore — ti risponderà via email entro 24 ore." e nient'altro.`
-  : `Compratore non autenticato. Quando devi inoltrare al venditore, segui questo flusso in ordine:
-1. Prima chiedi: "Vuoi che inoltri questa domanda al venditore? Risponderà entro 24 ore."
-2. Se l'utente risponde sì/confermo/inoltro/procedi o simili → chiedi ESATTAMENTE: "Perfetto. Per ricevere la risposta del venditore, lasciami il tuo nome e la tua email."
-3. Quando l'utente fornisce nome ed email → rispondi ESATTAMENTE con: "Grazie. Ho inoltrato la tua domanda al venditore — ti risponderà via email entro 24 ore." e nient'altro.`}
-NON inoltrare automaticamente: usa sempre lo step di conferma.
+2. Se l'utente risponde sì/confermo/inoltro/procedi o simili → rispondi ESATTAMENTE con: "Grazie. Ho inoltrato la tua domanda al venditore — ti risponderà via email entro 24 ore." e nient'altro.
+NON inoltrare automaticamente: usa sempre lo step di conferma.`
+  : `Compratore NON registrato (anonimo). NON puoi inoltrare domande al venditore — solo gli utenti registrati hanno questo canale.
+Quando una domanda richiede il venditore (lavori, motivazioni, dettagli non disponibili nei dati che hai):
+- NON simulare inoltro, NON dire "ho inoltrato la tua domanda al venditore", NON dire "inoltro la tua domanda", NON usare verbi al futuro tipo "girerò la domanda".
+- NON chiedere nome ed email.
+- Rispondi ESATTAMENTE con questa frase (puoi anteporre una breve premessa contestuale di una frase): "Questa è una domanda specifica per il venditore. Per inoltrarla e ricevere risposta, registrati gratuitamente — bastano 30 secondi. Ti rispondiamo appena il venditore avrà risposto."
+La frase "registrati gratuitamente — bastano 30 secondi" è il segnale che il sistema usa per riconoscere l'invito alla registrazione: includila SEMPRE letterale quando inviti l'utente a registrarsi.`}
 Rispondi SEMPRE in italiano.`,
         messages: [
           ...(messaggi_precedenti || []).map(m => ({
@@ -194,46 +202,36 @@ Rispondi SEMPRE in italiano.`,
     if (!response.ok) return res.status(500).json({ error: "Errore API" });
 
     const text = data.content?.[0]?.text || "Risposta non disponibile.";
-    const forwarded = text.toLowerCase().includes("ho inoltrato la tua domanda al venditore");
+    // Solo i loggati hanno il canale di inoltro: per anonimi forwarded resta
+    // sempre false anche se l'AI dovesse infrangere la regola del prompt.
+    const forwarded = compratoreIdentificato &&
+      text.toLowerCase().includes("ho inoltrato la tua domanda al venditore");
+    // Segnale al frontend per mostrare un CTA "Registrati" sotto la risposta:
+    // l'AI è istruita a includere la frase ESATTA "registrati gratuitamente
+    // — bastano 30 secondi" quando una domanda anonima richiederebbe il venditore.
+    const inviteRegistration = !compratoreIdentificato &&
+      /registrati gratuitamente\s*[—-]\s*bastano 30 secondi/i.test(text);
 
-    // Save AI response
+    // Save AI response (skip per anonimi — saveMessage lo gestisce internamente)
     await saveMessage("ai", text, forwarded);
 
-    // Send email if forwarding
+    // Send email if forwarding. forwarded è già `false` per anonimi (vedi sopra),
+    // quindi qui siamo sempre in branch loggato: nome/email vengono dal JWT.
     if (forwarded) {
-      // Se il compratore è loggato (JWT valido), nome/email vengono dal token —
-      // ignoriamo body e regex. Per anonimi: estrazione regex come prima.
-      let nomeFinale;
-      let emailFinale;
-      if (compratoreIdentificato) {
-        nomeFinale = authedNome;
-        emailFinale = authedEmail;
-      } else {
-        nomeFinale = compratore_nome;
-        emailFinale = compratore_email;
-        const emailMatch = domanda.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
-        if (emailMatch && !emailFinale) emailFinale = emailMatch[0];
-      }
-
-      // Find the original question — search back through messages for the first user question.
-      // Per loggati il flow è di 2 step (chiedi conferma → conferma+inoltro), quindi la
-      // domanda originale è penultimo user message. Per anonimi è di 3 step (conferma →
-      // chiedi nome/email → fornisci dati+inoltro), domanda originale 3 indietro.
+      // Step-back: il flow loggato è 2 step (chiedi conferma → conferma+inoltro),
+      // quindi la domanda originale è il penultimo user message.
       let domandaOriginale = domanda;
       if (messaggi_precedenti && messaggi_precedenti.length >= 2) {
         const userMsgs = messaggi_precedenti.filter(m => m.role === "user");
-        const stepBack = compratoreIdentificato ? 2 : 3;
-        if (userMsgs.length >= stepBack) {
-          domandaOriginale = userMsgs[userMsgs.length - stepBack].text || domanda;
-        } else if (userMsgs.length >= 2) {
+        if (userMsgs.length >= 2) {
           domandaOriginale = userMsgs[userMsgs.length - 2].text || domanda;
         }
       }
 
-      await sendForwardEmail(domandaOriginale, text, nomeFinale, emailFinale);
+      await sendForwardEmail(domandaOriginale, text, authedNome, authedEmail);
     }
 
-    return res.status(200).json({ risposta: text, forwarded });
+    return res.status(200).json({ risposta: text, forwarded, inviteRegistration });
   } catch (err) {
     return res.status(500).json({ error: "Errore server", detail: err.message });
   }
