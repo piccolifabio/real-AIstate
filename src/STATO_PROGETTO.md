@@ -1,5 +1,5 @@
 # RealAIstate — Stato del progetto
-Aggiornato: 09/05/2026 (settimana 6 — admin tool + UX fix + Vercel limit fix + decisione rate-limit)
+Aggiornato: 10/05/2026 (settimana 7 — fix 3 blocker walkthrough: vani→locali, AI no-leak, chat JWT)
 
 ## Stack
 - Frontend: React + Vite, deploy su Vercel
@@ -237,6 +237,72 @@ Aggiornato: 09/05/2026 (settimana 6 — admin tool + UX fix + Vercel limit fix +
     di conferma email Supabase che lo riporta al Site URL — il
     redirect param scompare. Caso accettabile per ora.
 
+### Settimana 7 ✅ — completata 10/05/2026 (3 blocker walkthrough chiusi)
+Walkthrough UX 10/05 ha rivelato 3 blocker critici per onboarding venditore
+beta. Tutti chiusi in branch `feat/blocker-fixes-walkthrough`.
+
+- [x] **Fix 1.A: errore "vani" su submit /vendi (BLOCKER 500)** ✅
+  - Sintomo: `POST /api/vendi-submit` falliva con
+    `Could not find the 'vani' column of 'immobili' in the schema cache`
+    dopo il rename DB del 08/05.
+  - 3 file referenziavano ancora `vani` su path che toccavano la tabella
+    `immobili`:
+    - `api/vendi-submit.js:92` INSERT immobili scriveva `vani:` (causa root del 500)
+    - `api/_lib/ai-content.js:43` AI gen leggeva `immobile.vani` (undefined)
+    - `api/richiedi-pubblicazione.js:112` email review leggeva `immobile.vani`
+  - Fix: sostituito con `locali` su quei 3 path.
+  - Lasciati intatti: `vendi-submit.js:54` (INSERT venditori — la colonna
+    `vani` su quella tabella esiste ancora, il rename era solo su immobili)
+    e form key `dati.vani` (interno, mappato server-side).
+  - **Side action richiesta su Supabase**: `NOTIFY pgrst, 'reload schema';`
+    nel SQL Editor per rifrescare la cache PostgREST (best practice
+    post-rename, già in memo tecnici).
+- [x] **Fix 1.B: AI cross-immobile data leak (BLOCKER privacy/UX)** ✅
+  - Sintomo: chat AI sull'immobile id=2 (villa) rispondeva alla domanda
+    "il prezzo è giusto?" citando dati di Capecelatro (€100k, Fair Price
+    Score 88/100, zona D24 San Siro).
+  - Causa: il merge in `Immobile.jsx:635-671`
+    `{...IMMOBILE_FALLBACK, ...immobileDb-cherry-pick}` riempiva i campi
+    null del DB con i valori demo hardcoded di Capecelatro. Quel `immobile`
+    merged veniva passato come prop a `<AiChat>` che lo inviava al
+    system prompt → l'AI vedeva `Fair Price Score: 88/100` per qualsiasi
+    immobile senza score in DB.
+  - Fix:
+    - `<AiChat>` ora riceve `immobileDb` (raw DB) come prop, non più il
+      merged `immobile`.
+    - Costruisce `aiImmobile` esclusivamente dai campi della tabella
+      `immobili`. Campi non in DB (ascensore, garage, terrazzo,
+      riscaldamento, acqua_calda, anno_ristrutturazione, ecc., che
+      vivono solo come fallback per la demo Capecelatro) restano null.
+    - System prompt rinforzato: "Se un dato è 'non specificato', NON
+      inventarlo, NON usare valori di altri immobili. Ammetti che non
+      hai l'info e proponi di inoltrare al venditore."
+    - Per il prezzo senza Fair Price Score: AI deve dire che il punteggio
+      non è ancora calcolato, non improvvisare.
+  - Trade-off: per Capecelatro la chat AI perde i campi non-DB (ascensore/
+    garage/terrazzo/riscaldamento/...) — risponde comunque bene su prezzo,
+    zona, superficie, fair_price_score, ai_summary che sono tutti popolati
+    in DB. Aggiungere quelle colonne è già nel backlog post-MVP.
+- [x] **Fix 1.C: chat AI riconosce compratore loggato via JWT** ✅
+  - Sintomo: utente autenticato che fa domanda non risolta riceveva "per
+    inoltrare al venditore, dammi nome ed email" — sebbene l'app avesse
+    già JWT con email + user_metadata.full_name.
+  - Backend `api/chat-immobile.js`:
+    - JWT *opzionale* (la chat resta aperta agli anonimi). Se Bearer
+      presente, `/auth/v1/user` restituisce email + full_name.
+    - System prompt condizionato:
+      - Loggati: 2 step (conferma inoltro → "Ho inoltrato")
+      - Anonimi: 3 step (conferma → chiedi nome/email → inoltro) come
+        prima
+    - Email forward a info@: nome/email dal JWT per loggati (override su
+      body e su regex), regex extraction per anonimi.
+    - `chat_messages.compratore_nome/email`: JWT > body, scritto via
+      service_role.
+    - Stepback per individuare la domanda originale nello storico
+      parametrizzato (2 vs 3) per i due flow.
+  - Frontend `AiChat`: `supabase.auth.getSession()` + `Authorization: Bearer`
+    se loggato.
+
 ## File chiave
 - src/HomePage.jsx — home page con Nav e CTA
 - src/ScusePage.jsx — pagina scuse separata
@@ -262,7 +328,10 @@ Aggiornato: 09/05/2026 (settimana 6 — admin tool + UX fix + Vercel limit fix +
 - api/_lib/auth.js — verifyJwt(req) helper condiviso
 - api/_lib/cors.js — handleCors(req, res) restringe origin a whitelist
 - api/_lib/escape-html.js — escapeHtml() per template email
-- api/chat-immobile.js — chat AI con notifiche email (writes via service_role)
+- api/chat-immobile.js — chat AI con notifiche email (writes via service_role).
+  JWT opzionale: se Bearer presente, system prompt riceve "Compratore
+  identificato: <nome> <email>" e salta la richiesta nome/email; per
+  anonimi il flow 3-step resta invariato
 - api/proposta-submit.js — JWT-validated, blocca self-proposta, escape email
 - api/yousign-proposta.js — firma digitale FEA via Yousign sandbox
 - api/vendi-submit.js — form venditore JWT-auth, AI genera summary/punti/domande
@@ -403,6 +472,25 @@ Aggiornato: 09/05/2026 (settimana 6 — admin tool + UX fix + Vercel limit fix +
   `?redirect=<encoded>` query param invece che state — sopravvive a
   Navigate consecutivi. LoginPage valida con safeRedirect() prima di
   navigate(). Default '/' se param assente o invalido.
+- **Payload AI = solo dati DB raw, MAI fallback hardcoded** (decisione
+  10/05/2026 dopo walkthrough). Il pattern in Immobile.jsx
+  `{...IMMOBILE_FALLBACK, ...immobileDb}` è OK per il rendering visivo
+  della demo Capecelatro, ma NON deve fluire mai nel body inviato alle
+  API AI. Conseguenza concreta: prima di chiamare `/api/chat-immobile`
+  (e qualsiasi altra API AI futura), costruire un oggetto separato
+  estraendo solo i campi che vengono dal DB. I campi mancanti restano
+  null e l'API server-side li mostra come "non specificato" all'AI,
+  che è istruita a non inventarli. Questo evita data leak tra immobili
+  (es. Fair Price Score di un altro immobile suggerito a casaccio).
+- **JWT opzionale in API AI pubbliche** (`chat-immobile.js`): la chat
+  resta aperta agli anonimi (è discoverability), ma se l'utente è
+  loggato il JWT viene letto e nome/email estratti dal token —
+  iniettati nel system prompt come "Compratore già identificato",
+  usati per email forward, scritti in chat_messages, e l'AI è
+  istruita a NON chiedere nome/email di nuovo. Pattern: `try { fetch
+  /auth/v1/user; if ok set authedEmail/authedNome } catch { /* anon */ }`.
+  Niente 401 se token mancante — diversamente dalle API JWT-required
+  (proposta-submit, vendi-submit, ecc.).
 
 ## Memo tecnici (gotchas già imparati — non ripetere errori)
 - **Yousign `template_placeholders.signers[].label`**: case-sensitive
@@ -499,6 +587,18 @@ Aggiornato: 09/05/2026 (settimana 6 — admin tool + UX fix + Vercel limit fix +
   `?redirect=...` per `navigate()`, valida sempre: deve startsWith('/'),
   NON '//' o '/\\' (protocol-relative URL evil), length cap. Vedi
   `safeRedirect()` in LoginPage.jsx.
+- **Spread di fallback hardcoded in payload AI = data leak garantito**.
+  Lezione 10/05/2026: in `Immobile.jsx` il merge
+  `{...IMMOBILE_FALLBACK, ...immobileDb-cherry-picked}` riempie i null
+  con valori demo di Capecelatro (Fair Price 88/100, zona D24 San Siro,
+  ai_summary su €352k/mq). Se quel merged finisce nel body di `/api/chat-immobile`,
+  l'AI risponde "Fair Price 88/100" per QUALSIASI immobile senza score
+  in DB. Pattern di prevenzione: build di un oggetto AI-payload
+  dedicato che pesca solo da `immobileDb` raw (niente `??` che cade
+  sul fallback). I campi assenti diventano null → l'API mostra "non
+  specificato" → il system prompt istruisce l'AI a NON inventare e
+  proporre l'inoltro al venditore. Quando aggiungerai una nuova API
+  AI: stesso pattern, niente shortcut.
 
 ## ⚠️ Bug aperti
 Nessuno noto. (Bug scroll /immobili/:id non riproducibile dopo 08/05 sera —
@@ -522,6 +622,25 @@ Steps:
 **Attenzione**: in production le firme hanno valore legale.
 
 ## Prossima sessione
+- **AZIONE OBBLIGATORIA su Supabase post-deploy settimana 7**: nel SQL
+  Editor eseguire `NOTIFY pgrst, 'reload schema';` per pulire la cache
+  PostgREST. Senza questo step il fix vani→locali del 10/05 potrebbe
+  ancora vedere lo schema stale e fallire.
+- **Test E2E walkthrough — verifica i 3 fix su preview/prod**:
+  1. Registra nuovo account (email Gmail con sub-addressing per tracciare):
+     - Compila /vendi 5 step → submit step 5 → verifica niente 500,
+       redirect a /venditore, riga in `immobili` con `locali` popolato.
+  2. Apri scheda villa id=2 (o qualsiasi non-Capecelatro):
+     - Invia in chat AI "il prezzo è giusto?" → l'AI NON deve citare
+       Fair Price 88/100 né "zona D24 San Siro" né "€352k". Risposta
+       attesa: "il punteggio non è ancora calcolato per questo immobile,
+       posso inoltrare al venditore?"
+  3. Loggato sulla stessa scheda, fai una domanda non risolta:
+     - L'AI propone l'inoltro → conferma "sì" → l'AI deve rispondere
+       direttamente "Grazie. Ho inoltrato la tua domanda al venditore..."
+       SENZA chiedere nome/email.
+     - Verifica email a info@realaistate.ai: nome/email del compratore
+       devono essere quelli dell'account loggato, non un placeholder.
 - **Confermare cancellazione proposta-fantasma**: il founder deve eseguire
   manualmente via Supabase SQL Editor (query fornita 09/05, sotto è il backup):
   ```sql
