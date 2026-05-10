@@ -1,5 +1,5 @@
 # RealAIstate — Stato del progetto
-Aggiornato: 10/05/2026 (settimana 7 — batch 2 + 7 post-fix Places API New + ROLLBACK ottavo fix a Places API legacy: chat AI anonimo invita registrazione, nome/cognome separati, documenti minimi su tutti gli immobili, Google Places Autocomplete in /vendi tornato a `google.maps.places.Autocomplete` legacy su `<input>` HTML standard dopo che 7 fix sul Web Component `<gmp-place-autocomplete>` non hanno risolto edge case di upgrade-readiness in Vite + React)
+Aggiornato: 10/05/2026 (settimana 7 — batch 2 + 7 post-fix Places API New + ROLLBACK ottavo fix a Places API legacy + batch 3 polish UX/copy: nuovo claim home positivo "Comprare e vendere casa, indipendentemente", risposte scuse 05/06/08 ricalibrate, conferma password in registrazione, bottone proposta verde uniforme)
 
 ## Stack
 - Frontend: React + Vite, deploy su Vercel
@@ -833,6 +833,137 @@ API New, Places API legacy).
   - **src/Immobile.jsx invariato**: nessuna modifica al rendering.
   - Build pulita (`vite build` 1.73s, 0 errori, 0 nuovi warning). Branch
     `rollback/places-api-legacy`.
+
+### Settimana 7 — batch 3 ✅ — completata 10/05/2026 (polish UX/copy walkthrough)
+8 task atomici di copy + UX emersi dal walkthrough UX 10/05 sera dopo
+il rollback Places. Nessun task critico, ma insieme alzano la qualità
+percepita per l'onboarding venditore beta. Branch `feat/copy-ux-polish`,
+un commit per task. Tempo effettivo: ~70 min.
+
+- [x] **Task 3.A: nuovo claim home positivo** ✅
+  - `src/HomePage.jsx` hero section. Sostituito il claim antagonista
+    "Hai davvero bisogno di un'agenzia? **No.** Che scusa hai per non
+    usare RealAIstate?" con un claim dichiarativo:
+    - H1: "Comprare e vendere casa, indipendentemente."
+    - Sottotitolo (`hero-challenge`): "La piattaforma AI che lavora per
+      te, non per l'agenzia."
+    - Descrizione (`hero-sub`): "Valutazione, documenti, professionisti
+      — tutto incluso. Risparmio reale, in piena trasparenza."
+  - **Decisione di design**: rimossi anche il `hero-bg-number` "NO."
+    (giant background letter) e l'`hero-answer` "No." perché
+    visivamente ancorati al vecchio framing antagonista. Il nuovo tono
+    è positivo/dichiarativo, non più "smonta-le-scuse". L'`hero-eyebrow`
+    "Piattaforma AI · Compra e vendi casa" resta — neutro/descrittivo.
+
+- [x] **Task 3.B: box "Per te" — onestà su prodotto e copy professionista** ✅
+  - `src/HomePage.jsx` array `cards`:
+    - Box "Stai vendendo": rimosso il subtitle promozionale "Pubblica.
+      Incassa. Tutto." (induceva in errore — non è letteralmente vero
+      che con un click si pubblica e si incassa).
+    - Box "Sei un investitore": aggiunto il flag `inConstruction: true`
+      → render mostra "(in costruzione)" muted/grigio sotto il titolo,
+      così sono onesti sullo stato del workspace investitore (Investment
+      Score, pipeline, alert sono backlog post-MVP).
+    - Box "Sei un professionista": secondo bullet da "Richieste da
+      utenti qualificati dall'AI" a "Richieste da utenti qualificati"
+      (overclaim AI rimosso).
+  - Render `forwho-card`: condizionali su `c.name` (per supportare il
+    card "Stai vendendo" senza name) e `c.inConstruction` (per il
+    badge investitore). Inline style perché il pattern è isolato a un
+    solo elemento — non aggiungiamo classe CSS dedicata.
+
+- [x] **Task 3.C: rimosso bottone "Smonta la tua scusa" da hero** ✅
+  - Eliminato il blocco `<div className="hero-actions">` con il
+    `<a className="btn-red">Smonta la tua scusa →</a>`. Era troppo
+    prominente per il nuovo tono dichiarativo del claim 3.A.
+  - Il link a /scuse resta intatto in `excuses-subtitle` ("Hai una
+    scusa diversa? Sfida l'AI →") sopra la scusa 01 — quello è il
+    posto naturale per la CTA verso /scuse.
+  - **Effetto desiderato**: i numeri di risparmio (`hero-cost`) salgono
+    nella prima viewport senza scroll perché abbiamo guadagnato altezza.
+
+- [x] **Task 3.D: risposte scuse 05/06/08 in HomePage** ✅
+  - Scusa 05 ("Ho paura di sbagliare senza qualcuno che mi segue"):
+    "**RealAIstate è con te in ogni passaggio** — dalla valutazione
+    alla trattativa, fino al rogito." (era "L'AI è con te" — il
+    prodotto, non solo l'AI).
+  - Scusa 06 ("Non voglio dover negoziare"): "**L'AI di RealAIstate
+    ti aiuta a negoziare** — lavora per te, non per l'agenzia. Senza
+    fretta, senza commissioni: ottimizza il tuo prezzo." Riprende il
+    claim principale dell'home (3.A) "lavora per te, non per
+    l'agenzia".
+  - Scusa 08 (caparra/assegno): "**L'assegno non serve.** Il notaio
+    gestisce la caparra, tutto via bonifico. Tutela per venditore e
+    compratore. In futuro potrai farlo direttamente su RealAIstate."
+    (era "Con RealAIstate usi un escrow digitale" — feature non
+    presente sul prodotto attuale, copy ingannevole).
+  - **Inconsistenza nota fuori scope**: la stessa scusa caparra esiste
+    anche in `src/ScusePage.jsx` `hallOfFame[4]` con il vecchio copy
+    escrow. Da allineare manualmente quando si vuole — il task 3.D
+    diceva esplicitamente "in src/HomePage.jsx" e "non improvvisare
+    su scelte di copy non specificate".
+
+- [x] **Task 3.E: conferma password in registrazione** ✅
+  - `src/LoginPage.jsx` tab Registrati. Nuovo campo `confirmPassword`
+    sotto password. Stesso pattern UX di `confirmEmail`:
+    - Validazione alla submit: `if (password !== confirmPassword)
+      setError('Le password non coincidono.')`.
+    - Errore inline live (rosso) sotto il campo quando confirmPassword
+      è popolato e diverge — utente vede subito il mismatch senza
+      premere submit.
+    - `onPaste` prevented per costringere l'utente a re-tipparla
+      (riduce errori da copy-paste sbagliato; i password manager non
+      autofillano confirm-password fields, quindi non rompiamo niente).
+    - `autoComplete="new-password"`.
+    - `switchMode` resetta sia `confirmEmail` che `confirmPassword`.
+  - Niente refactor del button submit: la logica di validazione è
+    inline nel `handle` come per confirm email.
+
+- [x] **Task 3.F: chat affordability — trim "agevolazioni under 36"** ✅
+  - `src/Immobile.jsx` `AffordabilityChat`. Rimossa la frase
+    "— incluse eventuali agevolazioni under 36" dal primo messaggio AI.
+    Il copy creava aspettative non sempre mantenute (l'AI nel resto
+    della conversazione non sempre approfondiva le agevolazioni).
+  - Aggiornato sia `messages` (UI) che `apiMessages` (storico inviato
+    all'API Anthropic) per coerenza — entrambi inizializzati con la
+    stessa stringa identica.
+
+- [x] **Task 3.G: rimossi Monolocale/Bilocale dal dropdown tipologia** ✅
+  - `src/VendiForm.jsx` step 0. Rimosse le opzioni `<option>Monolocale</option>`
+    e `<option>Bilocale</option>` dal `<select>` tipologia. Ricadono
+    in "Appartamento" via il campo "Vani" (numero locali) già presente
+    nel form. Tenerli come tipologie separate creava ridondanza: un
+    compratore che filtra per "Appartamento" non trovava i monolocali.
+  - **Tipologie attive**: Appartamento, Villa, Villetta a schiera,
+    Attico, Loft, Altro.
+  - **Niente migration DB**: il campo tipologia è una stringa libera
+    lato DB. Immobili pre-esistenti con valore "Monolocale"/"Bilocale"
+    continuano a leggersi. Se il founder vuole uniformarli a
+    "Appartamento" può fare una `UPDATE immobili SET tipologia =
+    'Appartamento' WHERE tipologia IN ('Monolocale','Bilocale')` da
+    SQL Editor.
+
+- [x] **Task 3.H: bottone "Accedi per fare proposta" verde uniforme** ✅
+  - `src/Immobile.jsx` sticky-cta destra. Per utenti NON loggati e non
+    isOwner, il bottone è passato da `btn-secondary` (grigio neutro)
+    a `btn-primary` con `style={{ background: '#2d6a4f' }}` — stesso
+    verde del bottone "Fai una proposta" che vedono i loggati.
+  - Coerenza visiva: l'azione "fare una proposta" è SEMPRE verde,
+    indipendentemente dallo stato auth. L'unica differenza è il testo
+    e il comportamento (il primo porta a /login, il secondo apre
+    modal proposta).
+  - Aggiunto `?redirect=` alla URL /login con
+    `window.location.pathname + window.location.search` (stesso
+    pattern usato in `AiChat` per la registrazione anonima → loggato,
+    batch 2 task 2.A). Dopo il login l'utente torna sulla scheda
+    immobile e può cliccare di nuovo "Fai una proposta".
+  - Aggiunta freccia "→" al testo per uniformità col gemello verde.
+
+- [x] **Build & QA**: `npm run build` passa pulito (1.7-1.8s, 0
+  errori, solo il warning standard sul chunk size già esistente prima
+  del batch). Un commit per task, branch `feat/copy-ux-polish` su
+  origin. NON pushato su main — il founder mergia manualmente al
+  rientro come per gli altri batch.
 
 ## File chiave
 - src/HomePage.jsx — home page con Nav e CTA
