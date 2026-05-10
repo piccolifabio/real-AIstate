@@ -681,6 +681,14 @@ export default function ImmobilePage() {
       // come fallback. Dopo l'approvazione admin, l'AI compila titolo.
       titolo: immobileDb.titolo ?? null,
       indirizzo: immobileDb.indirizzo ?? IMMOBILE_FALLBACK.indirizzo,
+      // Nuovi campi indirizzo strutturati (Google Places Autocomplete, batch 2 task 2.D).
+      // Capecelatro non li ha popolati in DB — restano null e il render fa fallback
+      // a `zona` come prima per la demo.
+      cap: immobileDb.cap ?? null,
+      citta: immobileDb.citta ?? null,
+      provincia: immobileDb.provincia ?? null,
+      latitudine: immobileDb.latitudine ?? null,
+      longitudine: immobileDb.longitudine ?? null,
       zona: immobileDb.zona ?? IMMOBILE_FALLBACK.zona,
       prezzo: immobileDb.prezzo ?? IMMOBILE_FALLBACK.prezzo,
       superficie_catastale: immobileDb.superficie ?? IMMOBILE_FALLBACK.superficie_catastale,
@@ -759,10 +767,23 @@ export default function ImmobilePage() {
   const docsTotal = immobile.documenti.length;
   const allVerified = docsVerified === docsTotal;
 
-  // Indirizzo per mappa/Street View link
-  const indirizzoMappa = `${immobile.indirizzo}${immobile.zona ? ', ' + immobile.zona : ''}`;
+  // Indirizzo per mappa/Street View link.
+  // Se abbiamo i campi strutturati (immobili dopo batch 2 task 2.D), costruiamo
+  // un indirizzo completo "Via X, CAP Città" che il Maps Embed risolve con
+  // precisione molto maggiore. Per Capecelatro e immobili pre-migrazione il
+  // fallback è il vecchio "indirizzo, zona".
+  const indirizzoMappa = (immobile.cap && immobile.citta)
+    ? `${immobile.indirizzo}, ${immobile.cap} ${immobile.citta}`
+    : `${immobile.indirizzo}${immobile.zona ? ', ' + immobile.zona : ''}`;
   const queryMappa = encodeURIComponent(indirizzoMappa);
   const googleKey = import.meta.env.VITE_GOOGLE_MAPS_KEY;
+  // Display "luogo": preferisce città+CAP+provincia se popolati; fallback a zona.
+  const luogoLabel = immobile.citta
+    ? `${immobile.citta}${immobile.zona && immobile.zona !== immobile.citta ? ' · ' + immobile.zona : ''}`
+    : immobile.zona;
+  const indirizzoSottoTitolo = immobile.cap && immobile.citta
+    ? `${immobile.indirizzo}, ${immobile.cap} ${immobile.citta}${immobile.provincia ? ' (' + immobile.provincia + ')' : ''}`
+    : immobile.indirizzo;
 
   // Immobile non trovato o non pubblicato
   if (!loadingImmobile && !immobileDb) {
@@ -842,9 +863,9 @@ export default function ImmobilePage() {
 
           {/* HEADER */}
           <div className="prop-header">
-            <div className="prop-location">📍 {immobile.zona}</div>
+            <div className="prop-location">📍 {luogoLabel}</div>
             <h1 className="prop-title">{immobile.titolo || immobile.indirizzo}</h1>
-            <div style={{ fontSize: "0.85rem", color: "var(--muted)", marginBottom: "1rem" }}>{immobile.indirizzo}</div>
+            <div style={{ fontSize: "0.85rem", color: "var(--muted)", marginBottom: "1rem" }}>{indirizzoSottoTitolo}</div>
             <div className="prop-price">€ {immobile.prezzo.toLocaleString("it-IT")}</div>
             <div className="prop-price-sub">€ {Math.round(immobile.prezzo / immobile.superficie_catastale).toLocaleString("it-IT")} / m² · Spese cond. €{immobile.spese_condominio}/mese</div>
             <div className="prop-specs">
@@ -1037,7 +1058,7 @@ export default function ImmobilePage() {
           <div className="map-section">
             <h2 className="section-title">Posizione</h2>
             <div style={{ fontSize: "0.82rem", color: "var(--muted)", marginBottom: "0.5rem" }}>
-              {immobile.indirizzo}{immobile.zona ? ` · ${immobile.zona}` : ""}
+              {indirizzoSottoTitolo}{immobile.zona && immobile.zona !== immobile.citta ? ` · ${immobile.zona}` : ""}
             </div>
             <div style={{ fontSize: "0.78rem", color: "rgba(247,245,240,0.5)", marginBottom: "1rem" }}>
               <a

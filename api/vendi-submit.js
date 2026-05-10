@@ -80,10 +80,26 @@ export default async function handler(req, res) {
       console.error("Supabase venditori error:", err);
     }
 
-    // 4. NUOVO: insert in immobili (status=draft) per l'utente loggato
+    // 4. Validazione server-side dei campi indirizzo strutturati (defense in depth).
+    // Da oggi /vendi step 1 usa Google Places Autocomplete: il frontend impedisce
+    // di procedere senza una selezione valida. Qui rifiutiamo a priori payload
+    // privi di cap/citta/provincia per evitare scritture incomplete causate da
+    // client modificati o richieste fuori-flow.
+    if (!dati.cap || !dati.citta || !dati.provincia) {
+      return res.status(400).json({
+        error: "Indirizzo incompleto: cap, città e provincia sono obbligatori. Seleziona un indirizzo dai suggerimenti."
+      });
+    }
+
+    // 5. NUOVO: insert in immobili (status=draft) per l'utente loggato
     const immobiliPayload = {
       indirizzo: dati.indirizzo,
-      zona: null,
+      cap: dati.cap || null,
+      citta: dati.citta || null,
+      provincia: dati.provincia || null,
+      zona: dati.zona || null,
+      latitudine: dati.latitudine != null ? parseFloat(dati.latitudine) : null,
+      longitudine: dati.longitudine != null ? parseFloat(dati.longitudine) : null,
       prezzo: dati.prezzo_desiderato ? parseFloat(dati.prezzo_desiderato) : null,
       superficie: dati.superficie_catastale ? parseFloat(dati.superficie_catastale) : null,
       tipologia: dati.tipologia || null,
@@ -129,7 +145,7 @@ export default async function handler(req, res) {
       ? parseInt(dati.prezzo_desiderato).toLocaleString("it-IT")
       : "—";
 
-    // 5. Email conferma venditore
+    // 6. Email conferma venditore
     await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
       headers: {
@@ -190,7 +206,7 @@ export default async function handler(req, res) {
       }),
     });
 
-    // 6. Notifica interna a Fabio
+    // 7. Notifica interna a Fabio
     // Anche qui escapeHtml su tutti i campi user-controlled — lo storage path
     // viene encodeURI per rendere safe i nomi file con caratteri speciali.
     const safeStorageHref = (path) => `${supabaseStorageBase}/${encodeURI(path)}`;

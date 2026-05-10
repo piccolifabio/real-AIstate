@@ -148,6 +148,123 @@ function Tooltip({ text }) {
   );
 }
 
+// Carica una sola volta lo script Google Maps con Places library. Cache via
+// document, così tornando a step 0 non ricarichiamo niente. La key è
+// VITE_GOOGLE_MAPS_KEY, già usata per Maps Embed in Immobile.jsx — il founder
+// l'ha estesa con Places API (New) sul progetto Google Cloud.
+function loadGooglePlacesScript(apiKey) {
+  return new Promise((resolve, reject) => {
+    if (window.google?.maps?.places) return resolve();
+    const existing = document.getElementById("gmaps-places-script");
+    if (existing) {
+      existing.addEventListener("load", () => resolve());
+      existing.addEventListener("error", () => reject(new Error("Script load error")));
+      return;
+    }
+    const script = document.createElement("script");
+    script.id = "gmaps-places-script";
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&language=it`;
+    script.async = true;
+    script.defer = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error("Script load error"));
+    document.head.appendChild(script);
+  });
+}
+
+// Estrae i campi strutturati dall'oggetto Place restituito dall'API Places.
+// Mappa di componenti restituiti da Google → schema DB immobili.
+function parsePlace(place) {
+  if (!place || !place.address_components) return null;
+  const get = (type) => place.address_components.find((c) => c.types.includes(type))?.long_name || null;
+  const getShort = (type) => place.address_components.find((c) => c.types.includes(type))?.short_name || null;
+  const route = get("route");
+  const number = get("street_number");
+  const indirizzo = [route, number].filter(Boolean).join(" ").trim();
+  const citta = get("locality") || get("administrative_area_level_3") || null;
+  // zona: sublocality (es. "Città Studi") o neighborhood. Fallback al comune
+  // per piccoli paesi che non hanno sotto-aree riconosciute da Google.
+  const zona = get("sublocality_level_1") || get("neighborhood") || citta;
+  return {
+    indirizzo,
+    cap: get("postal_code"),
+    citta,
+    provincia: getShort("administrative_area_level_2"),
+    zona,
+    latitudine: place.geometry?.location?.lat?.() ?? null,
+    longitudine: place.geometry?.location?.lng?.() ?? null,
+    formatted: place.formatted_address || null,
+  };
+}
+
+// Componente Autocomplete dell'indirizzo. Quando l'utente seleziona un Place
+// dai suggerimenti, chiama onSelect con l'oggetto strutturato. NON usa
+// stato proprio per il valore dell'input: lo gestisce il DOM nativo, e la
+// fonte di verità rimane il form parent (popolato solo dopo la selezione).
+function AddressAutocomplete({ apiKey, onSelect, onUserType }) {
+  const inputRef = useRef(null);
+  const acRef = useRef(null);
+  const [scriptStatus, setScriptStatus] = useState("loading");
+
+  useEffect(() => {
+    if (!apiKey) {
+      setScriptStatus("error");
+      return;
+    }
+    loadGooglePlacesScript(apiKey)
+      .then(() => setScriptStatus("ready"))
+      .catch(() => setScriptStatus("error"));
+  }, [apiKey]);
+
+  useEffect(() => {
+    if (scriptStatus !== "ready" || !inputRef.current || acRef.current) return;
+    const ac = new window.google.maps.places.Autocomplete(inputRef.current, {
+      componentRestrictions: { country: "it" },
+      fields: ["address_components", "geometry", "formatted_address"],
+      types: ["address"],
+    });
+    acRef.current = ac;
+    const listener = ac.addListener("place_changed", () => {
+      const place = ac.getPlace();
+      const parsed = parsePlace(place);
+      if (parsed && parsed.indirizzo && parsed.citta && parsed.cap && parsed.provincia) {
+        onSelect(parsed);
+      } else {
+        // Place senza dati sufficienti (raro: l'utente ha cliccato un risultato
+        // ambiguo). Lo segnaliamo al parent come "non verificato".
+        onSelect(null);
+      }
+    });
+    return () => {
+      window.google?.maps?.event?.removeListener?.(listener);
+    };
+  }, [scriptStatus, onSelect]);
+
+  if (scriptStatus === "error") {
+    return (
+      <div style={{ fontSize: "0.85rem", color: "var(--red)", padding: "0.85rem 1rem", border: "1px solid rgba(217,48,37,0.3)", borderRadius: 2, background: "rgba(217,48,37,0.06)" }}>
+        Impossibile caricare i suggerimenti indirizzo. Ricarica la pagina o scrivici a <a href="mailto:info@realaistate.ai" style={{ color: "var(--red)" }}>info@realaistate.ai</a>.
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <input
+        ref={inputRef}
+        className="vendi-input"
+        placeholder={scriptStatus === "ready" ? "Inizia a digitare via, città..." : "Caricamento suggerimenti..."}
+        autoComplete="off"
+        onChange={(e) => onUserType?.(e.target.value)}
+        disabled={scriptStatus !== "ready"}
+      />
+      <div style={{ fontSize: "0.7rem", color: "rgba(247,245,240,0.35)", marginTop: "0.4rem" }}>
+        Powered by Google — i suggerimenti arrivano dai server Google Maps.
+      </div>
+    </>
+  );
+}
+
 function Pertinenza({ title, value, onToggle, metratura, onMetratura, tooltip }) {
   return (
     <div className="vendi-pertinenza">
@@ -178,7 +295,13 @@ export default function VendiForm() {
   const [error, setError] = useState("");
 
   const [form, setForm] = useState({
-    tipologia: "", indirizzo: "", piano: "", ascensore: "",
+    tipologia: "",
+    // Indirizzo strutturato — popolato da Google Places Autocomplete in step 0.
+    // addressVerified diventa true quando l'utente seleziona un Place dai
+    // suggerimenti (è il vero gate per procedere allo step successivo).
+    indirizzo: "", cap: "", citta: "", provincia: "", zona: "",
+    latitudine: "", longitudine: "", addressVerified: false,
+    piano: "", ascensore: "",
     superficie_catastale: "", superficie_calpestabile: "",
     vani: "", camere: "", bagni: "",
     anno_costruzione: "", anno_ristrutturazione: "",
@@ -225,6 +348,41 @@ export default function VendiForm() {
   const planimetriaRef = useRef();
   const apeRef = useRef();
   const fotoRef = useRef();
+  // Diventa true appena l'utente digita qualcosa nel campo autocomplete ma non
+  // ha ancora selezionato un Place. Serve a mostrare l'errore inline "Seleziona
+  // un indirizzo dai suggerimenti" senza farlo apparire al primo render.
+  const [addressTouched, setAddressTouched] = useState(false);
+  const googleMapsKey = import.meta.env.VITE_GOOGLE_MAPS_KEY;
+
+  const handleAddressSelect = (parsed) => {
+    if (!parsed) {
+      // L'utente ha cliccato un suggerimento incompleto. Resettiamo il flag
+      // verified ma teniamo `addressTouched` per mostrare ancora la guida.
+      setForm((f) => ({ ...f, addressVerified: false }));
+      return;
+    }
+    setForm((f) => ({
+      ...f,
+      indirizzo: parsed.indirizzo,
+      cap: parsed.cap || "",
+      citta: parsed.citta || "",
+      provincia: parsed.provincia || "",
+      zona: parsed.zona || "",
+      latitudine: parsed.latitudine != null ? String(parsed.latitudine) : "",
+      longitudine: parsed.longitudine != null ? String(parsed.longitudine) : "",
+      addressVerified: true,
+    }));
+    setAddressTouched(false);
+  };
+
+  const handleChangeAddress = () => {
+    setForm((f) => ({
+      ...f,
+      indirizzo: "", cap: "", citta: "", provincia: "", zona: "",
+      latitudine: "", longitudine: "", addressVerified: false,
+    }));
+    setAddressTouched(false);
+  };
 
   // Gate auth: stato di caricamento sessione
   if (authLoading) {
@@ -293,7 +451,7 @@ export default function VendiForm() {
   };
 
   const canProceed = () => {
-    if (step === 0) return form.tipologia && form.indirizzo && form.superficie_catastale && form.stato;
+    if (step === 0) return form.tipologia && form.indirizzo && form.addressVerified && form.superficie_catastale && form.stato;
     if (step === 1) return form.prezzo_desiderato;
     if (step === 2) return form.foto.length >= 3;
     if (step === 3) return form.planimetria && form.ape;
@@ -333,7 +491,9 @@ export default function VendiForm() {
         form.ape ? uploadFile(form.ape, "ape") : Promise.resolve(null),
       ]);
       const fotoUrls = await Promise.all(form.foto.map(f => uploadFile(f, "foto")));
-      const { email_conferma: _eic, ...formForApi } = form;
+      // Strippiamo i campi solo-client che non hanno colonna DB:
+      // email_conferma (validazione conferma email) e addressVerified (gate UX).
+      const { email_conferma: _eic, addressVerified: _av, ...formForApi } = form;
       const payload = {
         ...formForApi,
         foto: fotoUrls,
@@ -424,8 +584,65 @@ export default function VendiForm() {
 
             <div className="vendi-grid single">
               <div className="vendi-field">
-                <label className="vendi-label">Indirizzo completo <span className="req">*</span></label>
-                <input className="vendi-input" placeholder="Via Roma 12, Milano" value={form.indirizzo} onChange={e => update("indirizzo", e.target.value)} />
+                <label className="vendi-label">Indirizzo <span className="req">*</span></label>
+                {form.addressVerified ? (
+                  <div style={{
+                    background: "rgba(45,106,79,0.08)",
+                    border: "1px solid rgba(45,106,79,0.3)",
+                    borderRadius: 3,
+                    padding: "1rem 1.2rem",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "0.6rem",
+                  }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "1rem" }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: "0.7rem", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--green-light)", marginBottom: "0.4rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                          ✓ Indirizzo verificato
+                        </div>
+                        <div style={{ fontSize: "0.95rem", color: "var(--white)", fontWeight: 600, marginBottom: "0.2rem" }}>
+                          {form.indirizzo}
+                        </div>
+                        <div style={{ fontSize: "0.82rem", color: "rgba(247,245,240,0.55)" }}>
+                          {form.cap} {form.citta}{form.provincia ? ` (${form.provincia})` : ""}
+                          {form.zona && form.zona !== form.citta ? ` · ${form.zona}` : ""}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleChangeAddress}
+                        style={{
+                          background: "transparent",
+                          border: "1px solid rgba(247,245,240,0.15)",
+                          color: "rgba(247,245,240,0.7)",
+                          padding: "0.5rem 1rem",
+                          borderRadius: 2,
+                          cursor: "pointer",
+                          fontSize: "0.75rem",
+                          fontFamily: "DM Sans, sans-serif",
+                          letterSpacing: "0.06em",
+                          textTransform: "uppercase",
+                          flexShrink: 0,
+                        }}
+                      >
+                        Cambia
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <AddressAutocomplete
+                      apiKey={googleMapsKey}
+                      onSelect={handleAddressSelect}
+                      onUserType={(v) => { if (v) setAddressTouched(true); }}
+                    />
+                    {addressTouched && (
+                      <div className="vendi-error" style={{ marginTop: "0.4rem" }}>
+                        Seleziona un indirizzo dai suggerimenti per continuare.
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             </div>
 
