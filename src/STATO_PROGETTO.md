@@ -1,5 +1,5 @@
 # RealAIstate — Stato del progetto
-Aggiornato: 10/05/2026 (settimana 7 — batch 2 + post-fix Places API New: chat AI anonimo invita registrazione, nome/cognome separati, documenti minimi su tutti gli immobili, Google Places Autocomplete in /vendi migrato a PlaceAutocompleteElement)
+Aggiornato: 10/05/2026 (settimana 7 — batch 2 + post-fix Places API New + post-post-fix mount: chat AI anonimo invita registrazione, nome/cognome separati, documenti minimi su tutti gli immobili, Google Places Autocomplete in /vendi migrato a PlaceAutocompleteElement con attesa whenDefined)
 
 ## Stack
 - Frontend: React + Vite, deploy su Vercel
@@ -577,6 +577,47 @@ abilitare la legacy (debito tecnico), refactorare a Places API (New).
     invariata, schema DB invariato (cap/citta/provincia/lat/lng già
     aggiunti dal batch 2). Nessuna nuova migration SQL necessaria.
 
+### Settimana 7 — batch 2 post-post-fix ✅ — completata 10/05/2026 (mount race condition)
+Il post-fix ha mergeato in main, ma in produzione l'autocomplete mostrava
+il fallback rosso "Impossibile caricare i suggerimenti indirizzo".
+Diagnostica founder in incognito: SDK + custom element + classe
+`PlaceAutocompleteElement` tutto OK, errore solo nel componente React
+(catch silenzioso senza logging).
+
+- [x] **Race condition tra script.onload e libreria places** ✅
+  - Causa: l'URL dello script aveva `&libraries=places&loading=async` —
+    combinazione conflittuale per la Maps JS API. Con `loading=async`
+    Google si aspetta `await google.maps.importLibrary(...)`, ma con
+    `&libraries=places` carica eager bypassando il bootstrap di
+    `importLibrary`. Risultato: `google.maps.importLibrary` può essere
+    `undefined` quando React esegue l'effect → `await google.maps
+    .importLibrary("places")` → TypeError → catch → utente vede l'errore
+    rosso. Il founder ha verificato manualmente DOPO che
+    `PlaceAutocompleteElement` era una function (places.js si caricava
+    in background, ma il React effect era già fallito).
+  - Fix in `loadGoogleMapsScript`:
+    - Rimosso `&loading=async` dall'URL (mantenuto solo
+      `&v=weekly&libraries=places&language=it`).
+    - Check di "già caricato" cambiato da `window.google?.maps
+      ?.importLibrary` a `window.customElements?.get?.(
+      "gmp-place-autocomplete")` — più affidabile (verifica che il
+      custom element sia effettivamente registrato).
+    - Caso script tag già presente: `resolve()` immediato (l'attesa
+      vera è ora delegata a `whenDefined` nel chiamante).
+  - Fix in `AddressAutocomplete` effect:
+    - Eliminato `await google.maps.importLibrary("places")`.
+    - Aggiunto `await Promise.race([customElements.whenDefined(
+      "gmp-place-autocomplete"), timeout(8000)])` per attendere la
+      registrazione del custom element. `whenDefined` ritorna subito se
+      già registrato (ritorno step 0 dopo "Cambia").
+    - Dopo whenDefined, accesso DIRETTO a
+      `window.google.maps.places.PlaceAutocompleteElement` (senza
+      `importLibrary`). Throw esplicito se ancora `undefined`.
+    - Aggiunto `console.error("[VendiForm] AddressAutocomplete init
+      failed:", err)` nel catch — senza questo in produzione si vedeva
+      solo il messaggio utente, debug impossibile.
+  - Schema DB invariato. UX invariata. Build pulita.
+
 ## File chiave
 - src/HomePage.jsx — home page con Nav e CTA
 - src/ScusePage.jsx — pagina scuse separata
@@ -992,9 +1033,8 @@ abilitare la legacy (debito tecnico), refactorare a Places API (New).
   10/05/2026 è ancora basata sulla legacy
   ([Issue #283 aperta](https://github.com/googlemaps/extended-component-library/issues/283))
   → **non usarla**. La soluzione corretta è il Web Component nativo
-  Google `<gmp-place-autocomplete>` (`PlaceAutocompleteElement`)
-  ottenuto via `await google.maps.importLibrary("places")`. Pattern
-  inizializzazione: `new PlaceAutocompleteElement({
+  Google `<gmp-place-autocomplete>` (`PlaceAutocompleteElement`).
+  Pattern inizializzazione: `new PlaceAutocompleteElement({
   includedRegionCodes: ['it'], includedPrimaryTypes: ['address'] })` +
   `appendChild`. Evento `gmp-select` (NON `place_changed`) →
   `event.placePrediction.toPlace()` ritorna un Place vuoto: chiamare
@@ -1003,10 +1043,33 @@ abilitare la legacy (debito tecnico), refactorare a Places API (New).
   Struttura nuova: `addressComponents` (camelCase) con
   `longText`/`shortText`/`types` invece di `address_components` con
   `long_name`/`short_name`. `place.location.lat()/lng()` sono ancora
-  funzioni. Lo script Maps JS si carica con
-  `&v=weekly&loading=async&libraries=places&language=it`. Styling:
-  shadow DOM CHIUSO (no `::part`), solo CSS variables Material
-  `--gmp-mat-color-*` e `--gmp-mat-font-*` esposte.
+  funzioni. Styling: shadow DOM CHIUSO (no `::part`), solo CSS
+  variables Material `--gmp-mat-color-*` e `--gmp-mat-font-*` esposte.
+- **`&libraries=places` + `&loading=async` = combinazione conflittuale**
+  (lezione 10/05/2026, post-post-fix batch 2). I due parametri sullo
+  script `https://maps.googleapis.com/maps/api/js?...` sono mutualmente
+  esclusivi: `&loading=async` aspetta `await
+  google.maps.importLibrary(...)` per caricare le librerie on-demand,
+  mentre `&libraries=X` carica eager bypassando il bootstrap di
+  `importLibrary`. Mescolarli può lasciare `google.maps.importLibrary`
+  `undefined` quando lo `script.onload` triggera, perché lo script ha
+  finito ma `places.js` (carica in background) non ha ancora attaccato
+  `importLibrary` né `PlaceAutocompleteElement`. Sintomo: `await
+  google.maps.importLibrary("places")` → TypeError silenzioso in catch
+  → l'utente vede l'errore di fallback ma il debug è impossibile senza
+  console.error nel catch. **Fix raccomandato**: scegliere UNA delle
+  due strategie:
+  (a) `&libraries=places` (eager) + accesso diretto a
+  `google.maps.places.PlaceAutocompleteElement`, attesa via
+  `customElements.whenDefined("gmp-place-autocomplete")` con timeout —
+  semplice, robusto, senza importLibrary;
+  (b) NIENTE `&libraries=`, solo `&loading=async`, poi `await
+  google.maps.importLibrary("places")` per ogni libreria — pattern
+  moderno raccomandato Google ma richiede che importLibrary sia
+  effettivamente disponibile quando viene chiamato.
+  Noi usiamo (a) in VendiForm.jsx. **Best practice generale**: sempre
+  `console.error(err)` nel catch di un init async che mostra fallback
+  utente — senza, in produzione il debug è cieco.
 - **Frase canonica come segnale machine-readable nel prompt AI**: pattern
   riusabile per riconoscere lato server quando l'AI ha emesso una specifica
   intent (invito registrazione, conferma inoltro, ecc.). Nel prompt

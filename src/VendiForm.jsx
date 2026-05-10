@@ -158,20 +158,33 @@ function Tooltip({ text }) {
 // (Web Component nativo `<gmp-place-autocomplete>`) e NON l'API legacy
 // `google.maps.places.Autocomplete`. Riferimento:
 // https://developers.google.com/maps/documentation/javascript/place-autocomplete-new
+//
+// Gotcha caricamento: la combinazione `&libraries=places` (eager) +
+// `&loading=async` (dynamic import) è in conflitto. Con eager, `importLibrary`
+// può NON essere definito; con async, `&libraries=` è ignorato. Usiamo solo
+// eager (`&libraries=places`), accedendo poi direttamente a
+// `google.maps.places.PlaceAutocompleteElement` senza passare per
+// `importLibrary`. Lo `script.onload` può anticipare la registrazione del
+// custom element, quindi il chiamante deve fare `customElements.whenDefined`
+// per essere sicuro che `<gmp-place-autocomplete>` sia pronto.
 function loadGoogleMapsScript(apiKey) {
   return new Promise((resolve, reject) => {
-    if (window.google?.maps?.importLibrary) return resolve();
+    // Se il custom element è già registrato, lo script ha già completato il
+    // caricamento di places (check più affidabile di window.google.maps,
+    // che può essere parzialmente popolato durante l'init).
+    if (window.customElements?.get?.("gmp-place-autocomplete")) return resolve();
     const existing = document.getElementById("gmaps-script");
     if (existing) {
-      existing.addEventListener("load", () => resolve());
+      // Script già appeso da un mount precedente (ritorno step 0 dopo
+      // "Cambia indirizzo"). onload potrebbe già essersi triggerato:
+      // risolviamo subito, il chiamante poi attende whenDefined.
       existing.addEventListener("error", () => reject(new Error("Script load error")));
+      resolve();
       return;
     }
     const script = document.createElement("script");
     script.id = "gmaps-script";
-    // v=weekly + loading=async è il pattern raccomandato da Google per la
-    // dynamic library import (evita warning "loading=async" in console).
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&v=weekly&loading=async&libraries=places&language=it`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&v=weekly&libraries=places&language=it`;
     script.async = true;
     script.defer = true;
     script.onload = () => resolve();
@@ -253,13 +266,28 @@ function AddressAutocomplete({ apiKey, onSelect, onUserType }) {
     (async () => {
       try {
         await loadGoogleMapsScript(apiKey);
-        // importLibrary è la modalità raccomandata da Google per ottenere
-        // PlaceAutocompleteElement nella Places API (New).
-        const placesLib = await window.google.maps.importLibrary("places");
+        // Aspettiamo che il custom element <gmp-place-autocomplete> sia
+        // registrato dal Maps SDK. È il check più affidabile: lo
+        // `script.onload` può anticipare la registrazione del custom
+        // element (places.js è una libreria caricata in background dal
+        // main script), e google.maps.places può essere parzialmente
+        // popolato durante l'init.
+        // Non usiamo `await google.maps.importLibrary("places")` perché
+        // con `&libraries=places` (eager) `importLibrary` può essere
+        // undefined (provato in produzione: TypeError → catch → errore
+        // utente "Impossibile caricare i suggerimenti").
+        const TIMEOUT_MS = 8000;
+        await Promise.race([
+          window.customElements.whenDefined("gmp-place-autocomplete"),
+          new Promise((_, rej) => setTimeout(
+            () => rej(new Error("Timeout: gmp-place-autocomplete non registrato entro 8s")),
+            TIMEOUT_MS
+          )),
+        ]);
         if (!mounted || !containerRef.current) return;
-        const PlaceAutocompleteElement = placesLib.PlaceAutocompleteElement;
+        const PlaceAutocompleteElement = window.google?.maps?.places?.PlaceAutocompleteElement;
         if (!PlaceAutocompleteElement) {
-          throw new Error("PlaceAutocompleteElement non disponibile");
+          throw new Error("google.maps.places.PlaceAutocompleteElement non disponibile dopo whenDefined");
         }
         pickerEl = new PlaceAutocompleteElement({
           // Restrizione paese (Italia) — equivalente al vecchio
@@ -313,7 +341,10 @@ function AddressAutocomplete({ apiKey, onSelect, onUserType }) {
           pickerEl.removeEventListener("input", onInput);
           if (pickerEl.parentNode) pickerEl.parentNode.removeChild(pickerEl);
         };
-      } catch {
+      } catch (err) {
+        // Loggiamo il vero errore: senza questo in produzione si vede solo
+        // il messaggio rosso utente e il debug è impossibile.
+        console.error("[VendiForm] AddressAutocomplete init failed:", err);
         if (mounted) setScriptStatus("error");
       }
     })();
