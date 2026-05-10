@@ -148,46 +148,30 @@ function Tooltip({ text }) {
   );
 }
 
-// Carica una sola volta il bootstrap loader della Maps JavaScript API.
-// Cache via document (idempotente). La key è VITE_GOOGLE_MAPS_KEY, già usata
-// per Maps Embed in Immobile.jsx — il founder ha abilitato Places API (New)
-// sul progetto Google Cloud.
+// Carica una sola volta il bootstrap loader della Maps JavaScript API in
+// modalità LEGACY (`&libraries=places`). Cache via document (idempotente).
+// La key è VITE_GOOGLE_MAPS_KEY, già usata per Maps Embed in Immobile.jsx.
 //
-// IMPORTANTE: il progetto Google Cloud RealAIstate ha SOLO la Places API (New)
-// abilitata (NON la legacy). Per questo qui usiamo PlaceAutocompleteElement
-// (Web Component nativo `<gmp-place-autocomplete>`) e NON l'API legacy
-// `google.maps.places.Autocomplete`. Riferimento:
-// https://developers.google.com/maps/documentation/javascript/place-autocomplete-new
-//
-// Pattern di caricamento (Google ufficiale per Places API New): URL con
-// `&loading=async` SENZA `&libraries=`. Lo script base espone
-// `google.maps.importLibrary`, e il chiamante fa
-// `await google.maps.importLibrary('places')` per caricare E inizializzare
-// la libreria places in modo ATOMICO. Questo è cruciale per evitare il
-// bug del fourth-fix in cui `&libraries=places` (eager) registrava il
-// custom element come stub e `whenDefined` risolveva troppo presto →
-// React montava il tag JSX inerte (`shadowRoot:null` in produzione).
-// Con `loading=async + importLibrary`, la promise di importLibrary
-// risolve SOLO quando la classe è completa e il custom element è
-// upgrade-ready.
-//
-// GOTCHA fifth-fix (10/05/2026): `script.onload` triggera PRIMA che
-// `google.maps.importLibrary` sia attached come function. Il founder
-// ha verificato in console che `importLibrary` esiste come function
-// dopo il caricamento, ma se viene controllato ISTANTANEAMENTE dopo
-// onload può ancora essere undefined. Per questo il chiamante DEVE
-// fare polling (vedi `waitForImportLibrary` sotto), non un check
-// sincrono throw-on-fail.
+// ROLLBACK 10/05/2026 — da Places API (New) a Places API legacy:
+// 7 fix consecutivi sul Web Component `<gmp-place-autocomplete>` (Places
+// API New) hanno fallito per edge case di upgrade-readiness in
+// Vite + React in produzione (shadowRoot:null nonostante whenDefined
+// risolto, microtask gap su importLibrary, race tra mount JSX e
+// `connectedCallback`). Il founder ha abilitato sul progetto Google
+// Cloud anche la Places API legacy (ora 4 API attive: Maps Embed,
+// Maps JavaScript, Places API New, Places API legacy). Si torna al
+// pattern legacy `google.maps.places.Autocomplete` su un `<input>` HTML
+// normale: stabile, documentato in 100k tutorial, niente Web Components.
+// Vedi memo "Places API New + Web Components + Vite + React" e sezione
+// Settimana 7 batch 2 ottavo fix in STATO_PROGETTO.md per il razionale
+// completo.
 function loadGoogleMapsScript(apiKey) {
   return new Promise((resolve, reject) => {
-    // Già caricato (re-mount dopo "Cambia indirizzo" o navigazione interna):
-    // `google.maps.importLibrary` è la funzione bootstrap esposta dallo
-    // script con `loading=async`. Se è una function, lo script ha
-    // completato il bootstrap e il chiamante può chiamare importLibrary
-    // direttamente. Check più affidabile del custom element, che con
-    // loading=async non viene registrato finché qualcuno non chiama
-    // importLibrary('places').
-    if (typeof window.google?.maps?.importLibrary === "function") return resolve();
+    // Già caricato: la classe Autocomplete è disponibile come constructor
+    // su `google.maps.places.Autocomplete`. Check sincrono affidabile —
+    // con il pattern legacy lo script eager carica places.js prima di
+    // triggerare onload, quindi la classe è già attached.
+    if (typeof window.google?.maps?.places?.Autocomplete === "function") return resolve();
     const existing = document.getElementById("gmaps-script");
     if (existing) {
       // Script già appeso da un mount precedente ma non ancora caricato
@@ -198,7 +182,10 @@ function loadGoogleMapsScript(apiKey) {
     }
     const script = document.createElement("script");
     script.id = "gmaps-script";
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&v=weekly&loading=async&language=it`;
+    // URL legacy classico: niente `loading=async`, niente `v=weekly`.
+    // `libraries=places` carica eager places.js insieme al core, come da
+    // pattern documentato 2020-2024. `language=it` per UI in italiano.
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&language=it`;
     script.async = true;
     script.defer = true;
     script.onload = () => resolve();
@@ -207,45 +194,16 @@ function loadGoogleMapsScript(apiKey) {
   });
 }
 
-// Polling per `google.maps.importLibrary`: lo `script.onload` di
-// `loadGoogleMapsScript` può triggerare prima che `importLibrary` sia
-// attached come function. È un microtask gap del bootstrap loader Google
-// con `loading=async`. Polling ogni 50ms fino a un massimo di 3 secondi
-// (in produzione il founder ha verificato che diventa disponibile entro
-// poche centinaia di ms su connessione normale; 3s è il timeout di
-// fallback per network molto lenti). Sintomo storico (fifth-fix bug,
-// 10/05/2026): un check sincrono `if (typeof importLibrary !== 'function')
-// throw` falliva immediatamente in produzione mentre il founder vedeva
-// la function disponibile in console pochi istanti dopo.
-function waitForImportLibrary(timeoutMs = 3000, intervalMs = 50) {
-  return new Promise((resolve, reject) => {
-    const start = Date.now();
-    const check = () => {
-      if (typeof window.google?.maps?.importLibrary === "function") {
-        resolve();
-        return;
-      }
-      if (Date.now() - start > timeoutMs) {
-        reject(new Error(`google.maps.importLibrary non disponibile entro ${timeoutMs}ms`));
-        return;
-      }
-      setTimeout(check, intervalMs);
-    };
-    check();
-  });
-}
-
-// Estrae i campi strutturati dal Place della Places API (New).
-// La struttura è diversa dalla legacy:
-// - `addressComponents` (camelCase, era address_components)
-// - ogni component ha `longText`/`shortText`/`types` (erano long_name/short_name)
-// - `location.lat()`/`lng()` sono FUNZIONI (come prima, ma ora su place.location
-//   direttamente, non più place.geometry.location)
-// - `formattedAddress` (camelCase, era formatted_address)
+// Estrae i campi strutturati dal Place della Places API legacy.
+// Struttura legacy (documentata da anni):
+// - `address_components` (snake_case)
+// - ogni component ha `long_name`/`short_name`/`types`
+// - `geometry.location.lat()`/`lng()` sono FUNZIONI sul LatLng object
+// - `formatted_address` (snake_case)
 function parsePlace(place) {
-  if (!place || !place.addressComponents) return null;
-  const get = (type) => place.addressComponents.find((c) => c.types?.includes(type))?.longText || null;
-  const getShort = (type) => place.addressComponents.find((c) => c.types?.includes(type))?.shortText || null;
+  if (!place || !place.address_components) return null;
+  const get = (type) => place.address_components.find((c) => c.types?.includes(type))?.long_name || null;
+  const getShort = (type) => place.address_components.find((c) => c.types?.includes(type))?.short_name || null;
   const route = get("route");
   const number = get("street_number");
   const indirizzo = [route, number].filter(Boolean).join(" ").trim();
@@ -253,17 +211,13 @@ function parsePlace(place) {
   // zona: sublocality (es. "Città Studi") o neighborhood. Fallback al comune
   // per piccoli paesi che non hanno sotto-aree riconosciute da Google.
   const zona = get("sublocality_level_1") || get("neighborhood") || citta;
-  // place.location può essere LatLng (con metodi lat()/lng()) o un literal
-  // {lat, lng} a seconda del contesto. Difensivi: gestiamo entrambi.
   let latitudine = null;
   let longitudine = null;
-  if (place.location) {
-    if (typeof place.location.lat === "function") {
-      latitudine = place.location.lat();
-      longitudine = place.location.lng();
-    } else if (typeof place.location.lat === "number") {
-      latitudine = place.location.lat;
-      longitudine = place.location.lng;
+  if (place.geometry?.location) {
+    const loc = place.geometry.location;
+    if (typeof loc.lat === "function") {
+      latitudine = loc.lat();
+      longitudine = loc.lng();
     }
   }
   return {
@@ -274,46 +228,21 @@ function parsePlace(place) {
     zona,
     latitudine,
     longitudine,
-    formatted: place.formattedAddress || null,
+    formatted: place.formatted_address || null,
   };
 }
 
-// Componente Autocomplete dell'indirizzo. Usa PlaceAutocompleteElement
-// (Web Component `<gmp-place-autocomplete>`) della Places API (New).
-//
-// Pattern di mount (seventh-fix, 10/05/2026 — definitivo):
-// Il `<gmp-place-autocomplete>` NON viene mai renderizzato come tag JSX.
-// Viene creato programmaticamente via `document.createElement` e iniettato
-// in un container vuoto SOLO DOPO che `importLibrary('places')` ha risolto.
-//
-// MOTIVO TECNICO (diagnosi finale dopo 6 fix falliti):
-// I Web Components NON si auto-upgradano retroattivamente. Se il browser
-// incontra un tag custom element come HTMLUnknownElement (perché la classe
-// non era ancora registrata quando il parser/React lo ha visto), quel
-// particolare elemento NON viene upgraded quando la classe diventa
-// disponibile più tardi — solo gli elementi NUOVI creati post-registrazione
-// vengono upgraded. La diagnostica del founder ha confermato che, anche
-// dopo che `importLibrary('places')` risolve E `customElements.whenDefined`
-// risolve, il tag JSX già nel DOM ha `shadowRoot=false` e `children.length=0`.
-// Esiste uno stato intermedio in cui `customElements.get('gmp-place-autocomplete')`
-// ritorna una stub class che soddisfa whenDefined ma non implementa
-// connectedCallback completo. Solo `document.createElement` chiamato DOPO
-// `importLibrary('places')` garantisce che il browser usi la classe
-// completa per istanziare l'elemento (upgrade-ready dalla nascita).
-//
-// Tentativi falliti documentati (NON riprovare il pattern JSX dichiarativo):
-// - 005ce0d: gate scriptStatus="ready" prima del mount JSX → tag JSX
-//   ancora inerte in produzione (shadowRoot=false).
-// - 3e41628: aggiunto polling waitForImportLibrary → idem, perché il bug
-//   è nel rendering dichiarativo, non nel timing del bootstrap.
-// - 317189f, 26b9e98, f13619d: varianti del pattern JSX → tutti shadowRoot=false.
+// Componente Autocomplete dell'indirizzo. Usa l'API LEGACY
+// `google.maps.places.Autocomplete` su un `<input>` HTML standard.
+// Pattern usato da milioni di siti dal 2020 e ancora pienamente operativo
+// (Google ha annunciato deprecation ma supporto fino al 2027+).
 function AddressAutocomplete({ apiKey, onSelect, onUserType }) {
-  const containerRef = useRef(null);
+  const inputRef = useRef(null);
   const [scriptStatus, setScriptStatus] = useState("loading");
   // Le callback cambiano ad ogni render del parent (non sono memoizzate).
-  // Le mettiamo in ref per agganciare i listener UNA VOLTA SOLA — senza
-  // questo, removeListener/addListener girerebbero ad ogni keystroke
-  // (setAddressTouched triggera re-render del parent).
+  // Le mettiamo in ref per usare valori freschi nel listener `place_changed`
+  // senza ri-agganciarlo ad ogni keystroke (setAddressTouched triggera
+  // re-render del parent).
   const onSelectRef = useRef(onSelect);
   const onUserTypeRef = useRef(onUserType);
   useEffect(() => {
@@ -321,130 +250,57 @@ function AddressAutocomplete({ apiKey, onSelect, onUserType }) {
     onUserTypeRef.current = onUserType;
   });
 
-  // Carica lo script bootstrap, importa la libreria places, attendi
-  // che il custom element sia completamente upgrade-ready, POI crea
-  // programmaticamente l'elemento e lo aggancia. È un singolo effect
-  // perché tutto il setup (fetch + creazione + listener) deve avvenire
-  // in sequenza atomica nello stesso ciclo per garantire l'upgrade.
   useEffect(() => {
     if (!apiKey) {
       setScriptStatus("error");
       return;
     }
     let mounted = true;
-    let createdElement = null;
-    let onSelectEvent = null;
-    let onInput = null;
-
     (async () => {
       try {
-        const TIMEOUT_MS = 8000;
-        const timeout = (ms, label) => new Promise((_, rej) =>
-          setTimeout(() => rej(new Error(`Timeout ${label} dopo ${ms}ms`)), ms)
-        );
-        await Promise.race([loadGoogleMapsScript(apiKey), timeout(TIMEOUT_MS, "loadGoogleMapsScript")]);
-        // Polling fino a 3s: lo `script.onload` può triggerare prima che
-        // `importLibrary` sia attached come function. Il check sincrono
-        // throw-on-fail (fifth-fix originario) falliva istantaneamente in
-        // produzione anche quando importLibrary diventava disponibile poco
-        // dopo. Polling è il pattern Google "Dynamic Library Import" per
-        // attendere che il bootstrap loader abbia finito.
-        await waitForImportLibrary(3000);
-        // importLibrary('places') è il pattern ufficiale Google per la
-        // Places API (New): carica E inizializza la libreria, registra
-        // il custom element CON la sua classe completa (incluso il
-        // connectedCallback che attacca lo shadow root).
-        await Promise.race([window.google.maps.importLibrary("places"), timeout(TIMEOUT_MS, "importLibrary('places')")]);
-        // Doppia sicurezza: in teoria dopo importLibrary il custom element
-        // è già definito e whenDefined risolve immediatamente.
-        await Promise.race([
-          window.customElements.whenDefined("gmp-place-autocomplete"),
-          timeout(TIMEOUT_MS, "whenDefined('gmp-place-autocomplete')"),
-        ]);
-
-        if (!mounted || !containerRef.current) return;
-
-        // CHIAVE DEL FIX: createElement DOPO importLibrary. Il browser usa
-        // la classe registrata (completa, non lo stub) per istanziare
-        // l'elemento. shadowRoot viene attaccato in connectedCallback al
-        // momento dell'appendChild qui sotto.
-        const el = document.createElement("gmp-place-autocomplete");
-        el.setAttribute("placeholder", "Inizia a digitare via, città...");
-        // Property dinamiche (array): gli attributi HTML sono stringhe e
-        // non garantiscono il parsing come array. Settiamo direttamente le
-        // property JS, PRIMA dell'appendChild così connectedCallback le legge.
-        el.includedRegionCodes = ["it"];
-        el.includedPrimaryTypes = ["street_address"];
-        // Styling: le CSS variables `--gmp-mat-*` sono il set Material delle
-        // Places UI Kit, gli unici hook esposti da Google per personalizzare
-        // l'input dentro lo shadow DOM chiuso.
-        el.style.setProperty("--gmp-mat-color-surface", "rgba(247,245,240,0.04)");
-        el.style.setProperty("--gmp-mat-color-on-surface", "var(--white)");
-        el.style.setProperty("--gmp-mat-color-on-surface-variant", "rgba(247,245,240,0.5)");
-        el.style.setProperty("--gmp-mat-color-primary", "var(--red)");
-        el.style.setProperty("--gmp-mat-color-outline", "rgba(247,245,240,0.1)");
-        el.style.setProperty("--gmp-mat-font-family", "'DM Sans', sans-serif");
-        el.style.setProperty("--gmp-mat-font-body-medium", "0.95rem");
-        el.style.width = "100%";
-        el.style.display = "block";
-
-        onSelectEvent = async (event) => {
-          try {
-            // L'evento porta una placePrediction; toPlace() ritorna un Place
-            // "vuoto" che va popolato con fetchFields prima di leggere
-            // addressComponents/location.
-            const place = event.placePrediction.toPlace();
-            await place.fetchFields({
-              fields: ["formattedAddress", "addressComponents", "location"],
-            });
-            const parsed = parsePlace(place);
-            if (parsed && parsed.indirizzo && parsed.citta && parsed.cap && parsed.provincia) {
-              onSelectRef.current?.(parsed);
-            } else {
-              onSelectRef.current?.(null);
-            }
-          } catch (err) {
-            console.error("[VendiForm] gmp-select handler error:", err);
-            onSelectRef.current?.(null);
-          }
-        };
-
-        // L'evento `input` bubblando dallo shadow DOM ci permette di rilevare
-        // quando l'utente sta digitando (per mostrare l'errore inline
-        // "Seleziona un indirizzo dai suggerimenti").
-        onInput = (e) => {
-          const v = e.composedPath?.()[0]?.value ?? "";
-          if (v) onUserTypeRef.current?.(v);
-        };
-
-        el.addEventListener("gmp-select", onSelectEvent);
-        el.addEventListener("input", onInput);
-
-        // Svuota il container (difensivo: residui da un re-mount precedente
-        // o doppio invocation di useEffect in StrictMode) e aggancia.
-        // L'appendChild triggera connectedCallback che attacca lo shadow root.
-        containerRef.current.innerHTML = "";
-        containerRef.current.appendChild(el);
-
-        createdElement = el;
+        await loadGoogleMapsScript(apiKey);
         if (mounted) setScriptStatus("ready");
       } catch (err) {
         console.error("[VendiForm] AddressAutocomplete script load failed:", err);
         if (mounted) setScriptStatus("error");
       }
     })();
+    return () => { mounted = false; };
+  }, [apiKey]);
+
+  // Quando lo script è caricato e l'input è nel DOM, istanzia l'Autocomplete
+  // legacy e aggancia il listener `place_changed`. La cleanup rimuove il
+  // listener (l'istanza Autocomplete viene garbage-collected col componente).
+  useEffect(() => {
+    if (scriptStatus !== "ready" || !inputRef.current) return;
+    const autocomplete = new window.google.maps.places.Autocomplete(
+      inputRef.current,
+      {
+        componentRestrictions: { country: "it" },
+        types: ["address"],
+        fields: ["address_components", "formatted_address", "geometry"],
+      }
+    );
+    const listener = autocomplete.addListener("place_changed", () => {
+      const place = autocomplete.getPlace();
+      const parsed = parsePlace(place);
+      if (parsed && parsed.indirizzo && parsed.citta && parsed.cap && parsed.provincia) {
+        onSelectRef.current?.(parsed);
+      } else {
+        // Place senza dati sufficienti (utente ha premuto invio senza
+        // selezionare un suggerimento, o suggerimento ambiguo).
+        onSelectRef.current?.(null);
+      }
+    });
 
     return () => {
-      mounted = false;
-      if (createdElement) {
-        if (onSelectEvent) createdElement.removeEventListener("gmp-select", onSelectEvent);
-        if (onInput) createdElement.removeEventListener("input", onInput);
-        if (createdElement.parentNode) {
-          createdElement.parentNode.removeChild(createdElement);
-        }
-      }
+      window.google.maps.event.removeListener(listener);
     };
-  }, [apiKey]);
+  }, [scriptStatus]);
+
+  const handleInputChange = (e) => {
+    if (e.target.value) onUserTypeRef.current?.(e.target.value);
+  };
 
   if (scriptStatus === "error") {
     return (
@@ -454,24 +310,16 @@ function AddressAutocomplete({ apiKey, onSelect, onUserType }) {
     );
   }
 
-  // Container SEMPRE renderizzato (anche durante loading): containerRef
-  // deve essere disponibile prima dell'appendChild dell'effect. Quando
-  // scriptStatus === "loading" mostriamo un placeholder di sibling, e
-  // nascondiamo il container con display:none. Quando ready, mostriamo
-  // il container (che ora contiene il custom element programmatico) e
-  // rimuoviamo il placeholder. React NON tocca i figli del container
-  // perché in JSX non ha figli — quindi il <gmp-place-autocomplete> che
-  // abbiamo iniettato resta intatto attraverso i re-render.
   return (
     <>
-      {scriptStatus === "loading" && (
-        <div className="vendi-input" style={{ color: "rgba(247,245,240,0.4)", display: "flex", alignItems: "center" }}>
-          Caricamento suggerimenti...
-        </div>
-      )}
-      <div
-        ref={containerRef}
-        style={{ width: "100%", display: scriptStatus === "ready" ? "block" : "none" }}
+      <input
+        ref={inputRef}
+        className="vendi-input"
+        type="text"
+        placeholder={scriptStatus === "ready" ? "Inizia a digitare via, città..." : "Caricamento suggerimenti..."}
+        disabled={scriptStatus !== "ready"}
+        onChange={handleInputChange}
+        autoComplete="off"
       />
       <div style={{ fontSize: "0.7rem", color: "rgba(247,245,240,0.35)", marginTop: "0.4rem" }}>
         Powered by Google — i suggerimenti arrivano dai server Google Maps.

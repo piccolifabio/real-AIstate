@@ -1,5 +1,5 @@
 # RealAIstate — Stato del progetto
-Aggiornato: 10/05/2026 (settimana 7 — batch 2 + 7 post-fix Places API New: chat AI anonimo invita registrazione, nome/cognome separati, documenti minimi su tutti gli immobili, Google Places Autocomplete in /vendi migrato a `<gmp-place-autocomplete>` con upgrade-readiness via `importLibrary('places')` + polling per gap di attachment post-onload + creazione PROGRAMMATICA del custom element via `document.createElement` post-importLibrary — diagnosi definitiva: i tag JSX dichiarativi `<gmp-place-autocomplete>` restano stub `shadowRoot:null` perché i Web Components non si auto-upgradano retroattivamente)
+Aggiornato: 10/05/2026 (settimana 7 — batch 2 + 7 post-fix Places API New + ROLLBACK ottavo fix a Places API legacy: chat AI anonimo invita registrazione, nome/cognome separati, documenti minimi su tutti gli immobili, Google Places Autocomplete in /vendi tornato a `google.maps.places.Autocomplete` legacy su `<input>` HTML standard dopo che 7 fix sul Web Component `<gmp-place-autocomplete>` non hanno risolto edge case di upgrade-readiness in Vite + React)
 
 ## Stack
 - Frontend: React + Vite, deploy su Vercel
@@ -767,119 +767,72 @@ come function. Bug logico di timing.
   - Build pulita, schema DB invariato, UX invariata. Branch
     `fix/places-importlibrary-polling`.
 
-### Settimana 7 — batch 2 seventh-fix ✅ — completata 10/05/2026 (creazione PROGRAMMATICA del custom element)
-Anche dopo il sixth-fix (polling di `importLibrary` + tutti i gate
-asincroni risolti), in produzione il custom element restava inerte:
-`document.querySelector('gmp-place-autocomplete')?.shadowRoot === false`,
-`childrenCount === 0`, dropdown mai mostrato. Diagnostica chirurgica
-del founder in console su `realaistate.ai/vendi` step 1 (post-deploy
-sixth-fix, hard refresh, produzione):
+### Settimana 7 — batch 2 — rollback a Places API legacy ✅ — completata 10/05/2026 (ottavo fix)
+Dopo 7 fix consecutivi sul Web Component `<gmp-place-autocomplete>` (Places
+API New) — migration legacy→New, mount race, Place Type `address`→
+`street_address`, JSX vs `new+appendChild`, `importLibrary` upgrade-readiness,
+polling sul gap `script.onload`→`importLibrary`, e tutti i corollari — in
+produzione restavano edge case di upgrade-readiness non risolti col setup
+Vite + React + custom element via `loading=async + importLibrary`. Decisione
+di prodotto: ABBANDONARE Places API New per l'MVP e tornare al pattern
+`google.maps.places.Autocomplete` legacy su `<input>` HTML standard. Il
+founder ha abilitato la Places API legacy sul progetto Google Cloud
+RealAIstate (ora ci sono 4 API attive: Maps Embed, Maps JavaScript, Places
+API New, Places API legacy).
 
-```
-Step 1: importLibrary type = function
-Step 2: importLibrary result = {PlacesServiceStatus, PlacesService,
-        AutocompleteService, AutocompleteSessionToken, Autocomplete,
-        PlaceAutocompleteElement, ...}
-Step 3: PlaceAutocompleteElement in result = TRUE
-Step 4: whenDefined resolved
-Step 5: shadowRoot now = FALSE  ← ANCORA FALSE!
-Step 6: childrenCount now = 0   ← ZERO
-```
-
-Anche DOPO che `importLibrary('places')` ritorna l'oggetto completo con
-`PlaceAutocompleteElement` E DOPO che `customElements.whenDefined`
-risolve, il tag `<gmp-place-autocomplete>` già nel DOM ha
-`shadowRoot=false`. Cioè NON viene retroattivamente upgraded.
-
-- [x] **Causa root: i Web Components non si auto-upgradano retroattivamente** ✅
-  - Comportamento standard W3C Custom Elements: se il browser ha
-    incontrato un custom element come `HTMLUnknownElement` (perché la
-    classe non era completamente registrata quando il parser/React ha
-    visto il tag), quel particolare elemento NON si auto-upgrade dopo.
-    Solo elementi NUOVI creati post-registrazione vengono upgraded.
-  - I sei fix precedenti (legacy → New, mount race, types, JSX,
-    importLibrary, polling) hanno tutti usato il pattern JSX dichiarativo
-    `{scriptStatus === "ready" && <gmp-place-autocomplete ref={...}>}`.
-    Il problema è che React, anche con il gate `scriptStatus="ready"`,
-    può inserire il tag nel DOM in uno stato intermedio invisibile in
-    cui `customElements.get('gmp-place-autocomplete')` ritorna una stub
-    class che soddisfa `whenDefined` ma il cui `connectedCallback` non
-    è ancora completamente initialized → l'elemento finisce stub e non
-    si recupera mai.
-  - L'evidenza è oggettiva: `importLibrary` ritornato OK + `whenDefined`
-    risolto + `PlaceAutocompleteElement` truthy nell'oggetto + tag nel
-    DOM → MA `shadowRoot:false`. Solo l'auto-upgrade retroattivo
-    spiegherebbe la discrepanza, e quel meccanismo non esiste nei
-    Web Components.
-
-- [x] **Fix definitivo: createElement programmatico DOPO importLibrary** ✅
-  - `AddressAutocomplete` riscritto: il tag `<gmp-place-autocomplete>` NON
-    è più renderizzato come JSX. Il render JSX espone solo un
-    `<div ref={containerRef}>` vuoto come slot dove iniettare l'elemento
-    programmaticamente.
-  - Singolo `useEffect` (deps `[apiKey]`) esegue in sequenza atomica:
-    1. `loadGoogleMapsScript`
-    2. `waitForImportLibrary` (polling)
-    3. `importLibrary("places")`
-    4. `whenDefined("gmp-place-autocomplete")`
-    5. `document.createElement("gmp-place-autocomplete")` — CHIAVE: il
-       browser usa la classe registrata (completa) per istanziare,
-       l'elemento nasce upgrade-ready
-    6. set di `setAttribute("placeholder", ...)`, property array
-       (`includedRegionCodes`, `includedPrimaryTypes`), CSS variables
-    7. `addEventListener("gmp-select", ...)` + `addEventListener("input", ...)`
-    8. `containerRef.current.innerHTML = ""` (difensivo per StrictMode/re-mount)
-    9. `containerRef.current.appendChild(el)` → `connectedCallback`
-       attacca lo shadow root perché la classe è completa
-    10. `setScriptStatus("ready")` → React rimuove il placeholder loading
-        e mostra il container (display:block)
-  - Cleanup: `removeEventListener` + `parentNode.removeChild(el)` su
-    unmount/re-mount. Il flag `mounted` previene set state dopo unmount
-    durante l'async pre-creazione.
-  - Container SEMPRE renderizzato (anche durante loading) con
-    `display: scriptStatus === "ready" ? "block" : "none"`: garantisce
-    che `containerRef.current` sia disponibile prima dell'`appendChild`
-    nell'effect. Il placeholder "Caricamento suggerimenti..." è un
-    sibling separato, non figlio del container. Critico: React non ha
-    mai figli JSX dentro al container, quindi non tocca il custom
-    element iniettato programmaticamente attraverso i re-render.
-  - Il tasto "Cambia" funziona automaticamente senza modifiche:
-    quando `addressVerified` flippa true→false, il parent monta una
-    nuova istanza di `AddressAutocomplete` (la vecchia era stata
-    unmountata quando verified→true). Il nuovo mount esegue il flow
-    completo, `loadGoogleMapsScript` ritorna immediatamente
-    (script già attached), `importLibrary` cache hit, createElement
-    crea un NUOVO elemento upgrade-ready, append.
-
-- [x] **Verifica post-fix attesa in console (post-deploy seventh-fix)** ✅
-  - Dopo 2-3 secondi dal load di /vendi:
-    - `document.querySelector('gmp-place-autocomplete')?.shadowRoot`
-      deve essere TRUE (era false in tutti i 6 fix precedenti)
-    - Digitando "via roma milano" deve apparire il dropdown
-    - `aria-expanded` deve diventare `'true'` quando dropdown aperto
-  - Se ancora false, il prossimo step sarà testare il fallback
-    `innerHTML = '<gmp-place-autocomplete ...>'` — equivalente
-    funzionale, ma il parsing innerHTML processa la registry custom
-    elements in modo leggermente diverso da createElement; in caso
-    estremo può aiutare. Pattern già documentato come alternativa nel
-    commento sopra `AddressAutocomplete`.
-
-- [x] **Memo tecnico definitivo (per qualunque feature futura con Web Components)** ✅
-  - **NON usare JSX dichiarativo per Web Components caricati
-    asincronicamente.** Anche con gate sull'`whenDefined`, l'elemento
-    può finire stub (HTMLUnknownElement-like) e non si recupera.
-  - **Pattern obbligatorio**: `useRef` su un container vuoto + dentro
-    un effect `await whatever-async + document.createElement(tag) +
-    set props + appendChild`. Il framework React deve solo tenere
-    in vita il container.
-  - **Cleanup richiesto**: removeEventListener + removeChild
-    nell'effect cleanup, altrimenti su re-mount/StrictMode si
-    accumulano elementi e listener.
-  - **Container sempre montato**: usare `display: none` per nasconderlo
-    durante il loading invece di renderizzazione condizionale, così
-    il ref è stabile e l'effect può iniettare appena pronto.
-  - Branch `fix/places-autocomplete-programmatic`. Build pulita,
-    schema DB invariato, UX invariata.
+- [x] **Rollback completo a `google.maps.places.Autocomplete` legacy** ✅
+  - **Razionale**: il pattern legacy è documentato in 100k tutorial dal
+    2020 ed è usato da milioni di siti senza edge case noti. Google ha
+    annunciato deprecation ma supporto operativo fino al 2027+ (ampio
+    margine per la finestra MVP/pre-PMF). Il refactor a Places API New
+    si riprenderà in futuro quando arriverà un wrapper React-friendly
+    maturo (es. `@vis.gl/react-google-maps`) o quando si avvicinerà la
+    sunset reale.
+  - **VendiForm.jsx — codice rimosso**:
+    - `waitForImportLibrary` (polling 50ms/3s su `importLibrary` attached)
+    - Tutti i riferimenti a `google.maps.importLibrary("places")`
+    - `customElements.whenDefined("gmp-place-autocomplete")`
+    - Listener `gmp-select` con `event.placePrediction.toPlace()` +
+      `place.fetchFields({ fields: [...] })`
+    - Tag JSX `<gmp-place-autocomplete>` con CSS variables `--gmp-mat-*`
+    - Mount programmatico con container ref + property dinamiche array
+    - Effect split (1: load script, 2: configure picker)
+    - Parsing camelCase `addressComponents` con `longText`/`shortText`
+  - **VendiForm.jsx — codice aggiunto**:
+    - `loadGoogleMapsScript`: URL legacy classico
+      `https://maps.googleapis.com/maps/api/js?key=KEY&libraries=places&language=it`
+      (niente `loading=async`, niente `v=weekly`).
+    - Check "già caricato": `typeof google.maps.places.Autocomplete ===
+      'function'` (la classe Autocomplete è il segnale di readiness).
+    - `parsePlace` riscritto per struttura legacy:
+      `address_components` (snake_case) con `long_name`/`short_name`/`types`,
+      `place.geometry.location.lat()/lng()` (funzioni sul LatLng object),
+      `place.formatted_address`.
+    - `AddressAutocomplete` riscritto: `useRef` su `<input className="vendi-input">`
+      HTML standard. Effect istanzia
+      `new google.maps.places.Autocomplete(inputRef.current, {
+        componentRestrictions: { country: 'it' },
+        types: ['address'],
+        fields: ['address_components', 'formatted_address', 'geometry']
+      })` e aggancia listener `place_changed` che chiama
+      `autocomplete.getPlace()` → `parsePlace()` → `onSelect`.
+      Cleanup: `google.maps.event.removeListener(listener)`.
+    - Callback in ref (`onSelectRef`/`onUserTypeRef`) per usare valori
+      freschi nel listener senza ri-agganciarlo ad ogni render.
+    - `onChange` su input chiama `onUserType` (alimenta `addressTouched`
+      come prima).
+  - **UX invariata**: riquadro verde "✓ Indirizzo verificato" con cap+
+    città+provincia, bottone "Cambia" che resetta selezione, validazione
+    `canProceed` step 0 richiede `addressVerified`, errore inline
+    "Seleziona un indirizzo dai suggerimenti", disclaimer "Powered by
+    Google" sotto.
+  - **Schema DB invariato**: cap/citta/provincia/latitudine/longitudine
+    già presenti da migration `2026-05-10-add-address-fields.sql`.
+  - **api/vendi-submit.js invariato**: già accetta i campi indirizzo
+    strutturati (validazione 400 se cap/citta/provincia mancanti).
+  - **src/Immobile.jsx invariato**: nessuna modifica al rendering.
+  - Build pulita (`vite build` 1.73s, 0 errori, 0 nuovi warning). Branch
+    `rollback/places-api-legacy`.
 
 ## File chiave
 - src/HomePage.jsx — home page con Nav e CTA
@@ -897,16 +850,14 @@ risolve, il tag `<gmp-place-autocomplete>` già nel DOM ha
   Conferma email in signup; legge ?redirect= post-login con open-redirect protection)
 - src/ProtectedRoute.jsx — gate auth, propaga destination come ?redirect=
 - src/VendiForm.jsx — form 5 step con auth gate, salva immobile draft + lead.
-  Step 1 indirizzo via Places API (New) `<gmp-place-autocomplete>` Web
-  Component nativo, creato PROGRAMMATICAMENTE via `document.createElement`
-  DOPO `importLibrary('places')` per garantire upgrade-readiness (i Web
-  Components NON si auto-upgradano retroattivamente: il pattern JSX
-  dichiarativo lascia il tag stub `shadowRoot:null`, vedi seventh-fix).
-  Property array (`includedRegionCodes: ['it']`,
-  `includedPrimaryTypes: ['street_address']`) settate prima
-  dell'appendChild → popola indirizzo+cap+città+provincia+zona+lat/lng.
-  Step 4 contatti pre-popola nome+cognome separati ed email da user;
-  email read-only; conferma email obbligatoria; cognome obbligatorio
+  Step 1 indirizzo via Places API LEGACY `google.maps.places.Autocomplete`
+  su `<input>` HTML standard (`componentRestrictions: { country: 'it' }`,
+  `types: ['address']`, `fields: ['address_components', 'formatted_address',
+  'geometry']`) — popola indirizzo+cap+città+provincia+zona+lat/lng.
+  Rollback 10/05/2026 ottavo fix dopo 7 fix falliti sulla Places API New
+  Web Component. Step 4 contatti pre-popola nome+cognome separati ed
+  email da user; email read-only; conferma email obbligatoria; cognome
+  obbligatorio
 - src/Admin.jsx — pannello admin con tab Pubblicazioni | Scuse, bottoni
   Approva/Rifiuta sugli immobili pending_review
 - src/AuthContext.jsx — gestione sessione + signUp(email, password, nome, cognome)
@@ -1137,24 +1088,32 @@ risolve, il tag `<gmp-place-autocomplete>` già nel DOM ha
   one-shot in /migrations/2026-05-10-split-nome-cognome.sql (idempotente,
   fallback runtime nel frontend per utenti pre-migrazione).
 - **Indirizzo immobile = struttura, non testo libero** (decisione 10/05/2026
-  batch 2 task 2.D, refactor post-fix 10/05/2026). /vendi step 1 usa la
-  **Places API (New)** ufficiale Google via `PlaceAutocompleteElement`
-  (Web Component `<gmp-place-autocomplete>`) per popolare
-  cap/citta/provincia/zona/lat/lng come campi DB strutturati. Razionale:
+  batch 2 task 2.D, ROLLBACK ottavo fix 10/05/2026). /vendi step 1 usa la
+  **Places API legacy** Google via `google.maps.places.Autocomplete` su un
+  `<input>` HTML standard per popolare cap/citta/provincia/zona/lat/lng come
+  campi DB strutturati. Razionale di prodotto:
   (a) impossibile pubblicare immobili con indirizzi inventati o errati;
   (b) FPS dinamico futuro avrà bisogno di geocoding preciso;
   (c) ricerca per zona / mappa centrata richiedono lat/lng;
   (d) il rendering della scheda mostra "Via X, CAP Città (Prov)" pulito.
+  Razionale tecnico (rollback): la Places API legacy funziona stabile,
+  la deprecation Google è annunciata ma il supporto è operativo fino al
+  2027+. Il progetto Google Cloud RealAIstate ha 4 API attive: Maps Embed,
+  Maps JavaScript, Places API New, Places API legacy (l'ultima abilitata
+  10/05/2026 dopo che 7 fix sulla New non hanno risolto edge case di
+  upgrade-readiness in Vite + React).
   Validazione frontend (canProceed step 0 richiede addressVerified) +
   validazione server-side (vendi-submit rifiuta 400 se cap/citta/provincia
   mancanti). Niente nuove dipendenze npm — script Maps JS API caricato
-  dinamicamente con la stessa key VITE_GOOGLE_MAPS_KEY già usata per
-  Maps Embed. Restrizione paese `includedRegionCodes: ['it']`, tipo
-  `includedPrimaryTypes: ['street_address']` (esclude POI; NB: NON
-  `'address'` che è valore legacy non valido nella API New, lezione
-  10/05). **NON usare la legacy `google.maps.places.Autocomplete`**:
-  il progetto Google Cloud RealAIstate ha solo la Places API (New)
-  abilitata, la legacy non è più disponibile per nuovi customer.
+  dinamicamente con la stessa key VITE_GOOGLE_MAPS_KEY già usata per Maps
+  Embed. URL legacy classico
+  `https://maps.googleapis.com/maps/api/js?key=KEY&libraries=places&language=it`,
+  niente `loading=async`. Restrizioni:
+  `componentRestrictions: { country: 'it' }`, `types: ['address']`,
+  `fields: ['address_components', 'formatted_address', 'geometry']`.
+  Migration alla Places API New riconsiderata in futuro con wrapper
+  React-friendly (`@vis.gl/react-google-maps`) quando sarà più maturo,
+  oppure quando arriverà sunset reale.
 - **Sezione Documenti = sempre visibile su immobili published** (decisione
   10/05/2026 batch 2 task 2.C). Capecelatro mostra la lista hardcoded di
   6 documenti verificati (demo). Altri immobili mostrano solo Template
@@ -1429,6 +1388,28 @@ risolve, il tag `<gmp-place-autocomplete>` già nel DOM ha
   flag resta false: difensivo ma non dannoso. Esempio: `forwarded` in
   chat-immobile.js cerca "ho inoltrato la tua domanda al venditore",
   `inviteRegistration` cerca "registrati gratuitamente — bastano 30 secondi".
+- **Places API New + Web Components + Vite + React: evitato per MVP**
+  (lezione 10/05/2026, rollback ottavo fix batch 2). 7 fix consecutivi
+  sul Web Component `<gmp-place-autocomplete>` non hanno risolto edge
+  case di upgrade-readiness in produzione: `shadowRoot:null` nonostante
+  `whenDefined` risolto, microtask gap su `importLibrary` post-`onload`,
+  race tra mount JSX e `connectedCallback`, listbox dei suggerimenti
+  che non viene mai renderizzato anche con Network 200 e classe
+  registrata. La combo Vite + React 18 + custom element esterno via
+  bootstrap async ha più punti di rottura (lifecycle Web Component,
+  upgrade-readiness, microtask timing, refs vs JSX) di quanto valga la
+  pena debuggare per un MVP. **Soluzione adottata**: Places API
+  legacy `google.maps.places.Autocomplete` su `<input>` HTML normale —
+  pattern documentato 2020-2024, stabile, niente custom element,
+  niente shadow DOM, niente race condition. **Riprovare la Places API
+  New solo quando**: (a) esce un wrapper React ufficiale o quasi-ufficiale
+  con esempi maturi (es. `@vis.gl/react-google-maps` con supporto
+  PlaceAutocompleteElement nativo), oppure (b) Google annuncia una data
+  sunset concreta per la legacy che obblighi a migrare. Fino a quel
+  momento, considerare il Web Component `<gmp-place-autocomplete>` come
+  sotto-supportato per l'integrazione React/Vite. Non riaprire la
+  questione "ottimizziamo" o "passiamo a quella nuova" senza un
+  trigger reale dei due punti sopra.
 - **Default Vercel/Vite: il rimount di un componente svuota i refs**. Quando
   un sibling React swappa (es. ternario `addressVerified ? Box : <Autocomplete />`),
   il componente Autocomplete viene smontato/rimontato. `useRef` parte fresh
