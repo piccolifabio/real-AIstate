@@ -639,8 +639,7 @@ export default function VendiForm() {
                   <option value="">Seleziona...</option>
                   <option>Appartamento</option><option>Villa</option>
                   <option>Villetta a schiera</option><option>Attico</option>
-                  <option>Loft</option><option>Monolocale</option>
-                  <option>Bilocale</option><option>Altro</option>
+                  <option>Loft</option><option>Altro</option>
                 </select>
               </div>
             </div>
