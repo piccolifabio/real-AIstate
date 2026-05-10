@@ -1,5 +1,5 @@
 # RealAIstate — Stato del progetto
-Aggiornato: 10/05/2026 (settimana 7 — batch 2 + post-fix Places API New + post-post-fix mount: chat AI anonimo invita registrazione, nome/cognome separati, documenti minimi su tutti gli immobili, Google Places Autocomplete in /vendi migrato a PlaceAutocompleteElement con attesa whenDefined)
+Aggiornato: 10/05/2026 (settimana 7 — batch 2 + post-fix Places API New + post-post-fix mount + post-post-post-fix types: chat AI anonimo invita registrazione, nome/cognome separati, documenti minimi su tutti gli immobili, Google Places Autocomplete in /vendi migrato a PlaceAutocompleteElement con includedPrimaryTypes='street_address')
 
 ## Stack
 - Frontend: React + Vite, deploy su Vercel
@@ -618,6 +618,20 @@ Diagnostica founder in incognito: SDK + custom element + classe
       solo il messaggio utente, debug impossibile.
   - Schema DB invariato. UX invariata. Build pulita.
 
+### Settimana 7 — batch 2 post-post-post-fix ✅ — completata 10/05/2026 (Place Type 'address' invalido)
+Dopo il fix mount, in produzione si vedeva un errore HTTP 400 dalla
+Places API New: *"Invalid included_primary_types 'address'. See list
+of supported types"*. La causa: il valore `'address'` (legacy
+`types: ['address']` del classico Autocomplete) NON è un Place Type
+valido nella tabella ufficiale Places API (New). Il corrispondente
+per indirizzi stradali è `'street_address'`.
+
+- [x] **`includedPrimaryTypes` legacy `['address']` → `['street_address']`** ✅
+  - Singola riga cambiata in `AddressAutocomplete` (VendiForm.jsx).
+  - Aggiornato il commento inline col link alla tabella ufficiale
+    Place Types e nota che `'address'` era valore legacy.
+  - Build pulita, schema DB invariato, UX invariata.
+
 ## File chiave
 - src/HomePage.jsx — home page con Nav e CTA
 - src/ScusePage.jsx — pagina scuse separata
@@ -636,7 +650,7 @@ Diagnostica founder in incognito: SDK + custom element + classe
 - src/VendiForm.jsx — form 5 step con auth gate, salva immobile draft + lead.
   Step 1 indirizzo via Places API (New) `<gmp-place-autocomplete>` Web
   Component nativo (`includedRegionCodes: ['it']`,
-  `includedPrimaryTypes: ['address']`) — popola
+  `includedPrimaryTypes: ['street_address']`) — popola
   indirizzo+cap+città+provincia+zona+lat/lng. Step 4 contatti pre-popola
   nome+cognome separati ed email da user; email read-only; conferma email
   obbligatoria; cognome obbligatorio
@@ -883,10 +897,11 @@ Diagnostica founder in incognito: SDK + custom element + classe
   mancanti). Niente nuove dipendenze npm — script Maps JS API caricato
   dinamicamente con la stessa key VITE_GOOGLE_MAPS_KEY già usata per
   Maps Embed. Restrizione paese `includedRegionCodes: ['it']`, tipo
-  `includedPrimaryTypes: ['address']` (esclude POI). **NON usare la
-  legacy `google.maps.places.Autocomplete`**: il progetto Google Cloud
-  RealAIstate ha solo la Places API (New) abilitata, la legacy non è
-  più disponibile per nuovi customer.
+  `includedPrimaryTypes: ['street_address']` (esclude POI; NB: NON
+  `'address'` che è valore legacy non valido nella API New, lezione
+  10/05). **NON usare la legacy `google.maps.places.Autocomplete`**:
+  il progetto Google Cloud RealAIstate ha solo la Places API (New)
+  abilitata, la legacy non è più disponibile per nuovi customer.
 - **Sezione Documenti = sempre visibile su immobili published** (decisione
   10/05/2026 batch 2 task 2.C). Capecelatro mostra la lista hardcoded di
   6 documenti verificati (demo). Altri immobili mostrano solo Template
@@ -1035,8 +1050,10 @@ Diagnostica founder in incognito: SDK + custom element + classe
   → **non usarla**. La soluzione corretta è il Web Component nativo
   Google `<gmp-place-autocomplete>` (`PlaceAutocompleteElement`).
   Pattern inizializzazione: `new PlaceAutocompleteElement({
-  includedRegionCodes: ['it'], includedPrimaryTypes: ['address'] })` +
-  `appendChild`. Evento `gmp-select` (NON `place_changed`) →
+  includedRegionCodes: ['it'], includedPrimaryTypes: ['street_address'] })`
+  + `appendChild`. **Attenzione**: `'address'` (valore legacy) NON è
+  un Place Type valido nella API New e fa fallire la chiamata con
+  HTTP 400. Evento `gmp-select` (NON `place_changed`) →
   `event.placePrediction.toPlace()` ritorna un Place vuoto: chiamare
   `await place.fetchFields({ fields: ['formattedAddress',
   'addressComponents', 'location'] })` PRIMA di leggere i campi.
@@ -1045,6 +1062,21 @@ Diagnostica founder in incognito: SDK + custom element + classe
   `long_name`/`short_name`. `place.location.lat()/lng()` sono ancora
   funzioni. Styling: shadow DOM CHIUSO (no `::part`), solo CSS
   variables Material `--gmp-mat-color-*` e `--gmp-mat-font-*` esposte.
+- **Place Types Places API (New) NON sono i `types` legacy** (lezione
+  10/05/2026, post-post-post-fix batch 2). Nel classico
+  `google.maps.places.Autocomplete` si passava `types: ['address']`
+  per filtrare solo indirizzi. Nella Places API (New) il valore
+  `'address'` NON esiste e l'API risponde con HTTP 400
+  *"Invalid included_primary_types 'address'. See list of supported
+  types"*. Il valore corretto è `'street_address'` (Table 2 — Other).
+  Stessa cosa per altri filtri: i Place Types validi sono solo quelli
+  delle tabelle 1-3 alla
+  [docs ufficiale](https://developers.google.com/maps/documentation/places/web-service/place-types)
+  (es. `restaurant`, `lodging`, `geocode`, `country`, `locality`,
+  `street_address`). `includedPrimaryTypes` accetta un array di questi
+  valori; un valore non riconosciuto fa fallire TUTTA la chiamata
+  autocomplete (non solo quel filtro). Quando si migra dalla legacy,
+  rivedere SEMPRE i nomi dei types.
 - **`&libraries=places` + `&loading=async` = combinazione conflittuale**
   (lezione 10/05/2026, post-post-fix batch 2). I due parametri sullo
   script `https://maps.googleapis.com/maps/api/js?...` sono mutualmente

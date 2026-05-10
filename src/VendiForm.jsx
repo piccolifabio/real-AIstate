@@ -293,9 +293,14 @@ function AddressAutocomplete({ apiKey, onSelect, onUserType }) {
           // Restrizione paese (Italia) — equivalente al vecchio
           // componentRestrictions: { country: 'it' }.
           includedRegionCodes: ["it"],
-          // Solo indirizzi (esclude POI, business, ecc.) — equivalente al
-          // vecchio types: ['address'].
-          includedPrimaryTypes: ["address"],
+          // Solo indirizzi stradali (esclude POI, business, ecc.).
+          // ATTENZIONE: nella Places API (New) il valore legacy 'address'
+          // NON è valido (provato in prod 10/05: 400
+          // "Invalid included_primary_types 'address'"). Il corrispondente
+          // Place Type ufficiale per indirizzi è 'street_address'. Vedi
+          // tabella supported types:
+          // https://developers.google.com/maps/documentation/places/web-service/place-types
+          includedPrimaryTypes: ["street_address"],
         });
         pickerEl.placeholder = "Inizia a digitare via, città...";
         // Hint per allargare l'elemento al 100% del container parent.
