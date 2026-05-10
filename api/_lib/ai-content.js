@@ -14,12 +14,27 @@ REGOLE INDEROGABILI:
 - NON calcolare il Fair Price Score, NON valutare se il prezzo è giusto, NON citare range OMI o €/mq di mercato. Quello è compito di un agente separato che lavora sui dati OMI ufficiali.
 - Resta strettamente descrittivo: racconta cosa offre l'immobile, NON giudicare il prezzo.
 - Italiano impeccabile. Tono asciutto, fattuale, leggermente caldo. Mai frasi fatte da agenzia ("imperdibile", "occasione unica", "splendido").
-- Lunghezza ai_summary: 80-130 parole.
-- 4-6 punti di forza, ognuno una frase concreta basata sui dati forniti. Mai vaghi tipo "ottima posizione".
-- 3-5 domande consigliate per il compratore in vista della visita. Pratiche, specifiche all'immobile (condominio, ristrutturazione, impianti, spese), non generiche.
+- USA SOLO i dati che ti vengono forniti. NON aggiungere caratteristiche che non sono nei dati (es. NON scrivere "garage" o "terrazzino" se quei campi non sono presenti o sono null/false). NON inventare. Se un dato manca, ignoralo: non riempirlo con valori plausibili.
+
+REGOLE titolo:
+- Max 60 caratteri.
+- Descrivi SOLO le caratteristiche reali presenti nei dati. Esempi accettabili: "Bilocale ristrutturato in zona X", "Appartamento di 67mq, 2° piano", "Trilocale luminoso con balcone" (solo se balcone è nei dati).
+- NON usare "garage", "terrazzo", "giardino", "ascensore" e simili a meno che non siano presenti e veri nei dati.
+- Se i dati non hanno caratteristiche distintive, usa un titolo neutro: "Appartamento ristrutturato", "{tipologia} in {zona}", "{n} locali in zona {zona}".
+- Niente superlativi vuoti ("splendido", "incredibile", "esclusivo").
+
+REGOLE ai_summary:
+- Lunghezza 80-130 parole.
+
+REGOLE punti_forza:
+- 4-6 punti, ognuno una frase concreta basata sui dati forniti. Mai vaghi tipo "ottima posizione".
+
+REGOLE domande_consigliate:
+- 3-5 domande per il compratore in vista della visita. Pratiche, specifiche all'immobile (condominio, ristrutturazione, impianti, spese), non generiche.
 
 OUTPUT: SOLO un oggetto JSON valido con questa shape, senza markdown, senza commenti, senza altro testo:
 {
+  "titolo": "stringa",
   "ai_summary": "stringa",
   "punti_forza": ["stringa", "stringa", ...],
   "domande_consigliate": ["stringa", "stringa", ...]
@@ -63,7 +78,7 @@ export async function generateAndSaveImmobileAI(immobile) {
 
 ${JSON.stringify(datiImmobile, null, 2)}
 
-Genera ai_summary, punti_forza, domande_consigliate seguendo le regole.`;
+Genera titolo, ai_summary, punti_forza, domande_consigliate seguendo le regole.`;
 
   const aiRes = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -92,7 +107,7 @@ Genera ai_summary, punti_forza, domande_consigliate seguendo le regole.`;
   const cleaned = text.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```\s*$/i, "").trim();
   const payload = JSON.parse(cleaned);
 
-  if (!payload.ai_summary || !Array.isArray(payload.punti_forza) || !Array.isArray(payload.domande_consigliate)) {
+  if (!payload.titolo || !payload.ai_summary || !Array.isArray(payload.punti_forza) || !Array.isArray(payload.domande_consigliate)) {
     throw new Error("Shape AI invalida");
   }
 
@@ -107,6 +122,7 @@ Genera ai_summary, punti_forza, domande_consigliate seguendo le regole.`;
         Prefer: "return=minimal",
       },
       body: JSON.stringify({
+        titolo: payload.titolo,
         ai_summary: payload.ai_summary,
         punti_forza: payload.punti_forza,
         domande_consigliate: payload.domande_consigliate,

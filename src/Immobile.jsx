@@ -338,7 +338,7 @@ function PropostaModal({ immobile, onClose }) {
         ) : (
           <>
             <div style={{ fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#d93025', marginBottom: '0.5rem' }}>Proposta d&apos;acquisto</div>
-            <h2 style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: '1.8rem', color: '#f7f5f0', marginBottom: '0.3rem', lineHeight: 1 }}>{immobile.titolo}</h2>
+            <h2 style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: '1.8rem', color: '#f7f5f0', marginBottom: '0.3rem', lineHeight: 1 }}>{immobile.titolo || immobile.indirizzo}</h2>
             <p style={{ fontSize: '0.82rem', color: 'rgba(247,245,240,0.4)', marginBottom: '2rem' }}>Prezzo richiesto: €{immobile.prezzo.toLocaleString('it-IT')}</p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
@@ -640,7 +640,13 @@ export default function ImmobilePage() {
     ...IMMOBILE_FALLBACK,
     ...(immobileDb && {
       id: immobileDb.id,
-      titolo: immobileDb.titolo ?? IMMOBILE_FALLBACK.titolo,
+      // titolo: NIENTE fallback hardcoded — IMMOBILE_FALLBACK.titolo
+      // ("Appartamento con garage e terrazzino") leakava su qualsiasi
+      // immobile con titolo=null in DB (walkthrough 10/05 batch 1.5).
+      // Se il DB non ha titolo (es. immobile non ancora pubblicato e
+      // quindi non passato per la AI gen), il render usa l'indirizzo
+      // come fallback. Dopo l'approvazione admin, l'AI compila titolo.
+      titolo: immobileDb.titolo ?? null,
       indirizzo: immobileDb.indirizzo ?? IMMOBILE_FALLBACK.indirizzo,
       zona: immobileDb.zona ?? IMMOBILE_FALLBACK.zona,
       prezzo: immobileDb.prezzo ?? IMMOBILE_FALLBACK.prezzo,
@@ -794,7 +800,7 @@ export default function ImmobilePage() {
           {/* HEADER */}
           <div className="prop-header">
             <div className="prop-location">📍 {immobile.zona}</div>
-            <h1 className="prop-title">{immobile.titolo}</h1>
+            <h1 className="prop-title">{immobile.titolo || immobile.indirizzo}</h1>
             <div style={{ fontSize: "0.85rem", color: "var(--muted)", marginBottom: "1rem" }}>{immobile.indirizzo}</div>
             <div className="prop-price">€ {immobile.prezzo.toLocaleString("it-IT")}</div>
             <div className="prop-price-sub">€ {Math.round(immobile.prezzo / immobile.superficie_catastale).toLocaleString("it-IT")} / m² · Spese cond. €{immobile.spese_condominio}/mese</div>

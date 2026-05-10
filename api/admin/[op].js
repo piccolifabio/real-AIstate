@@ -181,6 +181,7 @@ async function pubblicaImmobile(req, res, env) {
 
     // AI fill se mancante (errore non blocca pubblicazione)
     const aiMissing =
+      !immobile.titolo ||
       !immobile.ai_summary ||
       !Array.isArray(immobile.punti_forza) || immobile.punti_forza.length === 0 ||
       !Array.isArray(immobile.domande_consigliate) || immobile.domande_consigliate.length === 0;
