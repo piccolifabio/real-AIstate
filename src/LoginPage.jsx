@@ -19,15 +19,16 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [confirmEmail, setConfirmEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [fullName, setFullName] = useState('')
+  const [nome, setNome] = useState('')
+  const [cognome, setCognome] = useState('')
   const [status, setStatus] = useState('idle')
   const [error, setError] = useState('')
 
   const handle = async () => {
     if (!email || !password) return
     if (mode === 'register') {
-      if (!fullName.trim()) {
-        setError('Inserisci il tuo nome e cognome')
+      if (!nome.trim() || !cognome.trim()) {
+        setError('Inserisci nome e cognome')
         return
       }
       if (email.trim().toLowerCase() !== confirmEmail.trim().toLowerCase()) {
@@ -39,7 +40,7 @@ export default function LoginPage() {
     setError('')
     const { error } = mode === 'login'
       ? await signIn(email, password)
-      : await signUp(email, password, fullName.trim())
+      : await signUp(email, password, nome.trim(), cognome.trim())
     if (error) {
       setError(error.message)
       setStatus('idle')
@@ -66,6 +67,12 @@ export default function LoginPage() {
   }
 
   return (
+    <>
+    <style>{`
+      @media (max-width: 480px) {
+        .login-name-row { flex-direction: column; gap: 0 !important; }
+      }
+    `}</style>
     <div style={{
       minHeight: '100vh', background: '#0a0a0a', display: 'flex',
       alignItems: 'center', justifyContent: 'center', padding: '2rem'
@@ -100,14 +107,24 @@ export default function LoginPage() {
         ) : (
           <>
             {mode === 'register' && (
-              <input
-                type="text"
-                placeholder="Nome e cognome"
-                value={fullName}
-                onChange={e => setFullName(e.target.value)}
-                autoComplete="name"
-                style={inputStyle}
-              />
+              <div className="login-name-row" style={{ display: 'flex', gap: '0.6rem', marginBottom: 0 }}>
+                <input
+                  type="text"
+                  placeholder="Nome"
+                  value={nome}
+                  onChange={e => setNome(e.target.value)}
+                  autoComplete="given-name"
+                  style={{ ...inputStyle, flex: 1 }}
+                />
+                <input
+                  type="text"
+                  placeholder="Cognome"
+                  value={cognome}
+                  onChange={e => setCognome(e.target.value)}
+                  autoComplete="family-name"
+                  style={{ ...inputStyle, flex: 1 }}
+                />
+              </div>
             )}
             <input
               type="email"
@@ -169,5 +186,6 @@ export default function LoginPage() {
         )}
       </div>
     </div>
+    </>
   )
 }

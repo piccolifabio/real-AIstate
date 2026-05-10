@@ -197,11 +197,26 @@ export default function VendiForm() {
     disponibilita: [], note: "",
   });
 
+  // Pre-popolazione step 4 contatti: nome e cognome separati da user_metadata.
+  // Pattern: legge user_metadata.nome / .cognome se presenti (post-migrazione SQL
+  // del 10/05/2026 che splitta full_name nei due campi). Fallback per utenti
+  // pre-migrazione: split di full_name (primo token = nome, resto = cognome).
+  // Setta solo se il campo del form è vuoto: non sovrascrive modifiche manuali.
   useEffect(() => {
     if (!user) return;
+    const meta = user.user_metadata || {};
+    let nome = meta.nome || '';
+    let cognome = meta.cognome || '';
+    if (!nome && !cognome && meta.full_name) {
+      const fn = meta.full_name.trim();
+      const idx = fn.indexOf(' ');
+      nome = idx >= 0 ? fn.slice(0, idx) : fn;
+      cognome = idx >= 0 ? fn.slice(idx + 1).trim() : '';
+    }
     setForm(f => {
       const next = { ...f };
-      if (!f.nome && user.user_metadata?.full_name) next.nome = user.user_metadata.full_name;
+      if (!f.nome && nome) next.nome = nome;
+      if (!f.cognome && cognome) next.cognome = cognome;
       if (!f.email && user.email) next.email = user.email;
       return next;
     });
@@ -284,7 +299,7 @@ export default function VendiForm() {
     if (step === 3) return form.planimetria && form.ape;
     if (step === 4) {
       const emailMatch = form.email_conferma.trim().toLowerCase() === form.email.trim().toLowerCase();
-      return form.nome && form.email && form.email_conferma && emailMatch && form.telefono;
+      return form.nome && form.cognome && form.email && form.email_conferma && emailMatch && form.telefono;
     }
     return true;
   };
@@ -699,7 +714,7 @@ export default function VendiForm() {
                 <input className="vendi-input" placeholder="Mario" value={form.nome} onChange={e => update("nome", e.target.value)} />
               </div>
               <div className="vendi-field">
-                <label className="vendi-label">Cognome</label>
+                <label className="vendi-label">Cognome <span className="req">*</span></label>
                 <input className="vendi-input" placeholder="Rossi" value={form.cognome} onChange={e => update("cognome", e.target.value)} />
               </div>
             </div>

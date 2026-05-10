@@ -6,12 +6,29 @@ import NavBar from './NavBar.jsx'
 import SiteFooter from './SiteFooter.jsx'
 
 export default function AccountPage() {
-  const { user, signOut, updateFullName } = useAuth()
+  const { user, signOut, updateNomeCognome } = useAuth()
   const navigate = useNavigate()
 
-  const currentFullName = user?.user_metadata?.full_name || ''
+  // Nome/cognome dal profilo: dopo la migrazione SQL del 10/05/2026 i campi
+  // user_metadata.nome e .cognome sono popolati per tutti. Per utenti pre-migrazione
+  // o pre-fix il fallback è lo split del vecchio full_name (primo token = nome,
+  // resto = cognome).
+  const meta = user?.user_metadata || {}
+  const fallback = (() => {
+    const f = (meta.full_name || '').trim()
+    if (!f) return { nome: '', cognome: '' }
+    const idx = f.indexOf(' ')
+    return idx >= 0
+      ? { nome: f.slice(0, idx), cognome: f.slice(idx + 1).trim() }
+      : { nome: f, cognome: '' }
+  })()
+  const currentNome = meta.nome ?? fallback.nome
+  const currentCognome = meta.cognome ?? fallback.cognome
+  const currentFullName = `${currentNome} ${currentCognome}`.trim()
+
   const [editing, setEditing] = useState(false)
-  const [nameInput, setNameInput] = useState('')
+  const [nomeInput, setNomeInput] = useState('')
+  const [cognomeInput, setCognomeInput] = useState('')
   const [saving, setSaving] = useState(false)
   const [savedFlash, setSavedFlash] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
@@ -21,8 +38,9 @@ export default function AccountPage() {
   const [loadingProposte, setLoadingProposte] = useState(true)
 
   useEffect(() => {
-    setNameInput(currentFullName)
-  }, [currentFullName])
+    setNomeInput(currentNome)
+    setCognomeInput(currentCognome)
+  }, [currentNome, currentCognome])
 
   useEffect(() => {
     if (user && !currentFullName) setEditing(true)
@@ -49,13 +67,13 @@ export default function AccountPage() {
   }
 
   const handleSaveName = async () => {
-    if (!nameInput.trim()) {
-      setErrorMsg('Il nome non può essere vuoto')
+    if (!nomeInput.trim() || !cognomeInput.trim()) {
+      setErrorMsg('Inserisci sia nome sia cognome')
       return
     }
     setSaving(true)
     setErrorMsg('')
-    const { error } = await updateFullName(nameInput.trim())
+    const { error } = await updateNomeCognome(nomeInput.trim(), cognomeInput.trim())
     setSaving(false)
     if (error) {
       setErrorMsg(error.message || 'Errore salvataggio')
@@ -129,23 +147,39 @@ export default function AccountPage() {
             <>
               {!currentFullName && (
                 <div style={{ fontSize: '0.82rem', color: 'rgba(247,245,240,0.5)', marginBottom: '0.9rem', lineHeight: 1.6 }}>
-                  Aggiungi il tuo nome — verrà usato sui documenti di proposta firmati digitalmente.
+                  Aggiungi nome e cognome — verranno usati sui documenti di proposta firmati digitalmente.
                 </div>
               )}
-              <input
-                type="text"
-                placeholder="Es. Mario Rossi"
-                value={nameInput}
-                onChange={e => setNameInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleSaveName()}
-                autoComplete="name"
-                style={{
-                  width: '100%', padding: '0.8rem 1rem', marginBottom: '0.9rem',
-                  background: 'transparent', border: '1px solid rgba(247,245,240,0.15)',
-                  borderRadius: 2, color: '#f7f5f0', fontSize: '0.9rem',
-                  fontFamily: 'DM Sans, sans-serif', outline: 'none', boxSizing: 'border-box'
-                }}
-              />
+              <div style={{ display: 'flex', gap: '0.6rem', marginBottom: '0.9rem', flexWrap: 'wrap' }}>
+                <input
+                  type="text"
+                  placeholder="Nome"
+                  value={nomeInput}
+                  onChange={e => setNomeInput(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleSaveName()}
+                  autoComplete="given-name"
+                  style={{
+                    flex: '1 1 140px', padding: '0.8rem 1rem',
+                    background: 'transparent', border: '1px solid rgba(247,245,240,0.15)',
+                    borderRadius: 2, color: '#f7f5f0', fontSize: '0.9rem',
+                    fontFamily: 'DM Sans, sans-serif', outline: 'none', boxSizing: 'border-box'
+                  }}
+                />
+                <input
+                  type="text"
+                  placeholder="Cognome"
+                  value={cognomeInput}
+                  onChange={e => setCognomeInput(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleSaveName()}
+                  autoComplete="family-name"
+                  style={{
+                    flex: '1 1 140px', padding: '0.8rem 1rem',
+                    background: 'transparent', border: '1px solid rgba(247,245,240,0.15)',
+                    borderRadius: 2, color: '#f7f5f0', fontSize: '0.9rem',
+                    fontFamily: 'DM Sans, sans-serif', outline: 'none', boxSizing: 'border-box'
+                  }}
+                />
+              </div>
               {errorMsg && (
                 <div style={{ color: '#d93025', fontSize: '0.78rem', marginBottom: '0.8rem' }}>
                   {errorMsg}
@@ -167,7 +201,7 @@ export default function AccountPage() {
                 </button>
                 {currentFullName && (
                   <button
-                    onClick={() => { setEditing(false); setNameInput(currentFullName); setErrorMsg('') }}
+                    onClick={() => { setEditing(false); setNomeInput(currentNome); setCognomeInput(currentCognome); setErrorMsg('') }}
                     style={{
                       background: 'transparent', color: 'rgba(247,245,240,0.4)',
                       border: '1px solid rgba(247,245,240,0.12)', padding: '0.65rem 1.2rem',
