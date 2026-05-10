@@ -50,7 +50,7 @@ const styles = `
 
   /* HERO */
   .hero { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; padding: 8rem 3rem 5rem; position: relative; overflow: hidden; }
-  .hero-bg-number { position: absolute; right: -2rem; top: 50%; transform: translateY(-50%); font-family: 'Bebas Neue', sans-serif; font-size: clamp(200px, 30vw, 420px); color: rgba(217,48,37,0.12); line-height: 1; user-select: none; pointer-events: none; }
+  .hero-bg-number { position: absolute; right: -2rem; top: 50%; transform: translateY(-50%); font-family: 'Bebas Neue', sans-serif; font-size: clamp(200px, 30vw, 420px); color: rgba(217,48,37,0.35); line-height: 1; user-select: none; pointer-events: none; }
   .hero-eyebrow { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--red); margin-bottom: 2rem; display: flex; align-items: center; gap: 0.8rem; }
   .hero-eyebrow::before { content: ''; width: 32px; height: 1px; background: var(--red); }
   .hero-h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(3rem, 7vw, 7.5rem); line-height: 0.95; letter-spacing: 0.01em; color: var(--white); max-width: 900px; margin-bottom: 1rem; }
