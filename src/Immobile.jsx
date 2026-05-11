@@ -5,6 +5,7 @@ import { supabase } from "./supabase";
 import NavBar from "./NavBar.jsx";
 import SiteFooter from "./SiteFooter.jsx";
 import { DOCUMENT_TYPES, PROPOSAL_TEMPLATE } from "./constants/documentTypes";
+import { isAdminUser } from "./lib/isAdminUser";
 
 const styles = `
   /* GALLERY */
@@ -718,7 +719,10 @@ export default function ImmobilePage() {
   // Usato per nascondere chat AI, bottone "Contatta venditore", "Fai proposta".
   const isOwner = !!(user?.id && immobile?.venditore_user_id && user.id === immobile.venditore_user_id);
 
-  // Fetch immobile da Supabase
+  // Fetch immobile da Supabase. Da batch 5 task 5.G non filtriamo più per
+  // status='published': il check viene fatto post-fetch (vedi canViewAsPublic
+  // più sotto) così owner e admin possono vedere immobili in draft/
+  // pending_review/archived/rejected in modalità "anteprima privata".
   useEffect(() => {
     const fetchImmobile = async () => {
       if (!immobileId) return;
@@ -727,13 +731,23 @@ export default function ImmobilePage() {
         .from('immobili')
         .select('*')
         .eq('id', immobileId)
-        .eq('status', 'published')
         .maybeSingle();
       if (data) setImmobileDb(data);
       setLoadingImmobile(false);
     };
     fetchImmobile();
   }, [immobileId]);
+
+  // Flag di visibilità per la scheda. Tre stati possibili:
+  // - canViewAsPublic: l'immobile è pubblicato, chiunque può vedere
+  // - canViewAsOwner/canViewAsAdmin: l'immobile NON è pubblicato ma l'utente
+  //   loggato è il venditore proprietario o un admin (whitelist email) →
+  //   accesso in "anteprima privata", nessuna CTA transazionale visibile
+  // - else: scheda risponde con "Immobile non disponibile" come prima.
+  const canViewAsPublic = immobileDb?.status === 'published';
+  const canViewAsOwner = !!(user?.id && immobileDb?.venditore_user_id === user.id);
+  const canViewAsAdmin = isAdminUser(user);
+  const isPrivatePreview = !!immobileDb && !canViewAsPublic && (canViewAsOwner || canViewAsAdmin);
 
   const scrollToChat = () => {
     chatRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -774,8 +788,13 @@ export default function ImmobilePage() {
     ? `${immobile.indirizzo}, ${immobile.cap} ${immobile.citta}${immobile.provincia ? ' (' + immobile.provincia + ')' : ''}`
     : immobile.indirizzo;
 
-  // Immobile non trovato o non pubblicato
-  if (!loadingImmobile && !immobileDb) {
+  // Immobile non trovato, oppure non-published e l'utente NON è owner/admin
+  // → mostra fallback "Immobile non disponibile". Owner e admin entrano in
+  // anteprima privata, vedi banner sotto.
+  const showNotAvailable = !loadingImmobile && (
+    !immobileDb || (!canViewAsPublic && !canViewAsOwner && !canViewAsAdmin)
+  );
+  if (showNotAvailable) {
     return (
       <>
         <NavBar />
@@ -805,6 +824,26 @@ export default function ImmobilePage() {
     <>
       <style>{styles}</style>
       <NavBar />
+
+      {/* Banner anteprima privata: visibile solo a owner/admin su immobili
+          non-published. CTA transazionali (chat AI, proposta, affordability,
+          shortlist) disabilitate sotto via isPrivatePreview. */}
+      {isPrivatePreview && (
+        <div style={{
+          maxWidth: 1200,
+          margin: "5rem auto 0",
+          padding: "0.85rem 1.4rem",
+          background: "rgba(255, 193, 7, 0.10)",
+          border: "1px solid rgba(255, 193, 7, 0.4)",
+          borderLeft: "3px solid #ffc107",
+          borderRadius: 3,
+          color: "rgba(255, 220, 130, 0.95)",
+          fontSize: "0.85rem",
+          lineHeight: 1.5,
+        }}>
+          <strong style={{ fontWeight: 600 }}>⚠ Anteprima privata</strong> — questo immobile non è ancora pubblico (status: <code style={{ background: "rgba(0,0,0,0.25)", padding: "0.05rem 0.4rem", borderRadius: 2 }}>{immobileDb.status}</code>). Le azioni di contatto, proposta e chat sono nascoste.
+        </div>
+      )}
 
       {/* GALLERY */}
       <div className="gallery">
@@ -1021,8 +1060,11 @@ export default function ImmobilePage() {
             </div>
           </div>
 
-          {/* AI CHAT — visibile solo a chi NON è il venditore */}
-          {isOwner ? (
+          {/* AI CHAT — nascosta in anteprima privata (immobile non-published
+              non ha senso ricevere chat compratori). Per owner su immobile
+              published: placeholder con link a dashboard. Per tutti gli altri:
+              chat AI completa. */}
+          {!isPrivatePreview && (isOwner ? (
             <div className="chat-section" ref={chatRef}>
               <h2 className="section-title">Le tue conversazioni</h2>
               <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 3, padding: "2rem", textAlign: "center" }}>
@@ -1056,10 +1098,10 @@ export default function ImmobilePage() {
                   viene da {...IMMOBILE_FALLBACK, ...immobileDb} con immobileDb null. */}
               <AiChat key={immobileId} user={user} immobileId={immobileId} immobileDb={immobileDb} />
             </div>
-          )}
+          ))}
 
-          {/* AFFORDABILITY — non ha senso per il venditore */}
-          {!isOwner && (
+          {/* AFFORDABILITY — non ha senso per venditore o in anteprima privata */}
+          {!isOwner && !isPrivatePreview && (
             <div className="afford-section">
               <h2 className="section-title">Puoi permetterti questa casa?</h2>
               <div style={{ fontSize: "0.82rem", color: "var(--muted)", marginBottom: "1.2rem" }}>
@@ -1128,7 +1170,16 @@ export default function ImmobilePage() {
             </div>
 
             <div className="sticky-cta">
-              {isOwner ? (
+              {isPrivatePreview ? (
+                <>
+                  <a href={canViewAsOwner ? "/venditore" : "/admin"} className="btn-primary" style={{ textAlign: 'center', textDecoration: 'none' }}>
+                    {canViewAsOwner ? "Torna alla dashboard →" : "Torna al pannello admin →"}
+                  </a>
+                  <div className="btn-secondary" style={{ textAlign: 'center', cursor: 'default', opacity: 0.6, fontSize: '0.78rem' }}>
+                    Anteprima privata · nessuna azione disponibile
+                  </div>
+                </>
+              ) : isOwner ? (
                 <>
                   <a href="/venditore" className="btn-primary" style={{ textAlign: 'center', textDecoration: 'none' }}>
                     Vai alla dashboard →
@@ -1155,7 +1206,7 @@ export default function ImmobilePage() {
                   )}
                 </>
               )}
-              {!isOwner && (
+              {!isOwner && !isPrivatePreview && (
                 <button className="btn-secondary" onClick={() => setSaved(!saved)}>
                   {saved ? "♥ Salvato nella shortlist" : "♡ Aggiungi alla shortlist"}
                 </button>
