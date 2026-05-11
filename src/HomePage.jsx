@@ -169,6 +169,19 @@ export default function HomePage() {
         </div>
       </section>
 
+      <section className="fps-section">
+        <div className="fps-box">
+          <div className="fps-eyebrow">Fair Price Score</div>
+          <h2 className="fps-title">Il prezzo, oggettivo.</h2>
+          <p className="fps-desc">
+            La valutazione AI dell&apos;immobile basata sui dati OMI ufficiali dell&apos;Agenzia delle
+            Entrate. Trasparente, verificabile, lo stesso metro per tutti. Niente stime di parte:
+            sai subito se stai pagando troppo o vendendo sotto mercato.
+          </p>
+          <a className="fps-cta" href="/metodologia">Vedi la metodologia →</a>
+        </div>
+      </section>
+
       <section className="excuses" id="perche">
         <div className="excuses-label">Le scuse finiscono qui</div>
         <h2 className="excuses-title">Perché continui<br />a pagare l&apos;agenzia?</h2>

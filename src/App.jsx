@@ -74,6 +74,17 @@ const styles = `
   .cost-label { font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(247,245,240,0.35); margin-top: 0.25rem; }
   .cost-divider { width: 1px; height: 48px; background: var(--border); }
 
+  /* FAIR PRICE SCORE BOX (sotto hero, sopra excuses) */
+  .fps-section { background: var(--black); padding: 4rem 3rem 5rem; }
+  .fps-box { max-width: 880px; margin: 0 auto; background: rgba(217,48,37,0.04); border: 1px solid rgba(217,48,37,0.4); border-radius: 4px; padding: 2.5rem 2.8rem; position: relative; overflow: hidden; }
+  .fps-box::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--red); }
+  .fps-eyebrow { font-size: 0.65rem; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--red); margin-bottom: 0.8rem; }
+  .fps-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(1.8rem, 3.2vw, 2.6rem); color: var(--white); line-height: 1; margin-bottom: 0.8rem; letter-spacing: 0.01em; }
+  .fps-desc { font-size: 0.95rem; line-height: 1.65; color: rgba(247,245,240,0.7); margin-bottom: 1.5rem; max-width: 640px; }
+  .fps-cta { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; font-weight: 600; letter-spacing: 0.04em; color: var(--red); text-decoration: none; transition: gap 0.2s, color 0.2s; border-bottom: 1px solid rgba(217,48,37,0.3); padding-bottom: 0.2rem; }
+  .fps-cta:hover { gap: 0.7rem; color: var(--white); border-bottom-color: var(--white); }
+  @media (max-width: 768px) { .fps-section { padding: 3rem 1.2rem 4rem; } .fps-box { padding: 2rem 1.4rem; } }
+
   /* EXCUSES */
   .excuses { background: var(--white); color: var(--black); padding: 7rem 3rem; }
   .excuses-label { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--red); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.8rem; }
