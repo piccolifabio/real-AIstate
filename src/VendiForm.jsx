@@ -553,19 +553,18 @@ export default function VendiForm() {
   const uploadFile = async (file, folder) => {
     const ext = file.name.split(".").pop();
     const filename = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-    const res = await fetch(
-      `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/documenti-venditori/${filename}`,
-      {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          "Content-Type": file.type || "application/octet-stream",
-        },
-        body: file,
-      }
-    );
-    if (!res.ok) throw new Error(`Upload fallito: ${file.name}`);
-    return filename;
+    const { error: upErr } = await supabase.storage
+      .from("documenti-venditori")
+      .upload(filename, file, {
+        contentType: file.type || "application/octet-stream",
+        upsert: false,
+      });
+    if (upErr) throw new Error(`Upload fallito: ${file.name}`);
+    // Salviamo l'URL pubblico completo in DB (foto jsonb) invece del path
+    // relativo: il render lato Listing/Immobile usa direttamente <img src>
+    // senza dover ricostruire l'URL base. Standardizzato da batch 5 task 5.A.
+    const { data } = supabase.storage.from("documenti-venditori").getPublicUrl(filename);
+    return data.publicUrl;
   };
 
   const handleSubmit = async () => {
