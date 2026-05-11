@@ -51,7 +51,7 @@ const proSteps = [
 ];
 
 const cards = [
-  { role: "Stai vendendo", desc: "Smetti di cedere migliaia di euro a chi mette il tuo annuncio su un portale.", items: ["Valutazione AI del prezzo di mercato", "Analisi e miglioramento delle foto", "Annuncio generato dall'AI", "Rete di professionisti certificati", "Gestione trattativa diretta"] },
+  { role: "Stai vendendo", name: "Pubblica. Vendi. Incassa.", desc: "Smetti di cedere migliaia di euro a chi mette il tuo annuncio su un portale.", items: ["Valutazione AI del prezzo di mercato", "Analisi e miglioramento delle foto", "Annuncio generato dall'AI", "Rete di professionisti certificati", "Gestione trattativa diretta"] },
   { role: "Stai comprando", name: "Cerca. Analizza. Decidi.", desc: "Finisci di dipendere da qualcuno che rappresenta il venditore e si fa pagare anche da te.", items: ["Fair Price Score su ogni immobile", "Analisi AI punti di forza e criticità", "Domande consigliate pre-visita", "Connessione diretta col venditore", "Supporto AI dalla proposta al rogito"] },
   { role: "Sei un investitore", name: "Dati. Score. Pipeline.", inConstruction: true, desc: "Ogni ora persa a confrontare annunci è denaro. Il workspace investitore centralizza tutto.", items: ["Investment Score con spiegazione", "Classificazione: rendita, flip, affitto", "Pipeline opportunità con stato", "Report decisionale esportabile", "Alert automatici su nuovi immobili"] },
   { role: "Sei un professionista", name: "Entra nella rete.", desc: "RealAIstate ti porta clienti qualificati, già informati, pronti a procedere.", items: ["Profilo verificato sulla piattaforma", "Richieste da utenti qualificati", "Nessuna agenzia nel mezzo", "Pagamenti trasparenti e tracciati", "Visibilità su tutto il territorio"] },
