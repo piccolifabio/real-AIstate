@@ -1,5 +1,5 @@
 # RealAIstate — Stato del progetto
-Aggiornato: 11/05/2026 (settimana 7 — batch 4 walkthrough fixes: bug emailRedirectTo signUp, copy 80% uniforme, box Fair Price Score in home, placeholder geometrico card "In arrivo", rewrite verdetto negativo affordability chat)
+Aggiornato: 11/05/2026 (settimana 7 — batch 5 walkthrough fixes scope ridotto: foto URL completi getPublicUrl + backfill id=6, documenti come constants render generico, pagina /auth/callback dedicata, copy hero /vendi OMI, messaggio CAP più diretto, anteprima privata owner+admin via VITE_ADMIN_EMAILS)
 
 ## Stack
 - Frontend: React + Vite, deploy su Vercel
@@ -1070,6 +1070,200 @@ cambiamento può introdurre regressioni che emergono solo con utenti
 reali. La voce in "Da fare post-MVP" è stata ri-prioritizzata di
 conseguenza.
 
+### Settimana 7 — batch 5 ✅ — completata 11/05/2026 (walkthrough fixes scope ridotto: 2 blocker + 5 polish)
+Walkthrough completo flow venditore 11/05 da incognito + walktest4 ha
+prodotto 12 task: 2 priority-1 blocker (foto non visibili + sezione
+documenti vuota) + 10 secondari. Stima totale 5-7h, sopra il tetto 3h
+indicato dal founder → **scope ridotto** a 7 task (priority-1 + polish
+veloci + anteprima privata) per sbloccare l'onboarding venditori beta
+subito. I 5 task fuori scope (5.F edit bozze, 5.H elimina bozza,
+5.J tabs admin, 5.K modal rifiuto, 5.L email info@) sono UX polish non
+blockanti, rimandati a batch 6. Branch `feat/batch-5-walkthrough-fixes`,
+un commit per task. Tempo effettivo: ~90 min.
+
+- [x] **Task 5.A (priority-1): bug foto non visibili su immobili nuovi** ✅
+  - Sintomo walkthrough: walktest4 ha pubblicato immobile id=6 (Viale
+    Murillo 17). Foto uploaded su Storage (200 OK), ma /compra non mostra
+    cover e /immobili/6 ha gallery vuota. Capecelatro id=1 funziona.
+  - Root cause: `VendiForm.uploadFile()` salvava nomi file relativi
+    (`foto/{ts}-{rand}.{ext}`) invece di URL pubblici completi. Le righe
+    in DB hanno quindi `immobili.foto` come array di nomi file, che
+    `Listing.jsx`/`Immobile.jsx` passano direttamente come `<img src=>`
+    → richiesta a `https://realaistate.ai/foto/{nome}` → 404 silenzioso.
+    `VenditoreDashboard.jsx` invece aveva già un helper tollerante
+    (`includes('://')` + ricostruzione URL base) → la cover lì funzionava
+    senza che ce ne accorgessimo.
+  - **Decisione di design**: salvare URL pubblici completi nel DB d'ora
+    in poi (standard portabile, niente helper di ricostruzione sparsi).
+    `src/VendiForm.jsx` linee 553-571: `uploadFile()` ora usa
+    `supabase.storage.from('documenti-venditori').upload(filename, file)`
+    + `getPublicUrl(filename)` e ritorna `data.publicUrl` invece del nome
+    file. Il form state `form.foto` ora contiene URL completi, finiscono
+    in `immobili.foto` jsonb senza altre modifiche.
+  - Migration manuale per backfillare id=6 (e qualsiasi altro immobile
+    pre-fix): `migrations/2026-05-11-backfill-foto-immobile-6.sql`.
+    Idempotente — riconosce gli URL già completi via `LIKE '%://%'` e li
+    lascia invariati; trasforma solo i path relativi prependendo il
+    base URL Storage Supabase. Eseguito manualmente dal founder via SQL
+    Editor post-merge (vedi "AZIONE FOUNDER REQUIRED" sotto).
+
+- [x] **Task 5.B (priority-1): sezione documenti vuota su immobili non-demo** ✅
+  - Sintomo walkthrough: /immobili/6 mostra solo "Template proposta
+    d'acquisto" + lucchetto. Mancano i 6 documenti tipici (atto
+    provenienza, visura, planimetria, APE, ecc.) che Capecelatro id=1
+    mostra.
+  - Root cause: in Immobile.jsx il rendering documenti era condizionale
+    `isCapecelatroDemo ? <6-doc-hardcoded> : <solo-template-piu-placeholder>`.
+    Decisione batch 2 task 2.C che era ragionevole all'epoca (Capecelatro
+    aveva 6 doc verificati hardcoded, gli altri "su richiesta") ma con
+    onboarding venditori reali in arrivo serve un rendering uniforme che
+    metta lo stesso elenco di doc tipo su tutti gli immobili.
+  - **Decisione di design**: lista tipi documento in
+    `src/constants/documentTypes.js` (`DOCUMENT_TYPES` array di 6 oggetti
+    `{key, label, description}` + `PROPOSAL_TEMPLATE` separato). Render
+    unificato in Immobile.jsx: template proposta come prima card sempre
+    disponibile (scaricabile da anonimi e loggati — è un PDF pubblico),
+    poi 6 card "Su richiesta" con icona lucchetto. Loggati vedono
+    "Richiedi via chat al venditore", anonimi vedono "🔒 Accedi per
+    richiedere" + box top "Accedi per richiedere i documenti". La grid
+    `.docs-grid` esistente è riusata.
+  - Capecelatro id=1 perde la lista hardcoded e si comporta uguale agli
+    altri (tutte "Su richiesta" finché non avremo `documenti_immobile`
+    come tabella DB dedicata — backlog post-MVP).
+  - **Effetto collaterale voluto**: rimossi anche il badge "✓ Immobile
+    Verificato" / "{X}/{Y} Documenti" sopra la gallery e il verified-box
+    nella sticky-card destra. Erano leak Capecelatro (decisione batch 2
+    task 2.C diceva esplicitamente "no leak su immobili senza dati di
+    verifica reali") — mantenerli richiedeva docsVerified/docsTotal/
+    allVerified calcolati su una lista hardcoded che è proprio quello
+    che il task ha eliminato. Future-proof: quando avremo upload reali,
+    sarà naturale ricalcolare e re-introdurre i badge.
+
+- [x] **Task 5.C: bug redirect post-conferma email (era Task 4.A rimandato)** ✅
+  - Sintomo: utente arriva su `/login?redirect=/immobili/1`, signup,
+    clicca link conferma Gmail, torna sul sito ma atterra in HOME invece
+    che su /immobili/1. Whitelist Supabase Redirect URLs già configurata
+    + batch 4 task 4.A aveva già aggiunto `emailRedirectTo` al signUp.
+    Eppure il bug persisteva.
+  - Root cause: Supabase reindirizzava direttamente alla destination
+    (es. /immobili/1) con hash `#access_token=...` ma nessuna pagina di
+    destinazione gestiva il parse dell'hash + set sessione. Risultato:
+    utente atterrava sull'URL giusto ma non risultava loggato, o
+    `onAuthStateChange` triggava troppo tardi e nel frattempo
+    ProtectedRoute o altri redirectavano a /.
+  - **Decisione di design**: pagina `/auth/callback` dedicata
+    (`src/AuthCallback.jsx`). Pattern Supabase ufficiale, isolabile in
+    test. Al mount fa `supabase.auth.getSession()` (supabase-js parsa
+    l'hash automaticamente con `detectSessionInUrl:true` default) e poi
+    `navigate(safeRedirect(searchParams.get('next')))`.
+  - `LoginPage.jsx` signUp ora passa `emailRedirectTo` come
+    `${origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`
+    invece della destination diretta.
+  - `safeRedirect()` estratto da LoginPage.jsx in
+    `src/lib/safeRedirect.js` per riuso in AuthCallback. Same logic
+    (path relativo, no `//`, length cap), default ora `'/'` invece di
+    `null` per semplificare il chiamante.
+  - Route `/auth/callback` aggiunta in App.jsx prima di /login.
+  - **AZIONE FOUNDER REQUIRED su Supabase Dashboard**: in Auth → URL
+    Configuration → Redirect URLs aggiungere
+    `https://realaistate.ai/auth/callback`,
+    `https://*.vercel.app/auth/callback`,
+    `http://localhost:5173/auth/callback`. Senza whitelist Supabase
+    ignora `emailRedirectTo` e fa fallback al Site URL.
+
+- [x] **Task 5.D: copy hero /vendi non-loggato (claim OMI/anti-esclusiva)** ✅
+  - `src/VendiForm.jsx` linea 498 (hero pre-registrazione, branch
+    `if (!user)`). Sostituito sottotitolo:
+    - Vecchio: "Niente agenzia. Niente trattative al ribasso. L'AI
+      calcola il prezzo giusto, analizziamo le tue foto e pubblichiamo
+      il tuo annuncio sui principali portali."
+    - Nuovo: "Niente agenzia. Niente valutazioni gonfiate per strappare
+      l'esclusiva. L'AI confronta il tuo prezzo con i dati ufficiali
+      OMI, analizza le tue foto, pubblica il tuo annuncio. Tu decidi,
+      noi ti diamo gli strumenti."
+  - Il nuovo copy specifica il riferimento OMI (vantaggio differenziante
+    vs portali classici) e mette il dito sul pain reale del venditore
+    (agenzie che gonfiano per accaparrarsi il mandato).
+  - Lasciata invariata la hero post-login (sottotitolo a step 0 dentro
+    il form) come da specifica task — la decisione di tono è "non
+    loggato".
+
+- [x] **Task 5.E: messaggio CAP mancante step indirizzo più diretto** ✅
+  - `src/VendiForm.jsx` linea 727 (branch `addressMissingCap` nel
+    callback `place_changed` Google Places). Sostituito messaggio
+    inline:
+    - Vecchio: "CAP non rilevato per questo indirizzo. Riprova
+      inserendo l'indirizzo completo di numero civico (es. 'Via Roma
+      17 Milano')."
+    - Nuovo: "Indirizzo incompleto: serve il CAP. Aggiungi il numero
+      civico o scegli un suggerimento più specifico."
+  - Più diretto, no esempio inline che intasava la riga. Gating gestito
+    da `addressVerified=false` (Continua disabled) — già corretto da
+    hotfix 4.6, niente cambio logico.
+
+- [x] **Task 5.G + 5.I: anteprima privata owner + admin su non-published** ✅
+  - Sintomo walkthrough: owner clicca "Apri scheda" su immobile bozza
+    nella dashboard → pagina "Immobile non disponibile" perché la query
+    in Immobile.jsx filtrava `.eq('status', 'published')`. Stessa cosa
+    nel pannello admin: link "Preview ↗" su pending_review → 404.
+  - **Decisione di design — admin tramite env var whitelist**: nuova
+    `src/lib/isAdminUser.js` esporta `isAdminUser(user)` che legge
+    `VITE_ADMIN_EMAILS` (comma-separated, default `fabiopiccoli@hotmail.it`)
+    e ritorna true se `user.email` matcha. Pattern UI-only:
+    - flag UI: bundle JS contiene la lista in chiaro, è OK perché serve
+      solo a decidere cosa renderizzare in lettura
+    - mutating operations admin restano via ADMIN_SECRET server-side
+      (header x-admin-key in admin/[op]) — due livelli distinti
+    - alternative scartate: `user_metadata.is_admin` richiedeva
+      migration DB + update manuale per ogni admin; solo-owner non
+      copriva 5.I (admin preview)
+  - **Refactor visibilità in Immobile.jsx**:
+    - Fetch immobile non filtra più `.eq('status', 'published')`
+    - Calcolo post-fetch: `canViewAsPublic = status==='published'`,
+      `canViewAsOwner = user.id === venditore_user_id`,
+      `canViewAsAdmin = isAdminUser(user)`,
+      `isPrivatePreview = !canViewAsPublic && (canViewAsOwner || canViewAsAdmin)`
+    - "Immobile non disponibile" scatta se non esiste, oppure non
+      published E utente non è owner/admin (anonimi vedono il fallback
+      come prima)
+    - Banner giallo top in modalità preview: "⚠ Anteprima privata —
+      questo immobile non è ancora pubblico (status: {immobileDb.status}).
+      Le azioni di contatto, proposta e chat sono nascoste."
+    - Chat AI nascosta in preview (compratori non possono scrivere a
+      immobile non pubblico; owner ha già la dashboard)
+    - Affordability chat nascosta
+    - Sticky CTA in preview: "Torna alla dashboard →" (owner) o
+      "Torna al pannello admin →" (admin) + label
+      "Anteprima privata · nessuna azione disponibile"
+    - Shortlist button nascosto
+  - `VenditoreDashboard.jsx`: bottone "Apri scheda →" diventa
+    "Anteprima →" per immobili non-published (draft/pending_review/
+    rejected/archived). Per published resta "Apri scheda →" perché è
+    effettivamente pubblica.
+  - Task 5.I (admin preview pending_review) è coperto automaticamente
+    dal check `canViewAsAdmin`. Il link "Preview ↗" in Admin.jsx
+    funziona out-of-the-box dopo questo cambio, niente modifica a
+    Admin.jsx.
+  - **.env.example**: nuova `VITE_ADMIN_EMAILS=fabiopiccoli@hotmail.it`
+    con commento esplicativo (è flag UI, non auth).
+  - **AZIONE FOUNDER REQUIRED**: aggiungere `VITE_ADMIN_EMAILS=fabiopiccoli@hotmail.it`
+    in Vercel (Production + Preview + Development) e in `.env.local`
+    locale, altrimenti il founder non risulta admin nemmeno per la
+    preview UI.
+
+- [x] **Build & QA**: `npm run build` passa pulito (1.98s, 0 errori, solo
+  warning chunk size standard). 7 commit atomici su `feat/batch-5-walkthrough-fixes`
+  + 1 doc. Branch pushato su origin, **NIENTE merge automatico su main**.
+
+**Task fuori scope rimandati a batch 6** (non blockanti per onboarding):
+- 5.F edit bozze (richiede modifiche grosse a VendiForm + backend
+  vendi-submit per UPDATE vs INSERT)
+- 5.H elimina bozza (nuovo endpoint + modal conferma + delete Storage)
+- 5.J tabs filtro admin (Pending/Pubblicati/Rifiutati/Bozze)
+- 5.K modal rifiuto con motivo obbligatorio + status='rejected' (richiede
+  migration colonne `rejection_reason`/`rejected_at`)
+- 5.L email a info@ post-approvazione/rifiuto
+
 ### Settimana 7 — batch 3 ✅ — completata 10/05/2026 (polish UX/copy walkthrough)
 8 task atomici di copy + UX emersi dal walkthrough UX 10/05 sera dopo
 il rollback Places. Nessun task critico, ma insieme alzano la qualità
@@ -1214,7 +1408,15 @@ un commit per task. Tempo effettivo: ~70 min.
   Capecelatro hardcoded per campi non ancora in DB (documenti/comparabili)
 - src/Listing.jsx — pagina /compra dinamica da Supabase + fittizi "In arrivo"
 - src/LoginPage.jsx — login/registrazione (con campi nome+cognome separati +
-  Conferma email in signup; legge ?redirect= post-login con open-redirect protection)
+  Conferma email in signup; legge ?redirect= post-login con open-redirect protection;
+  signUp emailRedirectTo passa per /auth/callback?next=<dest> da batch 5 task 5.C)
+- src/AuthCallback.jsx — pagina di atterraggio post-conferma email Supabase.
+  getSession() parsa hash, navigate(safeRedirect(next))
+- src/lib/safeRedirect.js — open-redirect protection helper (path relativi only)
+- src/lib/isAdminUser.js — whitelist email admin via VITE_ADMIN_EMAILS per UI
+  privilegiate (anteprima privata). NON è auth — solo flag UI.
+- src/constants/documentTypes.js — DOCUMENT_TYPES (6 tipi standard) +
+  PROPOSAL_TEMPLATE per sezione documenti scheda
 - src/ProtectedRoute.jsx — gate auth, propaga destination come ?redirect=
 - src/VendiForm.jsx — form 5 step con auth gate, salva immobile draft + lead.
   Step 1 indirizzo via Places API LEGACY `google.maps.places.Autocomplete`
@@ -1261,6 +1463,10 @@ un commit per task. Tempo effettivo: ~70 min.
   per utenti pre-batch-2 (idempotente, da eseguire dal founder via SQL Editor)
 - migrations/2026-05-10-add-address-fields.sql — aggiunge cap/citta/provincia/lat/lng
   a immobili + NOTIFY pgrst (da eseguire post-deploy batch 2)
+- migrations/2026-05-11-backfill-foto-immobile-6.sql — backfill foto immobili
+  pre-batch-5 (path relativi → URL pubblici completi). Idempotente, default
+  scoped a id=6 (allargabile a tutti gli immobili). Da eseguire post-deploy
+  batch 5 dal founder via SQL Editor.
 - ARCHITECTURE_REVIEW.md — review pre-pitch angel (root)
 - FIXES_TODO.md — checklist setup esterno (Upstash, Sentry, branch git)
 - .env.example — template env vars (root)
@@ -1807,6 +2013,55 @@ Steps:
 **Attenzione**: in production le firme hanno valore legale.
 
 ## Prossima sessione
+- **AZIONI OBBLIGATORIE post-merge batch 5** (eseguire dopo che il
+  founder ha fatto merge del branch `feat/batch-5-walkthrough-fixes`):
+  1. Eseguire `migrations/2026-05-11-backfill-foto-immobile-6.sql` via
+     Supabase SQL Editor. Riporta le foto di immobile id=6 da nomi file
+     relativi a URL pubblici completi. Idempotente — rilanciabile senza
+     danno. Senza questo step, /compra continua a non mostrare la cover
+     di id=6.
+  2. Aggiungere env var `VITE_ADMIN_EMAILS=fabiopiccoli@hotmail.it` in
+     Vercel (Production + Preview + Development) e in `.env.local` per
+     dev locale. Senza, il founder non risulta admin neanche per
+     l'anteprima privata UI (5.G/5.I) — la mutating admin via password
+     resta funzionante perché usa ADMIN_SECRET server-side, ma la
+     scheda /immobili/:id non darà preview a immobili non-published.
+  3. Verificare su Supabase Dashboard → Auth → URL Configuration →
+     Redirect URLs che ci siano:
+     - `https://realaistate.ai/auth/callback`
+     - `https://*.vercel.app/auth/callback`
+     - `http://localhost:5173/auth/callback`
+     Senza whitelist, il fix redirect post-conferma email (5.C) non
+     funziona — Supabase ignora `emailRedirectTo` e fa fallback al
+     Site URL.
+
+- **Test E2E batch 5 in incognito post-merge** (12/05 mattina):
+  1. **5.A foto**: /compra mostra cover di id=6 (Viale Murillo); /immobili/6
+     gallery completa. Crea nuovo draft da /vendi con 2-3 foto → verifica
+     che `immobili.foto` in DB contenga URL completi
+     `https://strigywjvkhbubyszuxp.supabase.co/storage/v1/object/public/...`.
+  2. **5.B documenti**: /immobili/6 anonimo mostra 7 card (template
+     proposta + 6 doc "Su richiesta") con lucchetti; loggato vede
+     stesso layout, template scaricabile. /immobili/1 Capecelatro non
+     ha più i badge "Immobile Verificato" / "6/6 Documenti".
+  3. **5.C auth callback**: logout, incognito, /immobili/1 → "Accedi
+     per fare proposta" → /login?redirect=/immobili/1 → Registrati →
+     email nuova → submit → Gmail → click link conferma → loading
+     "Stiamo verificando..." → atterra su /immobili/1 LOGGATO.
+  4. **5.D copy**: /vendi da deslogato mostra nuovo sottotitolo
+     "Niente valutazioni gonfiate... OMI..."
+  5. **5.E warning CAP**: "Viale Murillo, Milano" senza civico →
+     messaggio "Indirizzo incompleto: serve il CAP..." appare,
+     Continua disabled. "Viale Murillo 17, Milano" → verde + abilitato.
+  6. **5.G owner preview**: logged-in venditore con un draft → dashboard
+     → click "Anteprima →" → scheda con banner giallo top, niente CTA
+     transazionali, bottone "Torna alla dashboard →" nel sticky.
+  7. **5.I admin preview**: logged-in come `fabiopiccoli@hotmail.it` →
+     /admin → click "Preview ↗" su pending_review → scheda visibile
+     con banner, "Torna al pannello admin →" nel sticky.
+  8. **Anonimo/altro utente** su /immobili/<id-non-published> → continua
+     a vedere "Immobile non disponibile" come prima.
+
 - **AZIONI OBBLIGATORIE su Supabase post-deploy batch 2** (eseguire in
   ordine via SQL Editor):
   1. `migrations/2026-05-10-add-address-fields.sql` — aggiunge
