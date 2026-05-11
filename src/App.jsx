@@ -19,6 +19,7 @@ import HomeEN from "./HomeEN.jsx";
 import HomePage from "./HomePage.jsx";
 import ScusePage from "./ScusePage.jsx";
 import LoginPage from "./LoginPage.jsx";
+import AuthCallback from "./AuthCallback.jsx";
 import ProtectedRoute from "./ProtectedRoute.jsx";
 import AccountPage from "./AccountPage.jsx";
 import Privacy from "./Privacy.jsx";
@@ -295,6 +296,7 @@ export default function App() {
         <Route path="/blog/:slug" element={<BlogArticolo />} />
         <Route path="/en" element={<HomeEN />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/account" element={<ProtectedRoute><AccountPage /></ProtectedRoute>} />
         <Route path="/venditore" element={<ProtectedRoute><VenditoreDashboard /></ProtectedRoute>} />
       </Routes>

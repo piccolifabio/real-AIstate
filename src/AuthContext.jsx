@@ -28,14 +28,18 @@ export function AuthProvider({ children }) {
   // il codice (email transazionali, UI legacy) che oggi legge user_metadata.full_name.
   //
   // emailRedirectTo opzionale: URL assoluto a cui Supabase reindirizza l'utente
-  // dopo che ha cliccato il link di conferma email. Senza di esso Supabase usa
-  // il Site URL configurato in dashboard (default = home), perdendo la destination
-  // del flow ?redirect=. Vedi LoginPage per il calcolo dell'URL.
+  // dopo che ha cliccato il link di conferma email. Da batch 5 task 5.C
+  // LoginPage passa una URL della forma /auth/callback?next=<destination>:
+  // la pagina AuthCallback fa getSession() (parse hash + popola sessione) poi
+  // navigate(next). Senza pagina dedicata, l'utente atterrava sulla destination
+  // con hash non gestito → non loggato e/o redirect a home.
   //
-  // AZIONE FONDER REQUIRED su Supabase Dashboard: in "Auth → URL Configuration →
-  // Redirect URLs" devono essere whitelistati `https://realaistate.ai/**` e
-  // `https://*.vercel.app/**` (preview), altrimenti Supabase ignora emailRedirectTo
-  // e fa fallback al Site URL → utente torna in home invece che alla destination.
+  // AZIONE FOUNDER REQUIRED su Supabase Dashboard: in "Auth → URL Configuration →
+  // Redirect URLs" devono essere whitelistati:
+  //   - https://realaistate.ai/auth/callback
+  //   - https://*.vercel.app/auth/callback
+  //   - http://localhost:5173/auth/callback
+  // Senza whitelist Supabase ignora emailRedirectTo e fa fallback al Site URL.
   const signUp = (email, password, nome, cognome, emailRedirectTo) =>
     supabase.auth.signUp({
       email,

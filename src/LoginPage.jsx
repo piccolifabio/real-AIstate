@@ -1,20 +1,13 @@
 import { useState } from 'react'
 import { useAuth } from './AuthContext'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-
-function safeRedirect(raw) {
-  if (!raw || typeof raw !== 'string') return null
-  if (raw.length > 512) return null
-  if (!raw.startsWith('/')) return null
-  if (raw.startsWith('//') || raw.startsWith('/\\')) return null
-  return raw
-}
+import { safeRedirect } from './lib/safeRedirect'
 
 export default function LoginPage() {
   const { signIn, signUp } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const redirectTo = safeRedirect(searchParams.get('redirect')) || '/'
+  const redirectTo = safeRedirect(searchParams.get('redirect'), '/')
   const [mode, setMode] = useState('login')
   const [email, setEmail] = useState('')
   const [confirmEmail, setConfirmEmail] = useState('')
@@ -43,14 +36,16 @@ export default function LoginPage() {
     }
     setStatus('loading')
     setError('')
-    // Per la registrazione passiamo a Supabase un emailRedirectTo esplicito che
-    // include il ?redirect= della query string: dopo che l'utente clicca il link
-    // di conferma email torna sulla destination (es. /immobili/1) invece che in
-    // home. redirectTo è già passato dal safeRedirect → solo path relativi che
-    // iniziano con "/" (open-redirect protection). Senza questo, il link di
-    // conferma usa il Site URL configurato in Supabase Dashboard come fallback.
+    // Per la registrazione passiamo a Supabase un emailRedirectTo che porta
+    // a /auth/callback?next=<destination>. La pagina callback dedicata fa
+    // getSession() (supabase-js parsa l'hash auto con detectSessionInUrl) e
+    // poi navigate(safeRedirect(next)). Senza pagina dedicata, il link di
+    // conferma atterra direttamente sulla destination ma con hash
+    // #access_token=... non gestito → utente non risulta loggato e/o atterra
+    // in home (bug walkthrough 11/05). redirectTo è già validato dal
+    // safeRedirect (solo path relativi che iniziano con "/").
     const emailRedirectTo = mode === 'register'
-      ? `${window.location.origin}${redirectTo}`
+      ? `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`
       : undefined
     const { error } = mode === 'login'
       ? await signIn(email, password)
