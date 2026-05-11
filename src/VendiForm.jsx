@@ -284,13 +284,22 @@ function AddressAutocomplete({ apiKey, onSelect, onUserType }) {
     const listener = autocomplete.addListener("place_changed", () => {
       const place = autocomplete.getPlace();
       const parsed = parsePlace(place);
-      // CAP opzionale: Google non lo ritorna sempre per vie lunghe che
-      // attraversano più CAP (es. "Viale Murillo, Milano" senza civico).
-      // I 3 campi richiesti (indirizzo, citta, provincia) bastano per
-      // identificare l'immobile; il backend (api/vendi-submit.js) accetta
-      // cap vuoto, e in dashboard si può sempre integrare a mano.
+      // 3 stati possibili (il backend `api/vendi-submit.js` linee 88-92
+      // richiede cap/citta/provincia non vuoti — defense in depth):
+      // - selezione valida completa → passiamo il parsed
+      // - selezione valida ma CAP non ritornato da Google (succede per
+      //   alcune vie lunghe anche con civico esplicito) → passiamo il
+      //   parsed con marker `_incomplete:'missing_cap'` per messaggio UX
+      //   dedicato, addressVerified resta false
+      // - selezione non valida (manca indirizzo/citta/provincia, o
+      //   l'utente ha premuto invio senza cliccare un suggerimento)
+      //   → passiamo null
       if (parsed && parsed.indirizzo && parsed.citta && parsed.provincia) {
-        onSelectRef.current?.(parsed);
+        if (!parsed.cap) {
+          onSelectRef.current?.({ ...parsed, _incomplete: "missing_cap" });
+        } else {
+          onSelectRef.current?.(parsed);
+        }
       } else {
         onSelectRef.current?.(null);
       }
@@ -418,13 +427,24 @@ export default function VendiForm() {
   // ha ancora selezionato un Place. Serve a mostrare l'errore inline "Seleziona
   // un indirizzo dai suggerimenti" senza farlo apparire al primo render.
   const [addressTouched, setAddressTouched] = useState(false);
+  // Diventa true quando l'utente ha selezionato un suggerimento valido ma
+  // Google non ha ritornato il `postal_code`. Pilota un messaggio UX
+  // dedicato che chiede di reinserire l'indirizzo con il numero civico.
+  const [addressMissingCap, setAddressMissingCap] = useState(false);
   const googleMapsKey = import.meta.env.VITE_GOOGLE_MAPS_KEY;
 
   const handleAddressSelect = (parsed) => {
     if (!parsed) {
-      // L'utente ha cliccato un suggerimento incompleto. Resettiamo il flag
-      // verified ma teniamo `addressTouched` per mostrare ancora la guida.
       setForm((f) => ({ ...f, addressVerified: false }));
+      setAddressMissingCap(false);
+      return;
+    }
+    if (parsed._incomplete === "missing_cap") {
+      // Suggerimento valido per via/citta/provincia ma senza CAP: il backend
+      // rifiuterebbe il submit (400). Blocchiamo qui e chiediamo all'utente
+      // di riprovare con un indirizzo più specifico (numero civico).
+      setForm((f) => ({ ...f, addressVerified: false }));
+      setAddressMissingCap(true);
       return;
     }
     setForm((f) => ({
@@ -439,6 +459,7 @@ export default function VendiForm() {
       addressVerified: true,
     }));
     setAddressTouched(false);
+    setAddressMissingCap(false);
   };
 
   const handleChangeAddress = () => {
@@ -448,6 +469,7 @@ export default function VendiForm() {
       latitudine: "", longitudine: "", addressVerified: false,
     }));
     setAddressTouched(false);
+    setAddressMissingCap(false);
   };
 
   // Gate auth: stato di caricamento sessione
@@ -701,11 +723,15 @@ export default function VendiForm() {
                       onSelect={handleAddressSelect}
                       onUserType={(v) => { if (v) setAddressTouched(true); }}
                     />
-                    {addressTouched && (
+                    {addressMissingCap ? (
+                      <div className="vendi-error" style={{ marginTop: "0.4rem" }}>
+                        CAP non rilevato per questo indirizzo. Riprova inserendo l'indirizzo completo di numero civico (es. "Via Roma 17 Milano").
+                      </div>
+                    ) : addressTouched ? (
                       <div className="vendi-error" style={{ marginTop: "0.4rem" }}>
                         Seleziona un indirizzo dai suggerimenti per continuare.
                       </div>
-                    )}
+                    ) : null}
                   </>
                 )}
               </div>

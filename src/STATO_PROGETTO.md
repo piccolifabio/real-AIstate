@@ -986,9 +986,12 @@ Tempo effettivo: ~25 min.
     a `parsed.indirizzo && parsed.citta && parsed.provincia`. Il CAP
     resta opzionale: viene comunque salvato in form state se Google lo
     ritorna (`cap: parsed.cap || ""` in `handleAddressSelect`), altrimenti
-    resta stringa vuota. Il backend `api/vendi-submit.js` (linee 83-92)
+    resta stringa vuota. ~~Il backend `api/vendi-submit.js` (linee 83-92)
     già accetta cap vuoto se gli altri campi indirizzo sono presenti
-    (defense in depth).
+    (defense in depth).~~ **[CORRETTO in hotfix 4.6]**: questa analisi era
+    errata, il backend ha la validazione opposta (rifiuta 400 se cap
+    vuoto). Conseguenza: 4.5 ha spostato il bug da step 0 a step 4. 4.6
+    re-introduce il CAP come required al gating + messaggio UX dedicato.
   - Commento inline aggiunto per documentare la motivazione: vie lunghe
     come Viale Murillo attraversano più CAP, Google non assegna un
     `postal_code` univoco al Place a livello di route.
@@ -1005,6 +1008,67 @@ batch 2). La soluzione strutturale è un test E2E (Playwright) sul submit
 /vendi che copra: digitazione indirizzo, selezione suggerimento, verifica
 `addressVerified=true`, click Continua, avanzamento step. Fuori scope per
 questo hotfix — aggiunto come voce nella sezione "Da fare post-MVP".
+
+### Settimana 7 — hotfix 4.6 ✅ — completata 11/05/2026 (Google Places non popola CAP per alcune vie — UX dedicata)
+Terza regressione consecutiva del flow Places in 48h (rollback 10/05 +
+hotfix 4.5 + ora 4.6). Sintomo: dopo 4.5 (CAP rimosso dal gating step 0),
+l'utente che selezionava un indirizzo senza CAP otteneva il riquadro verde
+"✓ Indirizzo verificato" ma al submit step 4 il backend
+(`api/vendi-submit.js` linee 88-92) rifiutava con 400 "cap, città e
+provincia sono obbligatori". Causa radice: errore di analisi nel hotfix
+4.5 — avevo scritto che il backend accettava cap vuoto, ma in realtà ha
+una validazione esplicita opposta. Branch
+`hotfix/vendi-places-cap-extraction`, 1 commit. Tempo effettivo: ~30 min.
+
+- [x] **Diagnosi rapida del bug 4.5** ✅
+  - Letto `api/vendi-submit.js` linee 83-92: `if (!dati.cap || !dati.citta
+    || !dati.provincia) return 400`. Il backend RICHIEDE il CAP. La nota
+    "accetta cap vuoto" nel commit message di 4.5 era errata, basata su
+    un'analisi superficiale non verificata di persona prima del commit.
+  - Conseguenza pratica: 4.5 ha spostato il bug da step 0 (no riquadro
+    verde) a step 4 (errore 400 al submit), peggiorando l'UX perché
+    l'utente perdeva il lavoro fatto negli step intermedi.
+
+- [x] **Fix UX dedicato (opzione A del task)** ✅
+  - `src/VendiForm.jsx` linea 284-303: listener `place_changed` ora
+    distingue 3 stati. Selezione completa → `onSelect(parsed)`. Selezione
+    valida ma SENZA `postal_code` (es. vie lunghe come "Viale Murillo"
+    che attraversano più CAP, anche con civico esplicito) →
+    `onSelect({ ...parsed, _incomplete: 'missing_cap' })`. Nessuna
+    selezione valida → `onSelect(null)`.
+  - `src/VendiForm.jsx` linea 420-462: aggiunto state `addressMissingCap`
+    (boolean). `handleAddressSelect` lo setta a true quando riceve il
+    marker `_incomplete:'missing_cap'`, lasciando `addressVerified=false`.
+    Reset su nuova selezione valida e su `handleChangeAddress`.
+  - `src/VendiForm.jsx` linea 706-720: render del messaggio inline
+    cambiato in cascata. Se `addressMissingCap` → "CAP non rilevato per
+    questo indirizzo. Riprova inserendo l'indirizzo completo di numero
+    civico (es. 'Via Roma 17 Milano')." Altrimenti se `addressTouched`
+    → messaggio generico esistente "Seleziona un indirizzo dai
+    suggerimenti per continuare."
+  - Diagnostica via `console.log` temporanei in `place_changed` durante
+    il test (rimossi dal commit finale).
+
+- [x] **Test in incognito su `localhost:5173/vendi` step 0**:
+  - "Via Capecelatro 38 Milano" (quartiere con CAP univoco 20148) →
+    riquadro verde con CAP popolato, bottone Continua cliccabile ✅
+  - "Viale Murillo Milano" (anche con civico esplicito) → messaggio
+    "CAP non rilevato..." appare, riquadro verde NON appare, bottone
+    Continua resta disabilitato ✅
+  - Bug del 4.5 (utente arriva fino a submit e prende 400) eliminato
+    perché il blocco avviene già a step 0 con messaggio specifico.
+
+- [x] **Build pulita** (`vite build` 1.63s, 0 errori, solo warning chunk
+  size standard). Branch pushato su origin, **NIENTE merge automatico su
+  main** — il founder verifica preview Vercel e mergia manualmente.
+
+**TECH DEBT prioritario (precedente all'onboarding venditori beta)**:
+test E2E Playwright sul submit /vendi. Tre regressioni consecutive del
+flow Places in 48h (rollback 10/05, hotfix 4.5, hotfix 4.6) dimostrano
+che il pattern "diagnosi manuale + fix mirato" non scala — ogni
+cambiamento può introdurre regressioni che emergono solo con utenti
+reali. La voce in "Da fare post-MVP" è stata ri-prioritizzata di
+conseguenza.
 
 ### Settimana 7 — batch 3 ✅ — completata 10/05/2026 (polish UX/copy walkthrough)
 8 task atomici di copy + UX emersi dal walkthrough UX 10/05 sera dopo
@@ -1890,11 +1954,16 @@ Steps:
 - Stringere DMARC policy da `p=none` a `p=quarantine` poi `p=reject`
 - Configurare client email mobile (IMAP/SMTP) per leggere info@ da iPhone
 - Fix warning React keys in VendiForm.jsx stepper
-- **Test E2E Playwright su /vendi**: copertura completa del flow venditore
-  (indirizzo step 0, prezzo, foto, documenti, contatti, submit). Previene
-  regressioni come hotfix 4.5 (Places callback senza CAP) e batch 2
-  rollback (Places API New). Setup minimo: playwright + mock Google Maps
-  API per stabilità CI.
+- **TECH DEBT prioritario — Test E2E Playwright su /vendi** (precedente
+  all'onboarding venditori beta): copertura completa del flow venditore
+  (indirizzo step 0, prezzo, foto, documenti, contatti, submit). 3
+  regressioni consecutive del flow Places in 48h (rollback 10/05,
+  hotfix 4.5, hotfix 4.6) dimostrano che diagnosi manuale + fix mirato
+  non scala. Setup minimo: playwright + mock Google Maps API per
+  stabilità CI. Casi da coprire: (a) indirizzo completo con CAP da
+  Google → submit ok; (b) indirizzo senza CAP (es. "Viale Murillo
+  Milano") → step 0 blocca con messaggio dedicato; (c) selezione
+  invalida → messaggio generico "Seleziona un indirizzo...".
 - **Standardizzazione formato `foto` jsonb**: scegliere formato unico
   (URL completi consigliati) e migrare i record esistenti
 - **Documenti immobile come tabella DB** (oggi hardcoded fallback)
