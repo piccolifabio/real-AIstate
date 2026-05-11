@@ -724,7 +724,7 @@ export default function VendiForm() {
                     />
                     {addressMissingCap ? (
                       <div className="vendi-error" style={{ marginTop: "0.4rem" }}>
-                        CAP non rilevato per questo indirizzo. Riprova inserendo l'indirizzo completo di numero civico (es. "Via Roma 17 Milano").
+                        Indirizzo incompleto: serve il CAP. Aggiungi il numero civico o scegli un suggerimento più specifico.
                       </div>
                     ) : addressTouched ? (
                       <div className="vendi-error" style={{ marginTop: "0.4rem" }}>
