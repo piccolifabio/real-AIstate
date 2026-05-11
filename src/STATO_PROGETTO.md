@@ -958,6 +958,54 @@ auth confermato + 5 modifiche copy/UX + 1 verifica. Branch
   Branch pushato su origin, **NIENTE merge automatico su main** — il
   founder verifica preview Vercel e mergia manualmente.
 
+### Settimana 7 — hotfix 4.5 ✅ — completata 11/05/2026 (Google Places callback non aggiorna stato React)
+Seconda regressione del flow indirizzo /vendi in 2 giorni dopo il rollback
+del 10/05 a Places API legacy. Sintomo: dropdown Google funziona, click su
+suggerimento popola l'input, MA riquadro verde "✓ Indirizzo verificato"
+non compare, errore inline "Seleziona un indirizzo dai suggerimenti per
+continuare." resta visibile, bottone Continua disabilitato. Bloccante per
+onboarding venditori beta. Branch `hotfix/vendi-places-callback`, 1 commit.
+Tempo effettivo: ~25 min.
+
+- [x] **Diagnosi via console.log temporaneo** ✅
+  - Aggiunti due `console.log("[Places DEBUG] ...")` nel listener
+    `place_changed` di `AddressAutocomplete` (`src/VendiForm.jsx` linea
+    284): uno sul `place` raw + uno su `parsed` con flag `*_ok` per
+    ciascuno dei 4 campi gate (indirizzo/citta/cap/provincia).
+  - Test in incognito su `localhost:5173/vendi` step 0 con query
+    "Viale Murillo Milano" → log mostra: `address_components` ritornato
+    da Google contiene `route` ("Viale Murillo"), `locality` ("Milano"),
+    `administrative_area_level_2` ("MI") MA non `postal_code` né
+    `street_number`. Conseguenza: `parsed.cap = null` → check
+    `parsed.cap` al gating fallisce → `onSelectRef.current?.(null)`
+    → `handleAddressSelect(null)` → `addressVerified: false`.
+
+- [x] **Fix: CAP opzionale al gating** ✅
+  - `src/VendiForm.jsx` linea 287: condizione cambiata da
+    `parsed.indirizzo && parsed.citta && parsed.cap && parsed.provincia`
+    a `parsed.indirizzo && parsed.citta && parsed.provincia`. Il CAP
+    resta opzionale: viene comunque salvato in form state se Google lo
+    ritorna (`cap: parsed.cap || ""` in `handleAddressSelect`), altrimenti
+    resta stringa vuota. Il backend `api/vendi-submit.js` (linee 83-92)
+    già accetta cap vuoto se gli altri campi indirizzo sono presenti
+    (defense in depth).
+  - Commento inline aggiunto per documentare la motivazione: vie lunghe
+    come Viale Murillo attraversano più CAP, Google non assegna un
+    `postal_code` univoco al Place a livello di route.
+  - Rimossi i due `console.log("[Places DEBUG] ...")` di debug.
+
+- [x] **Build pulita** (`vite build` 1.77s, 0 errori, solo il warning
+  standard sul chunk size già esistente dal batch 3). Branch pushato
+  su origin, **NIENTE merge automatico su main** — il founder verifica
+  preview Vercel e mergia manualmente.
+
+**Prevenzione (post-MVP)**: seconda regressione del flow indirizzo /vendi
+in 48h (la prima era il rollback del 10/05 da Places API New a legacy,
+batch 2). La soluzione strutturale è un test E2E (Playwright) sul submit
+/vendi che copra: digitazione indirizzo, selezione suggerimento, verifica
+`addressVerified=true`, click Continua, avanzamento step. Fuori scope per
+questo hotfix — aggiunto come voce nella sezione "Da fare post-MVP".
+
 ### Settimana 7 — batch 3 ✅ — completata 10/05/2026 (polish UX/copy walkthrough)
 8 task atomici di copy + UX emersi dal walkthrough UX 10/05 sera dopo
 il rollback Places. Nessun task critico, ma insieme alzano la qualità
@@ -1842,6 +1890,11 @@ Steps:
 - Stringere DMARC policy da `p=none` a `p=quarantine` poi `p=reject`
 - Configurare client email mobile (IMAP/SMTP) per leggere info@ da iPhone
 - Fix warning React keys in VendiForm.jsx stepper
+- **Test E2E Playwright su /vendi**: copertura completa del flow venditore
+  (indirizzo step 0, prezzo, foto, documenti, contatti, submit). Previene
+  regressioni come hotfix 4.5 (Places callback senza CAP) e batch 2
+  rollback (Places API New). Setup minimo: playwright + mock Google Maps
+  API per stabilità CI.
 - **Standardizzazione formato `foto` jsonb**: scegliere formato unico
   (URL completi consigliati) e migrare i record esistenti
 - **Documenti immobile come tabella DB** (oggi hardcoded fallback)

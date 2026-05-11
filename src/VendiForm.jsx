@@ -284,11 +284,14 @@ function AddressAutocomplete({ apiKey, onSelect, onUserType }) {
     const listener = autocomplete.addListener("place_changed", () => {
       const place = autocomplete.getPlace();
       const parsed = parsePlace(place);
-      if (parsed && parsed.indirizzo && parsed.citta && parsed.cap && parsed.provincia) {
+      // CAP opzionale: Google non lo ritorna sempre per vie lunghe che
+      // attraversano più CAP (es. "Viale Murillo, Milano" senza civico).
+      // I 3 campi richiesti (indirizzo, citta, provincia) bastano per
+      // identificare l'immobile; il backend (api/vendi-submit.js) accetta
+      // cap vuoto, e in dashboard si può sempre integrare a mano.
+      if (parsed && parsed.indirizzo && parsed.citta && parsed.provincia) {
         onSelectRef.current?.(parsed);
       } else {
-        // Place senza dati sufficienti (utente ha premuto invio senza
-        // selezionare un suggerimento, o suggerimento ambiguo).
         onSelectRef.current?.(null);
       }
     });
