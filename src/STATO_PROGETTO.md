@@ -1,5 +1,5 @@
 # RealAIstate — Stato del progetto
-Aggiornato: 10/05/2026 (settimana 7 — batch 2 + 7 post-fix Places API New + ROLLBACK ottavo fix a Places API legacy + batch 3 polish UX/copy: nuovo claim home positivo "Comprare e vendere casa, indipendentemente", risposte scuse 05/06/08 ricalibrate, conferma password in registrazione, bottone proposta verde uniforme)
+Aggiornato: 11/05/2026 (settimana 7 — batch 4 walkthrough fixes: bug emailRedirectTo signUp, copy 80% uniforme, box Fair Price Score in home, placeholder geometrico card "In arrivo", rewrite verdetto negativo affordability chat)
 
 ## Stack
 - Frontend: React + Vite, deploy su Vercel
@@ -833,6 +833,130 @@ API New, Places API legacy).
   - **src/Immobile.jsx invariato**: nessuna modifica al rendering.
   - Build pulita (`vite build` 1.73s, 0 errori, 0 nuovi warning). Branch
     `rollback/places-api-legacy`.
+
+### Settimana 7 — batch 4 ✅ — completata 11/05/2026 (walkthrough fixes UX/copy + 1 bug auth)
+Walkthrough UX 11/05 mattina in incognito sui flussi 1.1-1.7. Emersi 1 bug
+auth confermato + 5 modifiche copy/UX + 1 verifica. Branch
+`feat/batch-4-walkthrough-fixes`, un commit per task. Tempo effettivo: ~80 min.
+
+- [x] **Task 4.A: bug redirect post conferma email — emailRedirectTo** ✅
+  - Sintomo walkthrough: utente arriva su `/login?redirect=/immobili/1`,
+    si registra, riceve mail Supabase, clicca link → torna in HOME invece
+    che su /immobili/1.
+  - Causa: `supabase.auth.signUp` non riceveva `options.emailRedirectTo`
+    → Supabase fa fallback al Site URL configurato in dashboard (root).
+  - Fix:
+    - `src/LoginPage.jsx` handle(): costruisce `emailRedirectTo` come
+      `${window.location.origin}${redirectTo}` solo in modalità register.
+      `redirectTo` è già passato per `safeRedirect` (solo path relativi
+      che iniziano con "/", no domini esterni — open-redirect protection
+      già esistente dal batch 2 task 2.A).
+    - `src/AuthContext.jsx` signUp(): firma estesa con quinto parametro
+      opzionale `emailRedirectTo`, spread condizionale dentro options.
+  - **AZIONE FONDER REQUIRED su Supabase Dashboard** (commento esplicito
+    in AuthContext): in "Auth → URL Configuration → Redirect URLs"
+    devono essere whitelistati `https://realaistate.ai/**` e
+    `https://*.vercel.app/**`. Senza whitelist Supabase ignora
+    emailRedirectTo e fa fallback al Site URL.
+  - Test post-deploy (founder): logout → incognito su /immobili/1 →
+    "Accedi per fare proposta" → tab Registrati → submit con email nuova
+    (+walktest5@gmail.com) → click link conferma in Gmail → atteso ritorno
+    su /immobili/1 loggato, non in home.
+
+- [x] **Task 4.B: subtitle "Pubblica. Vendi. Incassa." su box "Stai vendendo"** ✅
+  - `src/HomePage.jsx` array `cards`, primo elemento: aggiunto
+    `name: "Pubblica. Vendi. Incassa."` per simmetria con gli altri 3 box
+    (Stai comprando, Sei un investitore, Sei un professionista) che hanno
+    già `name`. Render via il condizionale `{c.name && ...}` esistente.
+  - Formulazione voluta con "Vendi" al centro (non "Incassa" diretto come
+    la vecchia "Pubblica. Incassa. Tutto." rimossa in batch 3 task 3.B
+    perché ingannevole).
+
+- [x] **Task 4.C: verifica + bump leggibilità "(in costruzione)"** ✅
+  - `src/HomePage.jsx` linee 218-222: il flag `inConstruction:true` e il
+    render del muted erano già in codice dal batch 3 task 3.B. **Il
+    problema riportato dal founder è di deploy/cache**, non codice.
+  - Mitigazione: alzata leggibilità del muted (font-size 0.78rem → 0.82rem
+    ≈ 13.1px desktop; opacity 0.4 → 0.6). Resta italic e di colore
+    rgba(247,245,240,...) coerente col resto.
+  - Comunicato al founder: hard refresh Ctrl+F5 su realaistate.ai, o
+    verifica che il merge del branch `feat/copy-ux-polish` batch 3 sia
+    effettivamente passato su main.
+
+- [x] **Task 4.D: claim "X% in meno" uniformato a 80%** ✅
+  - `src/HomePage.jsx` hero-cost: i due claim verdi
+    `<div className="cost-num green">` (uno sotto "SE COMPRI", uno sotto
+    "SE VENDI") erano rispettivamente "90% in meno" e "50% in meno".
+    Entrambi sostituiti con "80% in meno". Tutto il resto (classe, layout,
+    colore green, label "Con RealAIstate") invariato.
+
+- [x] **Task 4.E: box dedicato Fair Price Score in home** ✅
+  - `src/App.jsx` aggiunto blocco CSS `.fps-section / .fps-box / .fps-eyebrow
+    / .fps-title / .fps-desc / .fps-cta` (collocato tra HERO COST e EXCUSES
+    nel global style). Stile coerente col design system: bordo
+    `rgba(217,48,37,0.4)` rosso brand soft, barra rossa solida 3px a
+    sinistra come accento, background sub-rosso `rgba(217,48,37,0.04)`,
+    border-radius 4px (stesso del resto), padding 2.5rem 2.8rem desktop /
+    2rem 1.4rem mobile, max-width 880px, font Bebas Neue sul titolo.
+  - `src/HomePage.jsx` nuova `<section className="fps-section">` inserita
+    DOPO `</section>` del hero e PRIMA di `<section className="excuses">`.
+    Contenuto: eyebrow "Fair Price Score", titolo "Il prezzo, oggettivo.",
+    descrizione 2 frasi sulla base OMI Agenzia Entrate (trasparente,
+    verificabile, stesso metro per tutti), CTA `<a href="/metodologia">Vedi
+    la metodologia →</a>` (route già esistente in App.jsx).
+  - **Motivazione di design**: il Fair Price Score è uno dei pochi punti
+    distintivi del prodotto vs portali italiani concorrenti. Va valorizzato
+    in home, non nascosto in pagina secondaria.
+
+- [x] **Task 4.F: placeholder geometrico per card "In arrivo" su /compra** ✅
+  - `src/Listing.jsx` nuovo componente `ComingSoonPlaceholder()` — SVG
+    inline con viewBox 400×220, preserveAspectRatio xMidYMid slice, riempie
+    `.prop-card-img` (200px). Composizione:
+    - Sfondo solido `#0a0a0a` (color-background sito).
+    - 9 rettangoli verticali stilizzati di altezze variabili
+      (`#141414/#1a1a1a/#1c1c1c`) → skyline astratto.
+    - 2 linee orizzontali subtle a 178/198 (`rgba(247,245,240,0.04-0.05)`)
+      per dare ritmo orizzontale.
+    - 2 "finestre" rosse `#d93025` (e una 40% opacità) sul rettangolo
+      centrale come singolo accento brand.
+    - Watermark "IN ARRIVO" in Bebas Neue 13px, letterSpacing 3.5,
+      `rgba(247,245,240,0.22)` in alto al centro.
+    Sostituisce il vecchio `prop-card-img-placeholder` + iconcina generica
+    su `PropCardFake`. Il badge "In arrivo" sopra resta intatto.
+  - CSS: `.prop-card.fake` opacity 0.5 → 0.78 (il body ha ora .6 separata
+    via `.prop-card.fake .prop-card-body`) — il placeholder non viene più
+    bruciato dall'opacity globale della card.
+  - **Motivazione di design**: tono coerente col brand serio/bold del sito.
+    Niente foto stock, niente illustrazioni casa carine, niente vibe
+    template-shopify.
+
+- [x] **Task 4.G: rewrite verdetto negativo chat affordability** ✅
+  - `api/chat-affordability.js` system prompt sezione VERDETTO. Il copy
+    precedente era 1 sola riga: "Se non sostenibile: sii onesto e
+    costruttivo — spiega cosa manca". Risultato AI: risposte secche
+    scoraggianti, tono da consulente bancario.
+  - Nuova struttura vincolante in 3 blocchi netti:
+    1. **Verdetto + numeri** senza addolcire (DTI%, soglia 35%, rata
+       stimata €X).
+    2. **2-3 leve concrete** calcolate sui SUOI dati (anticipo, durata
+       mutuo, prezzo target, zona alternativa -15%) — niente leve
+       generiche o inventate.
+    3. **Chiusura non-pressante** in 1 riga: varianti suggerite ("Vuoi
+       che proviamo con parametri diversi?" / "Rivedi i tuoi numeri
+       quando vuoi e ripartiamo." / "Posso ricalcolare con un anticipo o
+       un prezzo target diverso.").
+  - Bandite esplicitamente le formule paternaliste: "ci dispiace",
+    "purtroppo", "non te lo posso consigliare", "spero di esserti stato
+    utile".
+  - Lasciato invariato il resto del flow (sostenibile, contratto
+    determinato/autonomo). Solo verdetto negativo/borderline modificato,
+    come da richiesta task.
+
+- [x] **Build & QA**: `npm run build` passa pulito (1.7s, 0 errori, solo
+  il warning standard sul chunk size già esistente dal batch 3).
+  7 commit atomici su `feat/batch-4-walkthrough-fixes` + 1 doc.
+  Branch pushato su origin, **NIENTE merge automatico su main** — il
+  founder verifica preview Vercel e mergia manualmente.
 
 ### Settimana 7 — batch 3 ✅ — completata 10/05/2026 (polish UX/copy walkthrough)
 8 task atomici di copy + UX emersi dal walkthrough UX 10/05 sera dopo
