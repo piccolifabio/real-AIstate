@@ -216,7 +216,7 @@ export default function HomePage() {
               <div className="forwho-role">{c.role}</div>
               {c.name && <div className="forwho-name">{c.name}</div>}
               {c.inConstruction && (
-                <div style={{ fontSize: "0.78rem", color: "rgba(247,245,240,0.4)", fontStyle: "italic", marginTop: "-0.4rem", marginBottom: "0.6rem", letterSpacing: "0.02em" }}>
+                <div style={{ fontSize: "0.82rem", color: "rgba(247,245,240,0.6)", fontStyle: "italic", marginTop: "-0.4rem", marginBottom: "0.6rem", letterSpacing: "0.02em" }}>
                   (in costruzione)
                 </div>
               )}
