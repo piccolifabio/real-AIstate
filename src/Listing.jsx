@@ -27,11 +27,13 @@ const styles = `
   /* CARD */
   .prop-card { background: var(--surface); border: 1px solid var(--border); border-radius: 3px; overflow: hidden; transition: border-color 0.2s, transform 0.2s; }
   .prop-card.real:hover { border-color: rgba(247,245,240,0.2); transform: translateY(-2px); cursor: pointer; }
-  .prop-card.fake { opacity: 0.5; }
+  .prop-card.fake { opacity: 0.78; }
+  .prop-card.fake .prop-card-body { opacity: 0.6; }
   .prop-card-img { height: 200px; overflow: hidden; position: relative; background: var(--surface); }
   .prop-card-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .prop-card-img-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
   .prop-card-img-placeholder svg { width: 40px; height: 40px; opacity: 0.1; }
+  .prop-card-img-art { width: 100%; height: 100%; display: block; }
   .prop-card-badges { position: absolute; bottom: 0.8rem; left: 0.8rem; display: flex; gap: 0.4rem; flex-wrap: wrap; }
   .prop-badge { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 0.25rem 0.6rem; border-radius: 2px; }
   .prop-badge-green { background: var(--green); color: white; }
@@ -125,16 +127,50 @@ function PropCardReal({ imm }) {
   );
 }
 
+// Placeholder geometrico brand per le card "In arrivo": skyline astratto su
+// fondo dark con un singolo accento rosso (finestra "accesa"). Sostituisce il
+// nero pieno + iconcina generica delle card fittizie. SVG inline, riempie
+// l'area .prop-card-img (200px h) tramite preserveAspectRatio=xMidYMid slice.
+function ComingSoonPlaceholder() {
+  return (
+    <svg
+      className="prop-card-img-art"
+      viewBox="0 0 400 220"
+      xmlns="http://www.w3.org/2000/svg"
+      preserveAspectRatio="xMidYMid slice"
+      aria-hidden="true"
+    >
+      <rect width="400" height="220" fill="#0a0a0a" />
+      <line x1="0" y1="178" x2="400" y2="178" stroke="rgba(247,245,240,0.05)" strokeWidth="1" />
+      <line x1="0" y1="198" x2="400" y2="198" stroke="rgba(247,245,240,0.04)" strokeWidth="1" />
+      <rect x="30" y="100" width="34" height="100" fill="#141414" />
+      <rect x="68" y="70" width="42" height="130" fill="#1a1a1a" />
+      <rect x="114" y="90" width="30" height="110" fill="#141414" />
+      <rect x="148" y="55" width="46" height="145" fill="#1c1c1c" />
+      <rect x="198" y="105" width="34" height="95" fill="#141414" />
+      <rect x="236" y="78" width="40" height="122" fill="#1a1a1a" />
+      <rect x="280" y="118" width="28" height="82" fill="#141414" />
+      <rect x="312" y="62" width="38" height="138" fill="#1a1a1a" />
+      <rect x="354" y="98" width="30" height="102" fill="#141414" />
+      <rect x="164" y="95" width="8" height="5" fill="#d93025" />
+      <rect x="178" y="95" width="8" height="5" fill="#d93025" opacity="0.4" />
+      <text
+        x="200" y="32"
+        fontFamily="Bebas Neue, sans-serif"
+        fontSize="13"
+        fill="rgba(247,245,240,0.22)"
+        textAnchor="middle"
+        letterSpacing="3.5"
+      >IN ARRIVO</text>
+    </svg>
+  );
+}
+
 function PropCardFake({ imm }) {
   return (
     <div className="prop-card fake">
       <div className="prop-card-img">
-        <div className="prop-card-img-placeholder">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
-            <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
-            <path d="M21 15l-5-5L5 21"/>
-          </svg>
-        </div>
+        <ComingSoonPlaceholder />
         <div className="prop-card-badges">
           <span className="prop-badge prop-badge-soon">In arrivo</span>
         </div>
