@@ -150,7 +150,7 @@ export default function HomePage() {
               <div className="cost-divider" />
               <div><div className="cost-num red">€9.000–18.000</div><div className="cost-label">Su una casa da €300k</div></div>
               <div className="cost-divider" />
-              <div><div className="cost-num green">90% in meno</div><div className="cost-label">Con RealAIstate</div></div>
+              <div><div className="cost-num green">80% in meno</div><div className="cost-label">Con RealAIstate</div></div>
             </div>
             <div style={{ width: "100%", height: "1px", background: "var(--border)", marginBottom: "2rem" }} />
             <div style={{ fontSize: "0.65rem", fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--red)", marginBottom: "1rem" }}>SE VENDI</div>
@@ -159,7 +159,7 @@ export default function HomePage() {
               <div className="cost-divider" />
               <div><div className="cost-num red">€3.000</div><div className="cost-label">Su una casa da €300k</div></div>
               <div className="cost-divider" />
-              <div><div className="cost-num green">50% in meno</div><div className="cost-label">Con RealAIstate</div></div>
+              <div><div className="cost-num green">80% in meno</div><div className="cost-label">Con RealAIstate</div></div>
             </div>
             <div style={{ borderLeft: "3px solid var(--red)", paddingLeft: "1rem", marginTop: "0.5rem" }}>
               <div style={{ fontSize: "1rem", fontWeight: 600, color: "var(--white)", marginBottom: "0.3rem" }}>Il prezzo giusto.</div>
