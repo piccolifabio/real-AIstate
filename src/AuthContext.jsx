@@ -26,7 +26,17 @@ export function AuthProvider({ children }) {
   // signUp ora accetta nome e cognome separati. Salviamo entrambi in user_metadata
   // più il derivato full_name = `${nome} ${cognome}` per compatibilità con tutto
   // il codice (email transazionali, UI legacy) che oggi legge user_metadata.full_name.
-  const signUp = (email, password, nome, cognome) =>
+  //
+  // emailRedirectTo opzionale: URL assoluto a cui Supabase reindirizza l'utente
+  // dopo che ha cliccato il link di conferma email. Senza di esso Supabase usa
+  // il Site URL configurato in dashboard (default = home), perdendo la destination
+  // del flow ?redirect=. Vedi LoginPage per il calcolo dell'URL.
+  //
+  // AZIONE FONDER REQUIRED su Supabase Dashboard: in "Auth → URL Configuration →
+  // Redirect URLs" devono essere whitelistati `https://realaistate.ai/**` e
+  // `https://*.vercel.app/**` (preview), altrimenti Supabase ignora emailRedirectTo
+  // e fa fallback al Site URL → utente torna in home invece che alla destination.
+  const signUp = (email, password, nome, cognome, emailRedirectTo) =>
     supabase.auth.signUp({
       email,
       password,
@@ -35,7 +45,8 @@ export function AuthProvider({ children }) {
           nome,
           cognome,
           full_name: `${nome} ${cognome}`.trim(),
-        }
+        },
+        ...(emailRedirectTo ? { emailRedirectTo } : {}),
       }
     })
 

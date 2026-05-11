@@ -43,9 +43,18 @@ export default function LoginPage() {
     }
     setStatus('loading')
     setError('')
+    // Per la registrazione passiamo a Supabase un emailRedirectTo esplicito che
+    // include il ?redirect= della query string: dopo che l'utente clicca il link
+    // di conferma email torna sulla destination (es. /immobili/1) invece che in
+    // home. redirectTo è già passato dal safeRedirect → solo path relativi che
+    // iniziano con "/" (open-redirect protection). Senza questo, il link di
+    // conferma usa il Site URL configurato in Supabase Dashboard come fallback.
+    const emailRedirectTo = mode === 'register'
+      ? `${window.location.origin}${redirectTo}`
+      : undefined
     const { error } = mode === 'login'
       ? await signIn(email, password)
-      : await signUp(email, password, nome.trim(), cognome.trim())
+      : await signUp(email, password, nome.trim(), cognome.trim(), emailRedirectTo)
     if (error) {
       setError(error.message)
       setStatus('idle')
