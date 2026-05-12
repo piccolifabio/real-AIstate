@@ -1,5 +1,5 @@
 # RealAIstate — Stato del progetto
-Aggiornato: 12/05/2026 (settimana 7 — batch 6 fixes & polish: auth callback fix definitivo con explicit PKCE exchange + listener, endpoint preview-immobile service_role per anteprima admin/owner, copy hero /vendi meno aggressivo, label admin login, edit bozza venditore, elimina bozza con modal, modal rifiuto motivo obbligatorio + status='rejected' + migration rejection fields, email info@ post-approva/rifiuta, tabs filtro admin Pending/Pubblicati/Rifiutati/Bozze con counts)
+Aggiornato: 12/05/2026 (settimana 7 — hotfix 6.5: documenti planimetria+APE pre-popolati in modalità edit /vendi + colonne immobili.planimetria/ape + backfill id=6 dalla legacy table venditori. Prima di questo: batch 6 fixes & polish — auth callback fix definitivo con explicit PKCE exchange + listener, endpoint preview-immobile service_role per anteprima admin/owner, copy hero /vendi meno aggressivo, label admin login, edit bozza venditore, elimina bozza con modal, modal rifiuto motivo obbligatorio + status='rejected' + migration rejection fields, email info@ post-approva/rifiuta, tabs filtro admin Pending/Pubblicati/Rifiutati/Bozze con counts)
 
 ## Stack
 - Frontend: React + Vite, deploy su Vercel
@@ -236,6 +236,91 @@ Aggiornato: 12/05/2026 (settimana 7 — batch 6 fixes & polish: auth callback fi
   - **Out of scope**: signup. Dopo registrazione l'utente clicca il link
     di conferma email Supabase che lo riporta al Site URL — il
     redirect param scompare. Caso accettabile per ora.
+
+### Settimana 7 — hotfix 6.5 ✅ — completata 12/05/2026 (documenti edit pre-popolazione)
+Test E2E post-batch-6 (12/05) ha rivelato un bug residuo critico in
+modalità edit /vendi?edit=<id> (introdotta da batch 6 task 6.C): le foto
+si pre-popolano nel form, ma planimetria PDF + APE PDF no. L'utente
+arriva allo step 3 documenti e trova i campi vuoti — costretto a
+ri-caricare anche se l'immobile li aveva (id=6). Bloccante: il gate
+`return form.planimetria && form.ape` impedisce di proseguire e
+testare l'UPDATE del submit. Branch `hotfix/edit-documenti-prepopulate`,
+1 commit codice + 1 doc finale. Tempo effettivo: ~25 min.
+
+- [x] **Root cause confermata via Explore**:
+  - Tabella `public.immobili` NON ha colonne `planimetria` / `ape`.
+    Migrations esistenti: cap/citta/provincia/lat/lng (10/05), foto
+    (jsonb da launch), rejection_reason/rejected_at/rejected_by_email
+    (12/05 batch 6.F). Nessuna colonna documenti.
+  - `api/vendi-submit.js` INSERT venditori salva planimetria_url/ape_url
+    su tabella legacy `venditori` (lead capture). INSERT immobili NON
+    li include. Batch 6.C UPDATE branch NON li include nel PATCH.
+  - `mapDbToForm` in src/VendiForm.jsx legge `db.planimetria` / `db.ape`
+    → colonne non esistono → null → form vuoto → gate step 3 bloccato.
+  - Scheda pubblica /immobili/:id renderizza solo placeholder "Su
+    richiesta" hardcoded (DOCUMENT_TYPES in constants/) — niente
+    regressione visiva post-hotfix: i PDF restano in Storage,
+    indicizzati ora anche su immobili.*.
+
+- [x] **Fix in 3 parti**:
+  1. **Migration `migrations/2026-05-12-add-documenti-fields.sql`**: ADD
+     COLUMN IF NOT EXISTS `planimetria TEXT`, `ape TEXT` + NOTIFY pgrst.
+     Idempotente.
+  2. **Migration `migrations/2026-05-12-backfill-documenti-immobile-6.sql`**:
+     UPDATE immobili WHERE id=6 SET planimetria/ape = (SELECT
+     planimetria_url/ape_url da venditori matchando per email
+     auth.users.email == venditori.email, più recente). COALESCE
+     preserva valori già popolati. Estensione documentata: per
+     backfillare tutti gli immobili pre-hotfix sostituire WHERE id=6
+     con WHERE planimetria IS NULL OR ape IS NULL.
+  3. **api/vendi-submit.js**:
+     - INSERT immobili payload: aggiungo `planimetria: dati.planimetria
+       || null, ape: dati.ape || null`. Da ora ogni nuova bozza salva
+       i PDF anche in immobili (single source of truth).
+     - UPDATE branch (edit mode): logica preservation
+       `dati.planimetria !== undefined ? dati.planimetria : existing.planimetria`
+       — undefined preserva, null azzera (× user), stringa aggiorna.
+     - Storage cleanup best-effort post-PATCH: se planimetria/ape sono
+       cambiate e la vecchia URL è nel nostro bucket
+       `documenti-venditori`, DELETE su Storage. Errori loggati,
+       orphan tollerato (stesso pattern di 6.D elimina-bozza).
+
+- [x] **Zero modifiche frontend**: `mapDbToForm`, render step 3
+  (`typeof === "string"` check con "✓ Planimetria già caricata" / "✓
+  APE già caricato" + ×), uploadFile passthrough strings, submit
+  payload — tutto già pronto dal batch 6.C. Bastava che le colonne DB
+  esistessero.
+
+- [x] **Build & QA**: `npm run build` pulita 1.60s. 1 commit fix +
+  1 commit doc finale su `hotfix/edit-documenti-prepopulate`. Branch
+  pushato su origin, **NIENTE merge automatico su main**.
+
+**AZIONI FOUNDER REQUIRED post-merge hotfix 6.5** (in ordine):
+1. Eseguire `migrations/2026-05-12-add-documenti-fields.sql` via
+   Supabase SQL Editor. Senza, INSERT/UPDATE su immobili fallisce
+   con "Could not find the 'planimetria' column" (PostgREST cache miss).
+2. Eseguire `migrations/2026-05-12-backfill-documenti-immobile-6.sql`
+   per popolare planimetria/ape sull'immobile id=6 (test walktest4).
+3. Niente env var nuove né force redeploy.
+
+**Test E2E post-merge** (incognito o login walktest4):
+1. **Verifica backfill DB**:
+   ```sql
+   SELECT id, planimetria, ape FROM public.immobili WHERE id = 6;
+   ```
+   Atteso: entrambe le colonne popolate con URL Storage.
+2. **Edit pre-popolazione**: login walktest4 → /venditore → Modifica
+   id=6 → step 3 → vedi "✓ Planimetria già caricata" + "✓ APE già
+   caricato" con bottone × per ognuno. "Continua" abilitato.
+3. **Edit senza toccare doc**: prosegui fino step 4 → cambia prezzo a
+   €340.000 → submit → atteso: status='draft', prezzo aggiornato,
+   planimetria/ape INVARIATE in DB.
+4. **Edit rimuovi + nuovo**: Modifica id=6 → step 3 → × planimetria
+   → carica nuovo PDF → submit → atteso: nuovo URL in DB, vecchio
+   file rimosso da Storage (verifica via Studio Storage).
+5. **Nuova bozza fresca**: crea nuovo /vendi (no edit) → submit →
+   verifica DB: planimetria/ape popolate in immobili (non solo in
+   venditori).
 
 ### Settimana 7 — batch 6 ✅ — completata 12/05/2026 (2 bug residui priority-1 + 5 task ex-rimandati + 2 polish)
 Test E2E batch 5 del 12/05 mattina ha rivelato 2 bug residui critici
