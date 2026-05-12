@@ -1,6 +1,36 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "./AuthContext";
+import { supabase } from "./supabase";
 import SiteFooter from "./SiteFooter.jsx";
+
+// Diagnostica per task 6.A: se l'utente atterra in / subito dopo aver passato
+// per AuthCallback (entro 60s) E non risulta loggato, lo registriamo. Serve
+// solo se il fix AuthCallback non basta — il founder può dumpare entrambi
+// i debug log da DevTools e mandarmeli per analisi.
+function logHomeFallbackIfRelevant() {
+  try {
+    const callbackDebugRaw = localStorage.getItem("rai:auth-callback-debug");
+    if (!callbackDebugRaw) return;
+    const callbackDebug = JSON.parse(callbackDebugRaw);
+    const last = Array.isArray(callbackDebug) ? callbackDebug[callbackDebug.length - 1] : null;
+    if (!last?.ts) return;
+    const ageMs = Date.now() - new Date(last.ts).getTime();
+    if (ageMs > 60_000) return;
+    supabase.auth.getSession().then(({ data }) => {
+      if (data?.session) return;
+      const prev = JSON.parse(localStorage.getItem("rai:home-fallback-debug") || "[]");
+      const next = [...prev, {
+        ts: new Date().toISOString(),
+        path: window.location.pathname,
+        callbackLastEvent: last.event,
+        callbackAgeMs: ageMs,
+      }].slice(-5);
+      localStorage.setItem("rai:home-fallback-debug", JSON.stringify(next));
+    });
+  } catch {
+    // localStorage off in private mode estremo — non blocchiamo render
+  }
+}
 
 function useScrollReveal(dep = null) {
   useEffect(() => {
@@ -129,6 +159,7 @@ function CTA() {
 export default function HomePage() {
   const [tab, setTab] = useState("venditore");
   useScrollReveal(tab);
+  useEffect(() => { logHomeFallbackIfRelevant(); }, []);
   const steps = tab === "venditore" ? sellerSteps : tab === "compratore" ? buyerSteps : proSteps;
   return (
     <>
