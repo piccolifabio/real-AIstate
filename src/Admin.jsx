@@ -143,7 +143,9 @@ export default function AdminPage() {
         .admin-login-box { background: var(--surface); border: 1px solid var(--border); padding: 3rem; border-radius: 4px; width: 100%; max-width: 380px; }
         .admin-login-logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; color: var(--white); margin-bottom: 0.3rem; }
         .admin-login-logo span { color: var(--red); }
-        .admin-login-sub { font-size: 0.8rem; color: var(--muted); margin-bottom: 2rem; }
+        .admin-login-sub { font-size: 0.8rem; color: var(--muted); margin-bottom: 0.7rem; }
+        .admin-login-helper { font-size: 0.75rem; color: var(--muted); opacity: 0.75; line-height: 1.5; margin-bottom: 1.6rem; }
+        .admin-login-label { display: block; font-size: 0.7rem; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; margin-bottom: 0.45rem; }
         .admin-login-input { width: 100%; padding: 0.9rem 1rem; background: rgba(247,245,240,0.05); border: 1px solid var(--border); color: var(--white); font-family: 'DM Sans', sans-serif; font-size: 0.95rem; border-radius: 2px; outline: none; margin-bottom: 1rem; }
         .admin-login-input:focus { border-color: var(--red); }
         .admin-login-btn { width: 100%; padding: 0.9rem; background: var(--red); color: white; border: none; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; border-radius: 2px; }
@@ -154,7 +156,12 @@ export default function AdminPage() {
         <div className="admin-login-box">
           <div className="admin-login-logo">Real<span>AI</span>state</div>
           <div className="admin-login-sub">Area amministrativa</div>
+          <div className="admin-login-helper">
+            Inserisci la password fornita dal team RealAIstate. Non è richiesta una email — è un accesso condiviso amministratore.
+          </div>
+          <label className="admin-login-label" htmlFor="admin-password">Password amministratore</label>
           <input
+            id="admin-password"
             className="admin-login-input"
             type="password"
             placeholder="Password"
