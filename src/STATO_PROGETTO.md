@@ -1,5 +1,5 @@
 # RealAIstate — Stato del progetto
-Aggiornato: 12/05/2026 (settimana 7 — hotfix 6.8: upload Storage via signed URL service_role per bypassare RLS 403 — pattern signed upload URL, file PUT diretto browser → Storage senza passare per la serverless function. Prima di questo: hotfix 6.7 contatti per-immobile pre-popolati in edit mode, hotfix 6.6 coerenza URL completi planimetria/ape, hotfix 6.5 documenti edit pre-popolazione, batch 6 fixes & polish — auth callback fix definitivo con explicit PKCE exchange + listener, endpoint preview-immobile service_role per anteprima admin/owner, copy hero /vendi meno aggressivo, label admin login, edit bozza venditore, elimina bozza con modal, modal rifiuto motivo obbligatorio + status='rejected' + migration rejection fields, email info@ post-approva/rifiuta, tabs filtro admin Pending/Pubblicati/Rifiutati/Bozze con counts)
+Aggiornato: 12/05/2026 (settimana 7 — hotfix 6.9 doc only: migration repo per documentare il fix CHECK constraint immobili_status_check già applicato manualmente in produzione, aggiunge 'rejected' al CHECK. Prima di questo: hotfix 6.8 upload Storage via signed URL service_role, hotfix 6.7 contatti per-immobile pre-popolati in edit mode, hotfix 6.6 coerenza URL completi planimetria/ape, hotfix 6.5 documenti edit pre-popolazione, batch 6 fixes & polish — auth callback fix definitivo con explicit PKCE exchange + listener, endpoint preview-immobile service_role per anteprima admin/owner, copy hero /vendi meno aggressivo, label admin login, edit bozza venditore, elimina bozza con modal, modal rifiuto motivo obbligatorio + status='rejected' + migration rejection fields, email info@ post-approva/rifiuta, tabs filtro admin Pending/Pubblicati/Rifiutati/Bozze con counts)
 
 ## Stack
 - Frontend: React + Vite, deploy su Vercel
@@ -236,6 +236,47 @@ Aggiornato: 12/05/2026 (settimana 7 — hotfix 6.8: upload Storage via signed UR
   - **Out of scope**: signup. Dopo registrazione l'utente clicca il link
     di conferma email Supabase che lo riporta al Site URL — il
     redirect param scompare. Caso accettabile per ora.
+
+### Settimana 7 — hotfix 6.9 ✅ — completata 12/05/2026 (doc only: CHECK constraint immobili.status include 'rejected')
+Bug introdotto da batch 6 task 6.F (modal rifiuto admin): l'op rifiuta
+fa PATCH a `status='rejected'` ma il CHECK constraint
+`immobili_status_check` accettava solo i 3 valori storici (draft,
+pending_review, published). PATCH falliva con:
+`"new row for relation \"immobili\" violates check constraint
+immobili_status_check"`.
+
+Il founder ha applicato manualmente in produzione il 12/05/2026 il
+fix via Supabase SQL Editor:
+```sql
+ALTER TABLE public.immobili DROP CONSTRAINT IF EXISTS immobili_status_check;
+ALTER TABLE public.immobili ADD CONSTRAINT immobili_status_check
+  CHECK (status IN ('draft', 'pending_review', 'published', 'rejected'));
+```
+
+Branch `hotfix/status-check-rejected`, 1 commit (migration + doc).
+
+- [x] **Migration repo** `migrations/2026-05-12-fix-status-check-add-rejected.sql`:
+  - Documenta il cambio nel repo per coerenza e per restore futuri:
+    se mai serve ricostruire il DB da zero, l'esecuzione sequenziale
+    delle migration produce lo stato corretto senza intervento manuale.
+  - Idempotente con DROP CONSTRAINT IF EXISTS — rilanciabile senza
+    danno. Su produzione già fixata, esecuzione = NO-OP funzionale
+    (drop + ricreazione identica).
+  - Niente azione richiesta dal founder se non per restore futuri.
+
+- [x] **Lesson learned**: quando si introduce un nuovo valore di
+  status (batch 6.F → 'rejected'), bisogna aggiornare ANCHE il CHECK
+  constraint nella stessa migration. La migration
+  `2026-05-12-add-rejection-fields.sql` di batch 6.F aggiungeva le
+  colonne rejection_reason/at/by_email ma NON toccava il CHECK status
+  — gap mio nel piano batch 6, scoperto dal founder solo a runtime
+  perché il test E2E del modal rifiuto non era stato fatto end-to-end.
+  Future task che cambiano valori enum-like dovrebbero includere
+  TODO: aggiornare CHECK constraint.
+
+**AZIONI FOUNDER REQUIRED post-merge**: nessuna. Il fix è già attivo
+in produzione (manuale 12/05). La migration nel repo è documentazione
++ insurance per restore.
 
 ### Settimana 7 — hotfix 6.8 ✅ — completata 12/05/2026 (upload Storage via signed URL service_role)
 Test E2E 12/05 (bonus step 5 hotfix 6.5) ha rivelato 403 RLS violation
