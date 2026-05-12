@@ -1,5 +1,5 @@
 # RealAIstate — Stato del progetto
-Aggiornato: 12/05/2026 (settimana 7 — hotfix 6.7: contatti per-immobile pre-popolati in edit mode + colonne contatto_* su immobili + backfill id=6 + mapDbToForm con fallback user_metadata. Prima di questo: hotfix 6.6 coerenza URL completi planimetria/ape, hotfix 6.5 documenti edit pre-popolazione, batch 6 fixes & polish — auth callback fix definitivo con explicit PKCE exchange + listener, endpoint preview-immobile service_role per anteprima admin/owner, copy hero /vendi meno aggressivo, label admin login, edit bozza venditore, elimina bozza con modal, modal rifiuto motivo obbligatorio + status='rejected' + migration rejection fields, email info@ post-approva/rifiuta, tabs filtro admin Pending/Pubblicati/Rifiutati/Bozze con counts)
+Aggiornato: 12/05/2026 (settimana 7 — hotfix 6.8: upload Storage via signed URL service_role per bypassare RLS 403 — pattern signed upload URL, file PUT diretto browser → Storage senza passare per la serverless function. Prima di questo: hotfix 6.7 contatti per-immobile pre-popolati in edit mode, hotfix 6.6 coerenza URL completi planimetria/ape, hotfix 6.5 documenti edit pre-popolazione, batch 6 fixes & polish — auth callback fix definitivo con explicit PKCE exchange + listener, endpoint preview-immobile service_role per anteprima admin/owner, copy hero /vendi meno aggressivo, label admin login, edit bozza venditore, elimina bozza con modal, modal rifiuto motivo obbligatorio + status='rejected' + migration rejection fields, email info@ post-approva/rifiuta, tabs filtro admin Pending/Pubblicati/Rifiutati/Bozze con counts)
 
 ## Stack
 - Frontend: React + Vite, deploy su Vercel
@@ -236,6 +236,96 @@ Aggiornato: 12/05/2026 (settimana 7 — hotfix 6.7: contatti per-immobile pre-po
   - **Out of scope**: signup. Dopo registrazione l'utente clicca il link
     di conferma email Supabase che lo riporta al Site URL — il
     redirect param scompare. Caso accettabile per ora.
+
+### Settimana 7 — hotfix 6.8 ✅ — completata 12/05/2026 (upload Storage via signed URL service_role)
+Test E2E 12/05 (bonus step 5 hotfix 6.5) ha rivelato 403 RLS violation
+quando walktest4 carica un nuovo PDF in edit mode:
+`{ statusCode: '403', error: 'Unauthorized', message: 'new row violates
+row-level security policy' }`. Branch
+`hotfix/upload-rls-service-role` da `hotfix/contatti-prepopulate`. 1
+commit fix + 1 commit doc. Tempo effettivo: ~25 min.
+
+- [x] **Root cause reale** (diversa dall'ipotesi iniziale del founder):
+  - Ipotesi founder: "la INSERT branch originale di vendi-submit.js
+    usava service_role server-side, UPDATE usa anon → RLS blocca".
+  - Diagnosi codice: NON ci sono branch INSERT/UPDATE diversi per
+    l'upload. C'è UN SOLO upload path nel FRONTEND
+    (src/VendiForm.jsx uploadFile via `supabase.storage.upload()`),
+    usato identicamente da nuove bozze e da edit mode. Backend
+    vendi-submit.js riceve solo URL già upload-ati e fa solo
+    INSERT/PATCH su tabella + DELETE cleanup (entrambi service_role).
+  - Vero root cause: la RLS policy sul bucket `documenti-venditori`
+    è stata STRETTA nel frattempo (probabilmente policy "user's own
+    folder" che richiede path `${auth.uid()}/...`). I path attuali
+    sono FLAT (`planimetrie/<ts>-<rand>.pdf`) → non matchano →
+    anon client autenticato come walktest4 → 403.
+  - L'upload originale di id=6 funzionò perché RLS era più permissiva
+    all'epoca. Adesso QUALSIASI upload (nuove bozze + edit) fallirebbe
+    — non è una regressione introdotta da hotfix 6.5.
+
+- [x] **Fix: signed upload URL pattern** (allineato con intent founder
+  "usare service_role server-side", ma più efficiente):
+  - Il file NON passa attraverso la serverless function (eviterebbe
+    Vercel 4.5 MB body limit per foto 10 MB).
+  - Backend genera un signed URL via service_role; frontend fa PUT
+    diretto al signed URL; il token nell'URL bypassa RLS.
+  - Implementazione:
+    1. **api/admin/[op].js** nuovo op `upload-sign` (POST, auth=jwt):
+       body `{ folder, ext }`, folder allowlist
+       (planimetrie/ape/foto), estensione alphanumeric max 10 char
+       (defense path traversal). Chiama Supabase Storage API
+       `POST /storage/v1/object/upload/sign/documenti-venditori/<path>`
+       con apikey=service_role. Ritorna `{ ok, path, signedUrl,
+       publicUrl }`.
+    2. **src/VendiForm.jsx uploadFile rewrite**:
+       - Strings (edit mode pre-popolate): passthrough invariato
+       - File objects: POST `/api/admin/upload-sign` con JWT →
+         riceve signedUrl + publicUrl → PUT file direttamente al
+         signedUrl → return publicUrl
+       - Errori parlanti (sign fallito vs PUT fallito + status code)
+
+- [x] **Decisione design "OPZIONE A" path FLAT** (no user_id nel
+  path), documentata:
+  - Status quo mantenuto. I path restano `${folder}/${ts}-${rand}.ext`.
+  - Sicurezza upload garantita dall'endpoint `/api/admin/upload-sign`
+    che valida JWT prima di generare il signed URL → solo utenti
+    loggati possono uploadare.
+  - RLS Storage resta belt-and-braces per bloccare upload diretti
+    da anon client (se mai qualcuno tentasse di bypassare l'API).
+  - "OPZIONE B" (path con user_id per future RLS multi-tenant) in
+    backlog post-PMF se mai servirà multi-tenancy a livello Storage.
+
+- [x] **Niente modifiche a**:
+  - api/vendi-submit.js INSERT/UPDATE/cleanup (nessun upload lì, mai —
+    chiarito root cause)
+  - Storage RLS policy (corretta com'è, blocca anon direct upload)
+  - Path filename convention (resta flat)
+
+- [x] **Build & QA**: `npm run build` pulita 5.09s. 1 commit fix +
+  1 commit doc. Branch pushato su origin, **NIENTE merge automatico**.
+
+**AZIONI FOUNDER REQUIRED post-merge hotfix 6.8**: nessuna. Niente
+migration, niente env var, niente redeploy. Il fix è puramente di
+codice (backend op + frontend upload pattern).
+
+**Test E2E post-merge**:
+1. Login walktest4 → /venditore → Modifica id=6
+2. Step 3 documenti → click × su planimetria → carica nuovo PDF
+3. Step 4 contatti (popolati da hotfix 6.7) → submit "Aggiorna"
+4. **ATTESO**: toast successo, NIENTE 403
+5. Supabase Studio → Storage → documenti-venditori → planimetrie/:
+   - Nuovo file presente
+   - Vecchio file (es. `1778518928396-awqfftw5j5e.pdf`) eliminato dal
+     cleanup post-PATCH (già funzionante da hotfix 6.6 — ora abilitato
+     dal path completo di hotfix 6.6)
+6. **Verifica DB**:
+   ```sql
+   SELECT id, planimetria FROM public.immobili WHERE id = 6;
+   ```
+   Atteso: URL completo del nuovo file.
+7. **Test nuova bozza fresca** (sanity check del flow standard):
+   crea /vendi nuovo → carica foto + planimetria + APE → submit →
+   atteso: tutto va a buon fine come prima del bug 403.
 
 ### Settimana 7 — hotfix 6.7 ✅ — completata 12/05/2026 (contatti pre-popolati in edit mode)
 Test E2E post-hotfix-6.6 ha rivelato che lo step 4 contatti del form
