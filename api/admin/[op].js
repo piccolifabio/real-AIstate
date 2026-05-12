@@ -149,6 +149,61 @@ async function patchImmobileStatus(env, immobileId, status) {
   return { ok: true, immobile: rows[0] };
 }
 
+// Notifica interna a info@realaistate.ai dopo approvazione/rifiuto admin
+// (task 6.G). Body riepilogativo coi dati immobile + venditore + link
+// scheda / link admin. Send best-effort: errori loggati ma non bloccano
+// la response al frontend.
+async function sendAdminNotificationEmail(env, { type, immobile, venditoreInfo, motivo }) {
+  if (!env.BREVO_API_KEY) return false;
+  const indirizzoSafe = escapeHtml(immobile?.indirizzo || `Immobile #${immobile?.id || "?"}`);
+  const subject = type === "approva"
+    ? `Immobile approvato: ${immobile?.indirizzo || `#${immobile?.id}`}`
+    : `Immobile rifiutato: ${immobile?.indirizzo || `#${immobile?.id}`}`;
+  const heading = type === "approva" ? "Immobile pubblicato" : "Immobile rifiutato";
+  const motivoBlock = (type === "rifiuta" && motivo)
+    ? `<p style="margin:0 0 12px;"><strong>Motivo rifiuto:</strong> ${escapeHtml(motivo)}</p>`
+    : "";
+  const prezzoFmt = immobile?.prezzo
+    ? `€ ${Number(immobile.prezzo).toLocaleString("it-IT")}`
+    : "—";
+  const venditoreLine = venditoreInfo?.email
+    ? `${escapeHtml(venditoreInfo.nome || "")} (${escapeHtml(venditoreInfo.email)})`.trim()
+    : "—";
+  const linkScheda = `https://realaistate.ai/immobili/${encodeURIComponent(immobile?.id || "")}`;
+  const html = [
+    `<div style="font-family:Arial,sans-serif;max-width:600px;color:#0a0a0a;">`,
+    `<h2 style="margin:0 0 16px;color:#0a0a0a;">${heading}</h2>`,
+    `<p style="margin:0 0 8px;"><strong>ID:</strong> ${escapeHtml(String(immobile?.id || ""))}</p>`,
+    `<p style="margin:0 0 8px;"><strong>Indirizzo:</strong> ${indirizzoSafe}</p>`,
+    `<p style="margin:0 0 8px;"><strong>Prezzo:</strong> ${escapeHtml(prezzoFmt)}</p>`,
+    `<p style="margin:0 0 8px;"><strong>Venditore:</strong> ${venditoreLine}</p>`,
+    `<p style="margin:0 0 12px;"><strong>Data:</strong> ${escapeHtml(new Date().toLocaleString("it-IT"))}</p>`,
+    motivoBlock,
+    `<p style="margin:16px 0 0;"><a href="${encodeURI(linkScheda)}" style="color:#d93025;">Apri scheda &rarr;</a> · <a href="https://realaistate.ai/admin" style="color:#d93025;">Pannello admin &rarr;</a></p>`,
+    `</div>`,
+  ].join("");
+  try {
+    const r = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "api-key": env.BREVO_API_KEY },
+      body: JSON.stringify({
+        sender: { name: "RealAIstate", email: "info@realaistate.ai" },
+        to: [{ email: "info@realaistate.ai", name: "RealAIstate Admin" }],
+        subject,
+        htmlContent: html,
+      }),
+    });
+    if (!r.ok) {
+      const errBody = await r.text();
+      console.error("admin notification email error:", errBody);
+    }
+    return r.ok;
+  } catch (err) {
+    console.error("admin notification email failed:", err);
+    return false;
+  }
+}
+
 async function sendBrevo(env, { to, name, subject, html }) {
   if (!env.BREVO_API_KEY || !to) return false;
   try {
@@ -292,6 +347,13 @@ async function pubblicaImmobile(req, res, env) {
       });
     }
 
+    // Notifica admin info@ (task 6.G), best-effort.
+    const adminEmailSent = await sendAdminNotificationEmail(env, {
+      type: "approva",
+      immobile,
+      venditoreInfo: v,
+    });
+
     return res.status(200).json({
       ok: true,
       immobile_id,
@@ -300,6 +362,7 @@ async function pubblicaImmobile(req, res, env) {
       ai_skipped: aiMissing && !aiGenerated,
       ai_error: aiError,
       email_sent: emailSent,
+      admin_email_sent: adminEmailSent,
       venditore_email: v.email,
     });
   } catch (err) {
@@ -410,11 +473,20 @@ async function rifiutaImmobile(req, res, env) {
       });
     }
 
+    // Notifica admin info@ (task 6.G), best-effort, include il motivo.
+    const adminEmailSent = await sendAdminNotificationEmail(env, {
+      type: "rifiuta",
+      immobile,
+      venditoreInfo: v,
+      motivo,
+    });
+
     return res.status(200).json({
       ok: true,
       immobile_id,
       status: "rejected",
       email_sent: emailSent,
+      admin_email_sent: adminEmailSent,
       venditore_email: v.email,
     });
   } catch (err) {
