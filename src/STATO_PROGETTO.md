@@ -1,5 +1,5 @@
 # RealAIstate — Stato del progetto
-Aggiornato: 11/05/2026 (settimana 7 — batch 5 walkthrough fixes scope ridotto: foto URL completi getPublicUrl + backfill id=6, documenti come constants render generico, pagina /auth/callback dedicata, copy hero /vendi OMI, messaggio CAP più diretto, anteprima privata owner+admin via VITE_ADMIN_EMAILS)
+Aggiornato: 12/05/2026 (settimana 7 — batch 6 fixes & polish: auth callback fix definitivo con explicit PKCE exchange + listener, endpoint preview-immobile service_role per anteprima admin/owner, copy hero /vendi meno aggressivo, label admin login, edit bozza venditore, elimina bozza con modal, modal rifiuto motivo obbligatorio + status='rejected' + migration rejection fields, email info@ post-approva/rifiuta, tabs filtro admin Pending/Pubblicati/Rifiutati/Bozze con counts)
 
 ## Stack
 - Frontend: React + Vite, deploy su Vercel
@@ -236,6 +236,253 @@ Aggiornato: 11/05/2026 (settimana 7 — batch 5 walkthrough fixes scope ridotto:
   - **Out of scope**: signup. Dopo registrazione l'utente clicca il link
     di conferma email Supabase che lo riporta al Site URL — il
     redirect param scompare. Caso accettabile per ora.
+
+### Settimana 7 — batch 6 ✅ — completata 12/05/2026 (2 bug residui priority-1 + 5 task ex-rimandati + 2 polish)
+Test E2E batch 5 del 12/05 mattina ha rivelato 2 bug residui critici
+nonostante 3 iterazioni precedenti: auth callback redirect (terza
+iterazione fallita) e anteprima admin/owner non funzionante neanche col
+login Supabase corretto + email in whitelist VITE_ADMIN_EMAILS. Founder
+ha confermato via diagnostica che (a) URL bar va direttamente in HOME
+senza transitare /auth/callback durante il signup conferma email,
+(b) per anteprima admin RLS Supabase su immobili blocca SELECT a monte
+quindi isAdminUser() frontend è inutile. Batch 6 raggruppa: 2 bug
+residui priority-1 + 5 task rimandati da batch 5 (edit bozza, elimina
+bozza, tabs admin, modal rifiuto, email info@) + 2 polish (copy /vendi,
+admin login UI). 9 task totali, branch `feat/batch-6-fixes-polish`, un
+commit per task. Build pulita.
+
+- [x] **Task 6.A (priority-1): bug auth callback redirect (terza iterazione)** ✅
+  - Sintomo 12/05 in incognito: /immobili/1 → "Accedi per fare proposta"
+    → tab Registrati → Gmail → click conferma → atterra in HOME, NON
+    su /immobili/1. URL bar va direttamente in / senza mai mostrare
+    /auth/callback.
+  - Root cause più probabile: supabase-js 2.105.1 default flowType=PKCE.
+    Email link contiene `?code=<auth_code>` query param (non hash).
+    AuthCallback chiamava solo `getSession()` che con PKCE non garantisce
+    l'exchange esplicito del code in tutti gli scenari. Inoltre il
+    template email Supabase potrebbe non usare `{{ .ConfirmationURL }}`
+    (impossibile verificare senza ispezionare il Dashboard del founder).
+  - **Fix difensivo che copre tutti gli scenari**:
+    - `AuthCallback.jsx` rewrite useEffect: se `?code=` in URL chiama
+      esplicitamente `supabase.auth.exchangeCodeForSession(code)` in
+      try/catch. Errore "Auth code is invalid or already used" → success
+      silenzioso (supabase-js può averlo già scambiato auto).
+    - Se `?error=` esplicito → mostra UI errore + bottone "Vai al login".
+    - `getSession()` dopo l'exchange. Se session esiste → navigate
+      immediato. Se non esiste subscribe a `onAuthStateChange` listener
+      che naviga al primo SIGNED_IN/INITIAL_SESSION. Fallback timer 800ms
+      naviga comunque (la destination gestirà come "non loggato").
+    - **Logging diagnostico** persistente in `localStorage` chiave
+      `rai:auth-callback-debug` con array (max 5 entries FIFO) di event
+      JSON. Se bug persiste, founder può dumpare da DevTools.
+    - `HomePage.jsx` al mount: se esiste `rai:auth-callback-debug` con
+      ultima entry < 60s fa E getSession ritorna null E pathname='/',
+      logga in `rai:home-fallback-debug`. Cattura il caso "Supabase non
+      usa emailRedirectTo affatto" che non passa mai da AuthCallback.
+  - **AZIONE FOUNDER REQUIRED su Supabase Dashboard prima del test**:
+    - Auth → URL Configuration → Site URL = `https://realaistate.ai`
+      (NO trailing slash)
+    - Auth → Email Templates → "Confirm signup" → body HTML del link
+      deve contenere `{{ .ConfirmationURL }}` (non URL hardcoded)
+    - Whitelist Redirect URLs già confermata corretta dal founder 12/05
+
+- [x] **Task 6.B (priority-1): bug anteprima admin/owner non funziona** ✅
+  - Sintomo 12/05: founder loggato con `fabiopiccoli@hotmail.it` (email
+    in VITE_ADMIN_EMAILS sia Vercel che .env.local) apre /immobili/6
+    (draft, user_id ≠ founder) → "Immobile non disponibile" invece della
+    scheda preview attesa dal batch 5 task 5.G/5.I.
+  - Root cause: RLS Supabase su `immobili` filtra `status='published'`
+    a livello DB per anon-key client. La fetch in Immobile.jsx ritorna
+    0 righe → immobileDb resta null → "non disponibile". `isAdminUser()`
+    frontend è inutile perché RLS blocca a monte. Stesso problema per
+    owner sulle proprie bozze (RLS forse permette solo a venditore di
+    leggere il proprio published, non drafts — comportamento inferito
+    da behavior, RLS policies documentate in ARCHITECTURE_REVIEW.md ma
+    non in `migrations/*.sql`).
+  - **Decisione di design**: endpoint API service_role + check email
+    server-side, NIENTE migration RLS. Più reversibile, RLS resta tight.
+    Single source of truth: `ADMIN_EMAILS` env var server-side (separata
+    da `VITE_ADMIN_EMAILS` UI-only). Per il founder beta in pratica:
+    stesso valore in entrambe.
+  - `api/admin/[op].js` refactor:
+    - Auth check da globale x-admin-key a **per-op map**: `OPS = { ...,
+      'preview-immobile': { auth:'jwt', handler: previewImmobile } }`.
+      Dispatcher fa method check, poi auth dispatch (admin-key OR jwt),
+      poi chiama handler con `(req, res, env, ctx)`.
+    - Helper `checkJwt`: estrae Bearer token, valida via
+      `${SUPABASE_URL}/auth/v1/user`, ritorna `{ userId, userEmail }`.
+    - Nuovo op `preview-immobile` (POST, auth=jwt): valida JWT → fetch
+      immobile via service_role → autorizza se `userId === venditore_user_id`
+      OR `userEmail in ADMIN_EMAILS_SERVER` → ritorna immobile o 403/404.
+  - `src/lib/previewImmobile.js` (nuovo): `fetchImmobilePreview(id)`
+    legge JWT da `supabase.auth.getSession()`, POST endpoint con
+    `Authorization: Bearer`. Ritorna `{ immobile, error }`.
+  - `src/Immobile.jsx` fetch logic: dopo la fetch RLS standard, se
+    `data === null` E `user.id` esiste, ricade su `fetchImmobilePreview`.
+    Se ritorna immobile, set `immobileDb`. Tutto il rendering banner
+    giallo + sticky CTA owner/admin funziona già out-of-the-box dal
+    batch 5. Anonimi: nessun fallback (endpoint richiede JWT).
+  - **AZIONE FOUNDER REQUIRED**: aggiungere env `ADMIN_EMAILS=fabiopiccoli@hotmail.it`
+    server-side in Vercel (Production + Preview + Development) e in
+    `.env.local`. Force redeploy "no cache" se env aggiunta post-deploy.
+
+- [x] **Task 6.H: copy hero /vendi non-loggato meno aggressivo** ✅
+  - `src/VendiForm.jsx` linea 498 (branch `if (!user)`). Sostituito:
+    - Vecchio: "Niente agenzia. Niente valutazioni gonfiate per
+      strappare l'esclusiva. L'AI confronta il tuo prezzo con i dati
+      ufficiali OMI, analizza le tue foto, pubblica il tuo annuncio. Tu
+      decidi, noi ti diamo gli strumenti."
+    - Nuovo: "Niente agenzia. L'AI confronta il tuo prezzo con i dati
+      ufficiali OMI, analizza le tue foto, pubblica il tuo annuncio. Noi
+      ti diamo gli strumenti, tu decidi."
+  - Rimosso "Niente valutazioni gonfiate per strappare l'esclusiva"
+    (tono troppo aggressivo per /vendi — l'utente sta dando fiducia, non
+    attaccando il sistema). Invertito ordine "Tu decidi" / "noi ti diamo
+    gli strumenti": chiusura su "tu decidi" enfatizza autonomia.
+
+- [x] **Task 6.I: UX /admin login con label + helper text** ✅
+  - `src/Admin.jsx` login screen (linee 135-185). Aggiunti:
+    - Helper text sotto subtitle "Area amministrativa": "Inserisci la
+      password fornita dal team RealAIstate. Non è richiesta una email
+      — è un accesso condiviso amministratore."
+    - Label uppercase sopra input: "Password amministratore" (con
+      htmlFor + id per accessibilità).
+  - Placeholder "Password" invariato. Nuovi stili `.admin-login-helper`
+    / `.admin-login-label` coerenti col resto della UI (var(--muted),
+    letterSpacing 0.08em uppercase).
+  - OPZIONE A scelta come da spec. OPZIONE B (vero login email/password
+    + whitelist VITE_ADMIN_EMAILS) è in backlog post-PMF.
+
+- [x] **Task 6.C: modifica bozza venditore via /vendi?edit=<id>** ✅
+  - Venditore può modificare bozze esistenti (status=draft o rejected)
+    senza ricreare l'immobile da zero. Draft → save mantiene status.
+    Rejected → save fa re-submit automatico (status → pending_review)
+    così admin rivede.
+  - `src/VenditoreDashboard.jsx`: bottone "Modifica" (outline) visibile
+    per draft+rejected. Link a `/vendi?edit=<id>`. Non visibile per
+    pending_review/published/sold/archived.
+  - `src/VendiForm.jsx`:
+    - Helper `mapDbToForm(db)`: mappa colonne DB immobili → keys del
+      form (db.prezzo → form.prezzo_desiderato, db.superficie →
+      form.superficie_catastale, db.locali → form.vani, db.stato_immobile
+      → form.stato).
+    - useEffect `?edit=<id>`: fetch via Supabase, valida ownership +
+      status, poi setForm + editingId.
+    - Gate UI: editLoading (spinner), editError (schermata "Impossibile
+      modificare" + link dashboard).
+    - `uploadFile()` riconosce stringhe (URL già caricato) e le passa
+      through senza re-upload. Permette di mantenere foto/planimetria/
+      ape esistenti.
+    - Render foto/planimetria/ape: typeof check per scegliere src='url'
+      (esistente) vs URL.createObjectURL(File) (nuovo upload).
+    - Submit: se editingId, aggiunge `{ _mode:'update', immobile_id }`
+      al payload.
+    - Hero step 0 + success screen: copy dedicato edit mode.
+  - `api/vendi-submit.js`: branch `_mode === 'update'` prima della
+    INSERT venditori/immobili. Valida ownership + status (solo draft/
+    rejected). PATCH immobili (no venditori legacy, no emails). Status:
+    rejected → pending_review, draft → draft.
+  - Foto rimosse dal form NON triggerano delete su Storage: file restano
+    orphan. Cleanup batch in backlog post-MVP. Trade-off accettato.
+
+- [x] **Task 6.D: elimina bozza con modal conferma + asset cleanup** ✅
+  - Venditore può cancellare definitivamente bozze proprie (status=draft
+    o rejected). Operazione irreversibile, conferma via modal.
+  - `api/admin/[op].js` nuovo op `elimina-bozza` (POST, auth=jwt, owner-only):
+    - Body `{immobile_id}`. Authorize: `userId === venditore_user_id`
+      AND status IN ('draft','rejected'). Altri stati → 409.
+    - DELETE riga immobili via service_role. Se fallisce, 500 + abort.
+    - **Storage cleanup best-effort**: per ogni URL foto/planimetria/ape
+      che punta al bucket `documenti-venditori`, DELETE su /storage/v1.
+      Errori loggati come `asset_cleanup_warnings`, NON bloccano response.
+      Razione: meglio file orphan in Storage che riga orphan in DB.
+      Cleanup batch in backlog.
+  - `src/VenditoreDashboard.jsx`:
+    - Stato `eliminandoImmobile` (immobile in attesa conferma) +
+      `eliminandoLoading`.
+    - Bottone "Elimina bozza" rosso destructive (rgba red 10% bg, border
+      30%, text red) accanto a "Modifica" per draft/rejected.
+    - Modal inline (no astrazione — unico modal nella dashboard):
+      backdrop blur scuro click-to-dismiss, titolo Bebas + body con
+      indirizzo in evidenza, 2 bottoni Annulla (outline) + Elimina
+      definitivamente (rosso primario). Loading state.
+
+- [x] **Task 6.F: modal rifiuto admin con motivo obbligatorio + status='rejected'** ✅
+  - Sostituisce `prompt()` di rifiuto con modal dedicato. Motivo
+    obbligatorio (10-500 char), validato sia frontend che backend.
+    Status passa da 'draft' (era così pre-batch 6) a 'rejected' con
+    motivo + timestamp + admin persistiti in DB.
+  - Nuova migration `migrations/2026-05-12-add-rejection-fields.sql`:
+    ALTER TABLE public.immobili ADD COLUMN IF NOT EXISTS
+    `rejection_reason TEXT`, `rejected_at TIMESTAMPTZ`,
+    `rejected_by_email TEXT`. Idempotente, NOTIFY pgrst finale.
+  - `api/admin/[op].js` op `rifiuta`:
+    - Validation motivo: obbligatorio min 10 char (sotto è poco utile)
+      max 500 char (sopra sospetta paste di documenti). Errori 400.
+    - PATCH immobile: status='rejected', rejection_reason=<motivo>,
+      rejected_at=now(), rejected_by_email='admin' (placeholder finché
+      /admin login non passa a vero login Supabase con OPZIONE B).
+    - Email venditore: subject "Il tuo immobile non è stato approvato"
+      (era "Modifiche richieste sul tuo annuncio"), CTA "Modifica e
+      ripubblica →" che linka /venditore.
+  - `src/Admin.jsx`: stato rejectModal/rejectMotivo/rejectSubmitting.
+    Modal full-screen con backdrop blur, textarea con label, counter
+    "X/500 caratteri — min 10" cambia colore se fuori range. Bottone
+    "Conferma rifiuto" disabled se motivo invalido.
+  - **AZIONE FOUNDER REQUIRED**: eseguire la migration via SQL Editor
+    Supabase. Senza, il PATCH fallisce con "Could not find the
+    'rejection_reason' column".
+
+- [x] **Task 6.G: email notifica a info@ post-approva/rifiuta** ✅
+  - Helper `sendAdminNotificationEmail` in api/admin/[op].js: subject
+    "Immobile approvato/rifiutato: <indirizzo>", body HTML riepilogativo
+    (ID, indirizzo, prezzo, venditore, data ora, motivo se rifiuto,
+    link Apri scheda + link Pannello admin). Sender info@realaistate.ai,
+    to info@realaistate.ai.
+  - Chiamato in op `pubblica` e `rifiuta` dopo email venditore (e dopo
+    PATCH DB). Best-effort: errori NON bloccano response (notifica è
+    informativa, fallirla non deve far apparire l'operazione come
+    fallita al founder che vede già feedback nel pannello).
+  - Aggiunto `admin_email_sent` al payload response per debug.
+
+- [x] **Task 6.E: tabs filtro lista admin (Pending/Pubblicati/Rifiutati/Bozze)** ✅
+  - Oggi admin Pubblicazioni mostra solo pending_review e dopo
+    approva/rifiuta si svuota. Con tabs il founder naviga tutti gli
+    stati + vede conteggi.
+  - `api/admin/[op].js` op `immobili` estensione:
+    - Query param `?status=pending_review|published|rejected|draft|all`
+      (default pending_review per back-compat).
+    - Query param `?counts=1` → `{counts: {pending_review:N, ...}}`
+      invece della lista. Implementato con SELECT id per status in
+      parallel + count lato server (immobili sono pochi per MVP).
+  - `src/Admin.jsx`:
+    - Stato `statusTab` (default 'pending_review') + `counts`.
+    - `fetchData/refreshImmobili` accettano statusFilter, caricano
+      counts in parallelo. Refresh post-approva/rifiuta aggiorna entrambi.
+    - Sub-tabs row sotto "Pubblicazioni": 4 button con badge count.
+      Tab attivo background rosso. Empty state dedicato per ogni status.
+    - Per riga rejected: rejection_reason in italic muted sotto indirizzo.
+    - Link "Apri scheda" usa fix 6.B per preview anche su non-published.
+    - Approva/Rifiuta visibili solo su pending_review.
+    - Header stats "Pending review N" legge counts.pending_review
+      (prima leggeva immobili.length che ora cambia col tab).
+
+- [x] **Build & QA**: `npm run build` passa pulita ad ogni commit
+  (1.5-1.9s, 0 errori, solo warning chunk size standard). 9 commit
+  atomici + 1 doc finale su `feat/batch-6-fixes-polish`. Branch pushato
+  su origin, **NIENTE merge automatico su main**.
+
+**AZIONI FOUNDER REQUIRED post-merge batch 6** (in ordine):
+1. **Migration SQL** via Supabase SQL Editor: eseguire
+   `migrations/2026-05-12-add-rejection-fields.sql` (per task 6.F).
+2. **Env var server-side**: aggiungere `ADMIN_EMAILS=fabiopiccoli@hotmail.it`
+   in Vercel (Production + Preview + Development) e in `.env.local`
+   locale (per task 6.B). Separata da VITE_ADMIN_EMAILS che resta UI-only.
+3. **Supabase Dashboard**: verificare Auth → URL Configuration → Site
+   URL = `https://realaistate.ai` (NO trailing slash). Verificare
+   Email Templates → "Confirm signup" body HTML contiene
+   `{{ .ConfirmationURL }}` (per task 6.A).
+4. **Force redeploy Vercel "no cache"** se env var aggiunta post-deploy.
 
 ### Settimana 7 ✅ — completata 10/05/2026 (3 blocker walkthrough chiusi)
 Walkthrough UX 10/05 ha rivelato 3 blocker critici per onboarding venditore
