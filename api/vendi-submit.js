@@ -349,7 +349,17 @@ export default async function handler(req, res) {
     // 7. Notifica interna a Fabio
     // Anche qui escapeHtml su tutti i campi user-controlled — lo storage path
     // viene encodeURI per rendere safe i nomi file con caratteri speciali.
-    const safeStorageHref = (path) => `${supabaseStorageBase}/${encodeURI(path)}`;
+    //
+    // Hotfix 6.6: post-batch-5 task 5.A uploadFile() in VendiForm ritorna
+    // URL completi via getPublicUrl. Se path è già un URL assoluto,
+    // ritornarlo as-is invece di prependere base (che produceva link
+    // rotti tipo .../documenti-venditori/https%3A%2F%2F...). Path
+    // relativi legacy (pre-batch-5) continuano a essere espansi col base.
+    const safeStorageHref = (path) => {
+      if (typeof path !== "string" || !path) return "";
+      if (path.startsWith("http://") || path.startsWith("https://")) return path;
+      return `${supabaseStorageBase}/${encodeURI(path)}`;
+    };
     await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
       headers: {
