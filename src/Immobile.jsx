@@ -6,6 +6,7 @@ import NavBar from "./NavBar.jsx";
 import SiteFooter from "./SiteFooter.jsx";
 import { DOCUMENT_TYPES, PROPOSAL_TEMPLATE } from "./constants/documentTypes";
 import { isAdminUser } from "./lib/isAdminUser";
+import { fetchImmobilePreview } from "./lib/previewImmobile";
 
 const styles = `
   /* GALLERY */
@@ -723,6 +724,12 @@ export default function ImmobilePage() {
   // status='published': il check viene fatto post-fetch (vedi canViewAsPublic
   // più sotto) così owner e admin possono vedere immobili in draft/
   // pending_review/archived/rejected in modalità "anteprima privata".
+  //
+  // Da batch 6 task 6.B: la fetch RLS standard ritorna 0 righe per drafts
+  // altrui anche per admin (RLS lato DB filtra status='published'). Se
+  // l'utente è loggato e RLS non ritorna nulla, ricadiamo su
+  // /api/admin/preview-immobile che bypassa RLS via service_role + check
+  // email server-side. Per anonimi non tentiamo il fallback (richiede JWT).
   useEffect(() => {
     const fetchImmobile = async () => {
       if (!immobileId) return;
@@ -732,11 +739,20 @@ export default function ImmobilePage() {
         .select('*')
         .eq('id', immobileId)
         .maybeSingle();
-      if (data) setImmobileDb(data);
+      if (data) {
+        setImmobileDb(data);
+        setLoadingImmobile(false);
+        return;
+      }
+      // RLS ha filtrato (o riga non esiste): tenta fallback admin/owner se loggato.
+      if (user?.id) {
+        const { immobile } = await fetchImmobilePreview(immobileId);
+        if (immobile) setImmobileDb(immobile);
+      }
       setLoadingImmobile(false);
     };
     fetchImmobile();
-  }, [immobileId]);
+  }, [immobileId, user?.id]);
 
   // Flag di visibilità per la scheda. Tre stati possibili:
   // - canViewAsPublic: l'immobile è pubblicato, chiunque può vedere

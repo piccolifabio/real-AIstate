@@ -3,24 +3,65 @@
 // Consolidato in un singolo file per stare sotto il limite Vercel Hobby
 // (max 12 serverless functions per deployment).
 //
-// Auth: header `x-admin-key` == ADMIN_SECRET.
-//
-// Endpoint:
-//   GET  /api/admin/immobili → lista pending_review
-//   POST /api/admin/pubblica → approva: status='published' + AI fill + email
-//   POST /api/admin/rifiuta  → rifiuto: status='draft' + email con motivo
+// Auth per-op (alcuni op richiedono x-admin-key, altri JWT Supabase utente):
+//   GET  /api/admin/immobili           [admin-key] → lista pending_review
+//   POST /api/admin/pubblica           [admin-key] → approva: status='published' + AI fill + email
+//   POST /api/admin/rifiuta            [admin-key] → rifiuto: status='rejected' + email con motivo
+//   POST /api/admin/preview-immobile   [jwt]       → fetch immobile per owner OR admin
+//                                                   (bypassa RLS via service_role)
 
 import { handleCors } from "../_lib/cors.js";
 import { escapeHtml } from "../_lib/escape-html.js";
 import { generateAndSaveImmobileAI } from "../_lib/ai-content.js";
 
-export default async function handler(req, res) {
-  if (handleCors(req, res)) return;
+const ADMIN_EMAILS_SERVER = (process.env.ADMIN_EMAILS || "")
+  .split(",")
+  .map((e) => e.trim().toLowerCase())
+  .filter(Boolean);
 
+function checkAdminKey(req) {
   const adminKey = req.headers["x-admin-key"];
   if (!adminKey || adminKey !== process.env.ADMIN_SECRET) {
-    return res.status(401).json({ error: "Non autorizzato" });
+    return { ok: false, status: 401, error: "Non autorizzato" };
   }
+  return { ok: true };
+}
+
+async function checkJwt(req, env) {
+  const auth = req.headers.authorization || req.headers.Authorization;
+  if (!auth || !auth.startsWith("Bearer ")) {
+    return { ok: false, status: 401, error: "Bearer token mancante" };
+  }
+  const jwt = auth.slice("Bearer ".length).trim();
+  try {
+    const r = await fetch(`${env.SUPABASE_URL}/auth/v1/user`, {
+      headers: {
+        apikey: env.SUPABASE_SECRET,
+        Authorization: `Bearer ${jwt}`,
+      },
+    });
+    if (!r.ok) {
+      return { ok: false, status: 401, error: "JWT non valido" };
+    }
+    const data = await r.json();
+    if (!data?.id || !data?.email) {
+      return { ok: false, status: 401, error: "JWT senza user/email" };
+    }
+    return { ok: true, ctx: { userId: data.id, userEmail: String(data.email).toLowerCase() } };
+  } catch (e) {
+    return { ok: false, status: 500, error: "Errore validazione JWT: " + String(e?.message || e) };
+  }
+}
+
+const OPS = {
+  immobili:           { method: "GET",  auth: "admin-key", handler: listImmobili },
+  pubblica:           { method: "POST", auth: "admin-key", handler: pubblicaImmobile },
+  rifiuta:            { method: "POST", auth: "admin-key", handler: rifiutaImmobile },
+  "preview-immobile": { method: "POST", auth: "jwt",       handler: previewImmobile },
+};
+
+export default async function handler(req, res) {
+  if (handleCors(req, res)) return;
 
   const env = {
     SUPABASE_URL: process.env.SUPABASE_URL,
@@ -32,19 +73,21 @@ export default async function handler(req, res) {
   }
 
   const op = req.query.op;
-  switch (op) {
-    case "immobili":
-      if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
-      return listImmobili(req, res, env);
-    case "pubblica":
-      if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
-      return pubblicaImmobile(req, res, env);
-    case "rifiuta":
-      if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
-      return rifiutaImmobile(req, res, env);
-    default:
-      return res.status(404).json({ error: `Unknown op: ${op}` });
+  const opDef = OPS[op];
+  if (!opDef) return res.status(404).json({ error: `Unknown op: ${op}` });
+  if (req.method !== opDef.method) return res.status(405).json({ error: "Method not allowed" });
+
+  let ctx = {};
+  if (opDef.auth === "admin-key") {
+    const r = checkAdminKey(req);
+    if (!r.ok) return res.status(r.status).json({ error: r.error });
+  } else if (opDef.auth === "jwt") {
+    const r = await checkJwt(req, env);
+    if (!r.ok) return res.status(r.status).json({ error: r.error });
+    ctx = r.ctx;
   }
+
+  return opDef.handler(req, res, env, ctx);
 }
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -338,6 +381,56 @@ async function rifiutaImmobile(req, res, env) {
     });
   } catch (err) {
     console.error("admin/rifiuta error:", err);
+    return res.status(500).json({ error: "Errore interno", detail: String(err?.message || err) });
+  }
+}
+
+// ── op: preview-immobile (POST, JWT auth) ────────────────────────────────────
+//
+// Bypassa RLS via service_role per permettere a owner E admin (whitelist email
+// server-side ADMIN_EMAILS) di leggere immobili in qualsiasi status — incluso
+// draft/pending_review/rejected. Il frontend lo chiama come fallback quando la
+// fetch RLS standard ritorna null (es. admin che apre la scheda di una bozza
+// non sua: anon-key client la vede vuota perché RLS la filtra).
+//
+// Auth check già fatto dal dispatcher (validato JWT, ctx ha userId e userEmail).
+// Authorize qui: l'utente è OWNER (user.id === venditore_user_id) OPPURE è in
+// ADMIN_EMAILS_SERVER (whitelist server-side).
+async function previewImmobile(req, res, env, ctx) {
+  const body = parseBody(req);
+  if (body === null) return res.status(400).json({ error: "Body JSON invalido" });
+  const immobile_id = body?.immobile_id;
+  if (!immobile_id) return res.status(400).json({ error: "immobile_id mancante" });
+
+  try {
+    const r = await fetch(
+      `${env.SUPABASE_URL}/rest/v1/immobili?id=eq.${encodeURIComponent(immobile_id)}&select=*`,
+      {
+        headers: {
+          apikey: env.SUPABASE_SECRET,
+          Authorization: `Bearer ${env.SUPABASE_SECRET}`,
+        },
+      }
+    );
+    if (!r.ok) {
+      const errBody = await r.text();
+      return res.status(500).json({ error: "Errore lettura immobile", detail: errBody });
+    }
+    const rows = await r.json();
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return res.status(404).json({ error: "Immobile non trovato" });
+    }
+    const immobile = rows[0];
+
+    const isOwner = ctx.userId && immobile.venditore_user_id === ctx.userId;
+    const isAdmin = ADMIN_EMAILS_SERVER.includes(ctx.userEmail);
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ error: "Non autorizzato a vedere questa bozza" });
+    }
+
+    return res.status(200).json({ ok: true, immobile });
+  } catch (err) {
+    console.error("admin/preview-immobile error:", err);
     return res.status(500).json({ error: "Errore interno", detail: String(err?.message || err) });
   }
 }
