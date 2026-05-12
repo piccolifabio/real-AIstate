@@ -1,5 +1,5 @@
 # RealAIstate — Stato del progetto
-Aggiornato: 12/05/2026 (settimana 7 — hotfix 6.6: coerenza URL completi per planimetria/ape su immobile id=6 + hardening safeStorageHref. Prima di questo: hotfix 6.5 documenti edit pre-popolazione, batch 6 fixes & polish — auth callback fix definitivo con explicit PKCE exchange + listener, endpoint preview-immobile service_role per anteprima admin/owner, copy hero /vendi meno aggressivo, label admin login, edit bozza venditore, elimina bozza con modal, modal rifiuto motivo obbligatorio + status='rejected' + migration rejection fields, email info@ post-approva/rifiuta, tabs filtro admin Pending/Pubblicati/Rifiutati/Bozze con counts)
+Aggiornato: 12/05/2026 (settimana 7 — hotfix 6.7: contatti per-immobile pre-popolati in edit mode + colonne contatto_* su immobili + backfill id=6 + mapDbToForm con fallback user_metadata. Prima di questo: hotfix 6.6 coerenza URL completi planimetria/ape, hotfix 6.5 documenti edit pre-popolazione, batch 6 fixes & polish — auth callback fix definitivo con explicit PKCE exchange + listener, endpoint preview-immobile service_role per anteprima admin/owner, copy hero /vendi meno aggressivo, label admin login, edit bozza venditore, elimina bozza con modal, modal rifiuto motivo obbligatorio + status='rejected' + migration rejection fields, email info@ post-approva/rifiuta, tabs filtro admin Pending/Pubblicati/Rifiutati/Bozze con counts)
 
 ## Stack
 - Frontend: React + Vite, deploy su Vercel
@@ -236,6 +236,91 @@ Aggiornato: 12/05/2026 (settimana 7 — hotfix 6.6: coerenza URL completi per pl
   - **Out of scope**: signup. Dopo registrazione l'utente clicca il link
     di conferma email Supabase che lo riporta al Site URL — il
     redirect param scompare. Caso accettabile per ora.
+
+### Settimana 7 — hotfix 6.7 ✅ — completata 12/05/2026 (contatti pre-popolati in edit mode)
+Test E2E post-hotfix-6.6 ha rivelato che lo step 4 contatti del form
+/vendi non si pre-popola in modalità edit. Tutti gli altri campi sì
+(foto, indirizzo, prezzo, vani, mq, documenti). I 4 campi obbligatori
+nome/cognome/telefono/email restano vuoti → gating canProceed step 4
+blocca submit. Bloccante per testing UPDATE walktest4. Branch
+`hotfix/contatti-prepopulate` da `hotfix/docs-url-coherence`. 1 commit
+fix + 1 commit doc. Tempo effettivo: ~20 min.
+
+- [x] **Root cause** (stesso pattern di planimetria/ape pre-hotfix-6.5):
+  - Tabella public.immobili NON ha colonne contatto. I dati sono
+    salvati solo in legacy `venditori` (colonne nome/cognome/email/
+    telefono).
+  - `mapDbToForm` in src/VendiForm.jsx legge db.contatto_* → undefined
+    → form keys = "".
+  - Bug timing: il useEffect user_metadata (riga 495-513) popola
+    nome/cognome/email SOLO SE il form li ha vuoti. Funziona al primo
+    load /vendi. Ma in edit mode, `mapDbToForm` viene chiamato DOPO
+    (async fetch immobile) e fa REPLACE del form → sovrascrive i
+    valori popolati dal useEffect, resettandoli a "".
+
+- [x] **Fix in 4 parti**:
+  1. **Migration** `migrations/2026-05-12-add-contatti-fields.sql`:
+     ADD COLUMN IF NOT EXISTS contatto_nome / contatto_cognome /
+     contatto_email / contatto_telefono (tutti TEXT). Prefisso
+     `contatto_` per evitare collisioni: `immobili.email`
+     confliggerebbe con auth.users.email, `immobili.nome` col titolo
+     dell'immobile.
+  2. **Migration** `migrations/2026-05-12-backfill-contatti-immobile-6.sql`:
+     UPDATE immobili WHERE id=6 SET contatto_* = SELECT corrispondente
+     da venditori match per email (auth.users.email == venditori.email),
+     più recente. COALESCE preserva valori già popolati → idempotente.
+     Estensione documentata per tutti gli immobili pre-hotfix.
+  3. **api/vendi-submit.js**:
+     - INSERT immobili payload: aggiunge i 4 contatto_* (default null).
+       Da ora ogni nuova bozza salva i contatti anche in immobili.
+       Duplicazione transitoria con venditori — venditori resta solo
+       come lead capture legacy, immobili diventa SoT per i contatti.
+     - UPDATE branch: preservation logic
+       `dati.X !== undefined ? dati.X : existing.contatto_X` per i 4
+       campi. Stesso pattern di planimetria/ape (6.5).
+  4. **src/VendiForm.jsx** `mapDbToForm`:
+     - Signature ora `mapDbToForm(db, user)` (era solo db).
+     - Legge db.contatto_* come priorità.
+     - Fallback nome/cognome su user.user_metadata (con split di
+       full_name per back-compat utenti pre-batch-2 split SQL).
+     - Fallback email su user.email (Supabase Auth).
+     - email_conferma pre-popolato uguale a email per evitare che
+       canProceed step 4 fallisca a edit di campi diversi dall'email.
+     - Niente fallback per telefono (è per-immobile non globale).
+
+- [x] **Decisione design contatti per-immobile (NON per-utente)**:
+  Se l'utente ha 5 immobili e cambia il telefono in uno solo, gli
+  altri 4 restano col vecchio numero. Intenzionale — l'utente può
+  avere referenti diversi per annunci diversi (es. studio
+  professionale per uno, contatto personale per l'altro). Single
+  source of truth = immobili (post-hotfix-6.7). venditori legacy
+  resta solo come lead capture iniziale.
+
+- [x] **Build & QA**: `npm run build` pulita 1.60s. 1 commit fix +
+  1 commit doc. Branch pushato su origin, **NIENTE merge automatico**.
+
+**AZIONI FOUNDER REQUIRED post-merge hotfix 6.7** (in ordine):
+1. Eseguire `migrations/2026-05-12-add-contatti-fields.sql` via Supabase
+   SQL Editor. Senza, INSERT/UPDATE su immobili fallisce con "Could
+   not find the 'contatto_nome' column" (PostgREST cache miss).
+2. Eseguire `migrations/2026-05-12-backfill-contatti-immobile-6.sql`
+   per popolare i contatti su id=6.
+
+**Test E2E**:
+1. **Verifica DB post-backfill**:
+   ```sql
+   SELECT id, contatto_nome, contatto_cognome, contatto_email,
+          contatto_telefono FROM public.immobili WHERE id = 6;
+   ```
+   Atteso: tutti popolati con i valori della riga venditori di walktest4.
+2. **Edit pre-popolazione**: login walktest4 → /venditore → Modifica
+   id=6 → step 4 contatti → vedi nome, cognome, telefono, email tutti
+   pre-popolati.
+3. **Edit submit con modifica telefono**: cambio telefono da X a Y
+   → submit → DB: contatto_telefono aggiornato, altri 3 invariati.
+4. **Nuova bozza fresca**: crea nuovo /vendi (no edit) → submit →
+   DB: contatto_* tutti popolati in immobili (non più solo in
+   venditori).
 
 ### Settimana 7 — hotfix 6.6 ✅ — completata 12/05/2026 (coerenza URL completi planimetria/ape)
 Verifica DB del founder post-hotfix-6.5 ha rivelato che il backfill per
