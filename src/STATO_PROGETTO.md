@@ -1,5 +1,5 @@
 # RealAIstate — Stato del progetto
-Aggiornato: 12/05/2026 (settimana 7 — hotfix 6.5: documenti planimetria+APE pre-popolati in modalità edit /vendi + colonne immobili.planimetria/ape + backfill id=6 dalla legacy table venditori. Prima di questo: batch 6 fixes & polish — auth callback fix definitivo con explicit PKCE exchange + listener, endpoint preview-immobile service_role per anteprima admin/owner, copy hero /vendi meno aggressivo, label admin login, edit bozza venditore, elimina bozza con modal, modal rifiuto motivo obbligatorio + status='rejected' + migration rejection fields, email info@ post-approva/rifiuta, tabs filtro admin Pending/Pubblicati/Rifiutati/Bozze con counts)
+Aggiornato: 12/05/2026 (settimana 7 — hotfix 6.6: coerenza URL completi per planimetria/ape su immobile id=6 + hardening safeStorageHref. Prima di questo: hotfix 6.5 documenti edit pre-popolazione, batch 6 fixes & polish — auth callback fix definitivo con explicit PKCE exchange + listener, endpoint preview-immobile service_role per anteprima admin/owner, copy hero /vendi meno aggressivo, label admin login, edit bozza venditore, elimina bozza con modal, modal rifiuto motivo obbligatorio + status='rejected' + migration rejection fields, email info@ post-approva/rifiuta, tabs filtro admin Pending/Pubblicati/Rifiutati/Bozze con counts)
 
 ## Stack
 - Frontend: React + Vite, deploy su Vercel
@@ -236,6 +236,92 @@ Aggiornato: 12/05/2026 (settimana 7 — hotfix 6.5: documenti planimetria+APE pr
   - **Out of scope**: signup. Dopo registrazione l'utente clicca il link
     di conferma email Supabase che lo riporta al Site URL — il
     redirect param scompare. Caso accettabile per ora.
+
+### Settimana 7 — hotfix 6.6 ✅ — completata 12/05/2026 (coerenza URL completi planimetria/ape)
+Verifica DB del founder post-hotfix-6.5 ha rivelato che il backfill per
+id=6 ha inserito **path relativi** in `immobili.planimetria` / `ape`
+(`planimetrie/...pdf`, `ape/...pdf`) — incoerente col pattern delle
+foto che da batch 5 task 5.A usano URL completi
+(`https://strigywjvkhbubyszuxp.supabase.co/storage/v1/object/public/...`).
+Branch `hotfix/docs-url-coherence` (branchato da
+`hotfix/edit-documenti-prepopulate`), 1 commit fix + 1 commit doc.
+Tempo effettivo: ~15 min.
+
+- [x] **Diagnosi via Explore agent** (12 consumer di planimetria/ape
+  mappati):
+  - Il codice è **fault-tolerant per path relativi (CASO A)**: render
+    step 3 VendiForm mostra solo "✓ caricato" senza link clickable,
+    INSERT/UPDATE salvano AS-IS, Storage cleanup skippa path che non
+    matchano `startsWith(bucketBase)`, scheda pubblica non usa mai
+    questi campi (hardcoded "Su richiesta").
+  - Quindi tecnicamente NON c'era bug funzionale che bloccasse l'utente.
+  - **Bug latente scoperto durante diagnosi**: `safeStorageHref` in
+    api/vendi-submit.js (admin email "Nuovo venditore" per Fabio) usa
+    `${supabaseStorageBase}/${encodeURI(path)}`. Se path è già un URL
+    completo (caso post-batch-5: uploadFile ritorna getPublicUrl =
+    full URL), il risultato era
+    `.../documenti-venditori/https%3A%2F%2F...%2Fpublic%2F...` →
+    link Brevo rotto. Founder non se ne era accorto perché probabilmente
+    non clicca quei link, ma era rotto per ogni bozza submittata
+    post-batch-5.
+
+- [x] **Decisione: CASO B1 minimale** per i tre motivi:
+  1. Coerenza con foto pattern (un format unico nel DB → debug più
+     semplice in futuro)
+  2. Storage cleanup di id=6 inizierà a funzionare: se walktest4 in
+     futuro modifica planimetria/ape, il vecchio file viene cancellato
+     da Storage (oggi resta orphan perché path relativo non matcha
+     bucketBase nel cleanup)
+  3. Fix bug latente safeStorageHref (admin email links)
+
+- [x] **Fix in 2 parti, scope minimale**:
+  1. **Migration** `migrations/2026-05-12-fix-docs-urls-immobile-6.sql`:
+     UPDATE immobili WHERE id=6 prepende
+     `https://strigywjvkhbubyszuxp.supabase.co/storage/v1/object/public/documenti-venditori/`
+     ai path relativi di planimetria e ape. Idempotente con check
+     `NOT LIKE 'https://%'`. Estensione documentata: per applicare a
+     tutti gli immobili pre-hotfix sostituire `WHERE id=6` con
+     `WHERE planimetria NOT LIKE 'https://%' OR ape NOT LIKE 'https://%'`.
+  2. **api/vendi-submit.js** `safeStorageHref` hardening: se path è
+     già URL assoluto (`http://` / `https://`), return as-is invece di
+     prependere base URL. Path relativi legacy continuano a essere
+     espansi col base (back-compat). Defense in depth.
+
+- [x] **Niente modifiche frontend, niente modifiche INSERT/UPDATE
+  backend**: `uploadFile()` in VendiForm già ritorna full URL via
+  getPublicUrl (dal batch 5 task 5.A); l'INSERT su immobili (hotfix
+  6.5) e l'UPDATE branch (batch 6.C) salvano AS-IS — coerentemente
+  con la convention. Una volta convertito id=6 in URL completo, tutto
+  il flow è uniforme.
+
+- [x] **Build & QA**: `npm run build` pulita 1.59s. 1 commit fix +
+  1 commit doc. Branch pushato su origin, **NIENTE merge automatico**.
+
+**AZIONI FOUNDER REQUIRED post-merge hotfix 6.6** (UNA sola):
+- Eseguire `migrations/2026-05-12-fix-docs-urls-immobile-6.sql` via
+  Supabase SQL Editor. DOPO le 2 migration di hotfix 6.5
+  (add-documenti-fields + backfill).
+
+**Test E2E post-merge**:
+1. **Verifica DB**:
+   ```sql
+   SELECT id, planimetria, ape FROM public.immobili WHERE id = 6;
+   ```
+   Atteso: entrambe le colonne con URL completi
+   `https://strigywjvkhbubyszuxp.supabase.co/storage/v1/object/public/documenti-venditori/planimetrie/...pdf`
+   e `.../ape/...pdf`.
+2. **Edit mode invariato**: login walktest4 → Modifica id=6 → step 3
+   → "✓ Planimetria già caricata" + "✓ APE già caricato" con × come
+   prima (nessuna regressione UX).
+3. **Edit submit invariato**: prosegui submit → planimetria/ape
+   restano i full URL.
+4. **Edit + nuovo PDF**: × planimetria → carica nuovo PDF → submit
+   → DB ha nuovo URL completo, vecchio file RIMOSSO da Storage
+   (verifica via Supabase Studio Storage → documenti-venditori →
+   planimetrie/). Prima della migration questo non funzionava per
+   id=6 (cleanup skippato per path relativo).
+5. **Idempotenza migration**: rilancia la migration → 0 righe
+   modificate (CHECK NOT LIKE 'https://%' skippa).
 
 ### Settimana 7 — hotfix 6.5 ✅ — completata 12/05/2026 (documenti edit pre-popolazione)
 Test E2E post-batch-6 (12/05) ha rivelato un bug residuo critico in
