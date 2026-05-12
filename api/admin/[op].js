@@ -232,11 +232,56 @@ async function sendBrevo(env, { to, name, subject, html }) {
 }
 
 // ── op: immobili (GET) ───────────────────────────────────────────────────────
+//
+// Query params (task 6.E tabs admin):
+//   ?status=pending_review|published|rejected|draft|all  (default: pending_review)
+//   ?counts=1   → ritorna {pending_review:N, published:N, rejected:N, draft:N}
+//                 invece della lista. Usato dall'header tab per i badge.
+
+const VALID_STATUSES = ["pending_review", "published", "rejected", "draft"];
 
 async function listImmobili(req, res, env) {
   try {
+    // Modalità counts: ritorna conteggi per ogni status. PostgREST ritorna
+    // Content-Range header con count quando usiamo Prefer: count=exact, ma
+    // dobbiamo fare HEAD per ogni status. Più semplice: SELECT id per
+    // status e contiamo lato server (immobili sono pochi, ok per MVP).
+    if (req.query.counts === "1") {
+      const counts = {};
+      await Promise.all(
+        VALID_STATUSES.map(async (s) => {
+          const r = await fetch(
+            `${env.SUPABASE_URL}/rest/v1/immobili?status=eq.${s}&select=id`,
+            {
+              headers: {
+                apikey: env.SUPABASE_SECRET,
+                Authorization: `Bearer ${env.SUPABASE_SECRET}`,
+              },
+            }
+          );
+          if (r.ok) {
+            const rows = await r.json();
+            counts[s] = Array.isArray(rows) ? rows.length : 0;
+          } else {
+            counts[s] = 0;
+          }
+        })
+      );
+      return res.status(200).json({ counts });
+    }
+
+    const statusParam = req.query.status || "pending_review";
+    let filter = "";
+    if (statusParam === "all") {
+      filter = "";
+    } else if (VALID_STATUSES.includes(statusParam)) {
+      filter = `status=eq.${statusParam}&`;
+    } else {
+      return res.status(400).json({ error: `status non valido: ${statusParam}` });
+    }
+
     const listRes = await fetch(
-      `${env.SUPABASE_URL}/rest/v1/immobili?status=eq.pending_review&select=*&order=created_at.desc`,
+      `${env.SUPABASE_URL}/rest/v1/immobili?${filter}select=*&order=created_at.desc`,
       {
         headers: {
           apikey: env.SUPABASE_SECRET,

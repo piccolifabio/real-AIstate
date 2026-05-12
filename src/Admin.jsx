@@ -16,27 +16,33 @@ export default function AdminPage() {
   const [rejectModal, setRejectModal] = useState(null); // immobile target o null
   const [rejectMotivo, setRejectMotivo] = useState("");
   const [rejectSubmitting, setRejectSubmitting] = useState(false);
+  // Tabs filtro sotto "Pubblicazioni" (task 6.E)
+  const [statusTab, setStatusTab] = useState("pending_review");
+  const [counts, setCounts] = useState({ pending_review: 0, published: 0, rejected: 0, draft: 0 });
 
-  const fetchData = async (key) => {
-    const [scuseRes, immRes] = await Promise.all([
+  const fetchData = async (key, statusFilter = "pending_review") => {
+    const [scuseRes, immRes, countsRes] = await Promise.all([
       fetch("/api/admin-scuse", { headers: { "x-admin-key": key } }),
-      fetch("/api/admin/immobili", { headers: { "x-admin-key": key } }),
+      fetch(`/api/admin/immobili?status=${encodeURIComponent(statusFilter)}`, { headers: { "x-admin-key": key } }),
+      fetch("/api/admin/immobili?counts=1", { headers: { "x-admin-key": key } }),
     ]);
-    if (scuseRes.status === 401 || immRes.status === 401) {
+    if (scuseRes.status === 401 || immRes.status === 401 || countsRes.status === 401) {
       throw new Error("AUTH");
     }
     const scuseData = scuseRes.ok ? await scuseRes.json() : [];
     const immData = immRes.ok ? await immRes.json() : [];
-    return { scuseData, immData };
+    const countsData = countsRes.ok ? await countsRes.json() : { counts: {} };
+    return { scuseData, immData, countsData };
   };
 
   const handleLogin = async () => {
     setLoading(true);
     setError("");
     try {
-      const { scuseData, immData } = await fetchData(password);
+      const { scuseData, immData, countsData } = await fetchData(password, statusTab);
       setScuse(Array.isArray(scuseData) ? scuseData : []);
       setImmobili(Array.isArray(immData) ? immData : []);
+      setCounts(countsData?.counts || { pending_review: 0, published: 0, rejected: 0, draft: 0 });
       setAuthed(true);
     } catch (e) {
       if (String(e?.message) === "AUTH") setError("Password errata.");
@@ -45,13 +51,28 @@ export default function AdminPage() {
     setLoading(false);
   };
 
-  const refreshImmobili = async () => {
+  const refreshImmobili = async (newStatusTab) => {
+    const target = newStatusTab || statusTab;
     try {
-      const r = await fetch("/api/admin/immobili", { headers: { "x-admin-key": password } });
-      if (r.ok) setImmobili(await r.json());
+      const [listRes, countsRes] = await Promise.all([
+        fetch(`/api/admin/immobili?status=${encodeURIComponent(target)}`, { headers: { "x-admin-key": password } }),
+        fetch("/api/admin/immobili?counts=1", { headers: { "x-admin-key": password } }),
+      ]);
+      if (listRes.ok) setImmobili(await listRes.json());
+      if (countsRes.ok) {
+        const c = await countsRes.json();
+        setCounts(c?.counts || { pending_review: 0, published: 0, rejected: 0, draft: 0 });
+      }
     } catch {
       // ignora
     }
+  };
+
+  // Cambio tab: ricarica lista per il nuovo status (i counts sono già aggiornati
+  // dal refresh post-azione, non servirebbero qui ma li lasciamo per coerenza).
+  const switchStatusTab = (s) => {
+    setStatusTab(s);
+    refreshImmobili(s);
   };
 
   const approva = async (im) => {
@@ -245,7 +266,7 @@ export default function AdminPage() {
           <div className="admin-logo">Real<span>AI</span>state</div>
           <div className="admin-stats">
             <div className="admin-stat">
-              <div className={"admin-stat-num " + (immobili.length > 0 ? "warn" : "")}>{immobili.length}</div>
+              <div className={"admin-stat-num " + ((counts.pending_review || 0) > 0 ? "warn" : "")}>{counts.pending_review || 0}</div>
               <div className="admin-stat-label">Pending review</div>
             </div>
             <div className="admin-stat">
@@ -257,7 +278,7 @@ export default function AdminPage() {
 
         <div className="admin-tabs">
           <button className={"admin-tab " + (tab === "immobili" ? "active" : "")} onClick={() => setTab("immobili")}>
-            Pubblicazioni{immobili.length > 0 && <span className="pill">{immobili.length}</span>}
+            Pubblicazioni{(counts.pending_review || 0) > 0 && <span className="pill">{counts.pending_review}</span>}
           </button>
           <button className={"admin-tab " + (tab === "scuse" ? "active" : "")} onClick={() => setTab("scuse")}>
             Scuse
@@ -267,56 +288,113 @@ export default function AdminPage() {
         {feedback && <div className="admin-feedback">{feedback}</div>}
 
         {tab === "immobili" && (
-          immobili.length === 0 ? (
-            <div className="admin-empty">Nessun immobile in attesa di revisione.</div>
-          ) : (
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th>Submit</th>
-                  <th>Annuncio</th>
-                  <th>Venditore</th>
-                  <th>Prezzo</th>
-                  <th>Azioni</th>
-                </tr>
-              </thead>
-              <tbody>
-                {immobili.map((im) => (
-                  <tr key={im.id}>
-                    <td className="admin-td-date">{fmtDate(im.created_at)}</td>
-                    <td>
-                      <div className="admin-td-titolo">{im.titolo || `Immobile #${im.id}`}</div>
-                      <div className="admin-td-indirizzo">{im.indirizzo || "—"}</div>
-                    </td>
-                    <td className="admin-td-venditore">
-                      {im.venditore_nome || "—"}
-                      <span className="em">{im.venditore_email || "(email non disponibile)"}</span>
-                    </td>
-                    <td className="admin-td-prezzo">{fmtPrice(im.prezzo)}</td>
-                    <td>
-                      <div className="admin-actions">
-                        <a className="admin-link" href={`/immobili/${im.id}`} target="_blank" rel="noreferrer">Preview ↗</a>
-                        <button
-                          className="admin-btn-approva"
-                          disabled={!!processing[im.id]}
-                          onClick={() => approva(im)}
-                        >
-                          {processing[im.id] === "approva" ? "..." : "Approva"}
-                        </button>
-                        <button
-                          className="admin-btn-rifiuta"
-                          disabled={!!processing[im.id]}
-                          onClick={() => rifiuta(im)}
-                        >
-                          {processing[im.id] === "rifiuta" ? "..." : "Rifiuta"}
-                        </button>
-                      </div>
-                    </td>
+          <>
+            {/* Sub-tabs filtro per status (task 6.E) */}
+            <div style={{ display: "flex", gap: "0.4rem", marginBottom: "1.4rem", flexWrap: "wrap", borderBottom: "1px solid var(--border)", paddingBottom: "0.8rem" }}>
+              {[
+                { key: "pending_review", label: "Pending" },
+                { key: "published", label: "Pubblicati" },
+                { key: "rejected", label: "Rifiutati" },
+                { key: "draft", label: "Bozze" },
+              ].map((t) => {
+                const isActive = statusTab === t.key;
+                const n = counts[t.key] || 0;
+                return (
+                  <button
+                    key={t.key}
+                    onClick={() => switchStatusTab(t.key)}
+                    style={{
+                      background: isActive ? "var(--red)" : "transparent",
+                      color: isActive ? "white" : "rgba(247,245,240,0.7)",
+                      border: isActive ? "1px solid var(--red)" : "1px solid var(--border)",
+                      padding: "0.55rem 1.1rem",
+                      borderRadius: 2,
+                      cursor: "pointer",
+                      fontSize: "0.78rem",
+                      fontFamily: "DM Sans, sans-serif",
+                      fontWeight: 600,
+                      letterSpacing: "0.04em",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "0.45rem",
+                    }}
+                  >
+                    {t.label}
+                    <span style={{ background: isActive ? "rgba(255,255,255,0.22)" : "rgba(247,245,240,0.1)", padding: "0.05rem 0.45rem", borderRadius: 8, fontSize: "0.72rem", fontWeight: 700 }}>
+                      {n}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {immobili.length === 0 ? (
+              <div className="admin-empty">
+                {statusTab === "pending_review" && "Nessun immobile in attesa di revisione."}
+                {statusTab === "published" && "Nessun immobile pubblicato."}
+                {statusTab === "rejected" && "Nessun immobile rifiutato."}
+                {statusTab === "draft" && "Nessuna bozza."}
+              </div>
+            ) : (
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Submit</th>
+                    <th>Annuncio</th>
+                    <th>Venditore</th>
+                    <th>Prezzo</th>
+                    <th>Azioni</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          )
+                </thead>
+                <tbody>
+                  {immobili.map((im) => (
+                    <tr key={im.id}>
+                      <td className="admin-td-date">{fmtDate(im.created_at)}</td>
+                      <td>
+                        <div className="admin-td-titolo">{im.titolo || `Immobile #${im.id}`}</div>
+                        <div className="admin-td-indirizzo">{im.indirizzo || "—"}</div>
+                        {statusTab === "rejected" && im.rejection_reason && (
+                          <div style={{ marginTop: "0.4rem", fontSize: "0.78rem", color: "rgba(247,245,240,0.55)", fontStyle: "italic", maxWidth: 420, lineHeight: 1.45 }}>
+                            <strong style={{ color: "rgba(247,245,240,0.7)" }}>Motivo:</strong> {im.rejection_reason}
+                          </div>
+                        )}
+                      </td>
+                      <td className="admin-td-venditore">
+                        {im.venditore_nome || "—"}
+                        <span className="em">{im.venditore_email || "(email non disponibile)"}</span>
+                      </td>
+                      <td className="admin-td-prezzo">{fmtPrice(im.prezzo)}</td>
+                      <td>
+                        <div className="admin-actions">
+                          <a className="admin-link" href={`/immobili/${im.id}`} target="_blank" rel="noreferrer">
+                            {statusTab === "published" ? "Apri scheda ↗" : "Anteprima ↗"}
+                          </a>
+                          {statusTab === "pending_review" && (
+                            <>
+                              <button
+                                className="admin-btn-approva"
+                                disabled={!!processing[im.id]}
+                                onClick={() => approva(im)}
+                              >
+                                {processing[im.id] === "approva" ? "..." : "Approva"}
+                              </button>
+                              <button
+                                className="admin-btn-rifiuta"
+                                disabled={!!processing[im.id]}
+                                onClick={() => rifiuta(im)}
+                              >
+                                {processing[im.id] === "rifiuta" ? "..." : "Rifiuta"}
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </>
         )}
 
         {tab === "scuse" && (
