@@ -58,6 +58,7 @@ const OPS = {
   pubblica:           { method: "POST", auth: "admin-key", handler: pubblicaImmobile },
   rifiuta:            { method: "POST", auth: "admin-key", handler: rifiutaImmobile },
   "preview-immobile": { method: "POST", auth: "jwt",       handler: previewImmobile },
+  "elimina-bozza":    { method: "POST", auth: "jwt",       handler: eliminaBozza },
 };
 
 export default async function handler(req, res) {
@@ -431,6 +432,112 @@ async function previewImmobile(req, res, env, ctx) {
     return res.status(200).json({ ok: true, immobile });
   } catch (err) {
     console.error("admin/preview-immobile error:", err);
+    return res.status(500).json({ error: "Errore interno", detail: String(err?.message || err) });
+  }
+}
+
+// ── op: elimina-bozza (POST, JWT auth, owner only) ───────────────────────────
+//
+// Cancella definitivamente una bozza (status='draft' o 'rejected') del
+// venditore loggato. Cancellazione DB tramite service_role (RLS DELETE su
+// immobili può essere strict): chi è autorizzato lo decidiamo qui via
+// venditore_user_id === userId.
+//
+// Asset cleanup è best-effort: cancellazione DB prima, poi DELETE su Storage
+// per ogni URL in foto/planimetria/ape. Errori su Storage NON bloccano la
+// risposta (vengono raccolti in asset_cleanup_warnings) — meglio asset
+// orphan (Storage) che riga orphan (DB), e cleanup batch è in backlog.
+async function eliminaBozza(req, res, env, ctx) {
+  const body = parseBody(req);
+  if (body === null) return res.status(400).json({ error: "Body JSON invalido" });
+  const immobile_id = body?.immobile_id;
+  if (!immobile_id) return res.status(400).json({ error: "immobile_id mancante" });
+
+  try {
+    // 1. Fetch + authorize
+    const rFetch = await fetch(
+      `${env.SUPABASE_URL}/rest/v1/immobili?id=eq.${encodeURIComponent(immobile_id)}&select=*`,
+      {
+        headers: {
+          apikey: env.SUPABASE_SECRET,
+          Authorization: `Bearer ${env.SUPABASE_SECRET}`,
+        },
+      }
+    );
+    if (!rFetch.ok) {
+      return res.status(500).json({ error: "Errore lettura immobile" });
+    }
+    const rows = await rFetch.json();
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return res.status(404).json({ error: "Immobile non trovato" });
+    }
+    const immobile = rows[0];
+    if (immobile.venditore_user_id !== ctx.userId) {
+      return res.status(403).json({ error: "Non puoi eliminare questo immobile" });
+    }
+    if (immobile.status !== "draft" && immobile.status !== "rejected") {
+      return res.status(409).json({
+        error: `Immobile in stato ${immobile.status} non eliminabile (solo draft/rejected)`,
+      });
+    }
+
+    // 2. DELETE riga immobile (autoritative). Se fallisce, abort.
+    const rDel = await fetch(
+      `${env.SUPABASE_URL}/rest/v1/immobili?id=eq.${encodeURIComponent(immobile_id)}`,
+      {
+        method: "DELETE",
+        headers: {
+          apikey: env.SUPABASE_SECRET,
+          Authorization: `Bearer ${env.SUPABASE_SECRET}`,
+        },
+      }
+    );
+    if (!rDel.ok) {
+      const errBody = await rDel.text();
+      return res.status(500).json({ error: "Errore cancellazione immobile", detail: errBody });
+    }
+
+    // 3. Asset cleanup best-effort. Parse URLs Storage e DELETE bucket.
+    const warnings = [];
+    const collect = (val) => Array.isArray(val) ? val.filter(Boolean) : (val ? [val] : []);
+    const allUrls = [
+      ...collect(immobile.foto),
+      ...collect(immobile.planimetria),
+      ...collect(immobile.ape),
+    ];
+    const bucketBase = `${env.SUPABASE_URL}/storage/v1/object/public/documenti-venditori/`;
+    for (const url of allUrls) {
+      if (typeof url !== "string" || !url.startsWith(bucketBase)) {
+        warnings.push(`Skipped non-bucket URL: ${url}`);
+        continue;
+      }
+      const path = url.slice(bucketBase.length);
+      try {
+        const rs = await fetch(
+          `${env.SUPABASE_URL}/storage/v1/object/documenti-venditori/${path}`,
+          {
+            method: "DELETE",
+            headers: {
+              apikey: env.SUPABASE_SECRET,
+              Authorization: `Bearer ${env.SUPABASE_SECRET}`,
+            },
+          }
+        );
+        if (!rs.ok) {
+          const errTxt = await rs.text();
+          warnings.push(`Storage DELETE failed for ${path}: ${errTxt}`);
+        }
+      } catch (e) {
+        warnings.push(`Storage DELETE error for ${path}: ${String(e?.message || e)}`);
+      }
+    }
+
+    if (warnings.length > 0) {
+      console.warn("admin/elimina-bozza: storage cleanup warnings", warnings);
+    }
+    return res.status(200).json({ ok: true, deleted: true, asset_cleanup_warnings: warnings });
+  } catch (err) {
+    console.error("admin/elimina-bozza error:", err);
     return res.status(500).json({ error: "Errore interno", detail: String(err?.message || err) });
   }
 }

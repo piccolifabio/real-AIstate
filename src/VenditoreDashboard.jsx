@@ -29,6 +29,10 @@ export default function VenditoreDashboard() {
   const [aggiornandoImmobile, setAggiornandoImmobile] = useState(null)
   const [feedbackImmobile, setFeedbackImmobile] = useState(null)
 
+  // --- Elimina bozza (modal conferma) ---
+  const [eliminandoImmobile, setEliminandoImmobile] = useState(null)  // immobile in attesa di conferma
+  const [eliminandoLoading, setEliminandoLoading] = useState(false)
+
   // ── Load miei immobili (gating) ─────────────────────────────────────────────
   useEffect(() => {
     if (!user) return
@@ -132,6 +136,36 @@ export default function VenditoreDashboard() {
       setFeedbackImmobile({ tipo: 'err', testo: `Errore: ${err.message}` })
     } finally {
       setAggiornandoImmobile(null)
+    }
+  }
+
+  // ── Elimina bozza (modal conferma) ──────────────────────────────────────────
+  // Cancellazione definitiva via /api/admin/elimina-bozza (JWT auth, owner only).
+  // Backend cancella DB + best-effort cleanup Storage (foto, planimetria, ape).
+  const confermaEliminaBozza = async () => {
+    if (!eliminandoImmobile) return
+    setEliminandoLoading(true)
+    setFeedbackImmobile(null)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) throw new Error('Sessione scaduta')
+      const res = await fetch('/api/admin/elimina-bozza', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ immobile_id: eliminandoImmobile.id })
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || 'Errore server')
+      setMieiImmobili(prev => prev.filter(i => i.id !== eliminandoImmobile.id))
+      setFeedbackImmobile({ tipo: 'ok', testo: 'Bozza eliminata.' })
+      setEliminandoImmobile(null)
+    } catch (err) {
+      setFeedbackImmobile({ tipo: 'err', testo: `Errore: ${err.message}` })
+    } finally {
+      setEliminandoLoading(false)
     }
   }
 
@@ -397,12 +431,20 @@ const badgeImmobileStatus = (status) => {
                         </a>
 
                         {(immobile.status === 'draft' || immobile.status === 'rejected') && (
-                          <a
-                            href={`/vendi?edit=${immobile.id}`}
-                            style={{ background: 'transparent', border: '1px solid rgba(247,245,240,0.15)', color: 'rgba(247,245,240,0.7)', padding: '0.6rem 1.2rem', borderRadius: 2, textDecoration: 'none', fontSize: '0.78rem', fontFamily: 'DM Sans, sans-serif', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}
-                          >
-                            Modifica
-                          </a>
+                          <>
+                            <a
+                              href={`/vendi?edit=${immobile.id}`}
+                              style={{ background: 'transparent', border: '1px solid rgba(247,245,240,0.15)', color: 'rgba(247,245,240,0.7)', padding: '0.6rem 1.2rem', borderRadius: 2, textDecoration: 'none', fontSize: '0.78rem', fontFamily: 'DM Sans, sans-serif', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}
+                            >
+                              Modifica
+                            </a>
+                            <button
+                              onClick={() => setEliminandoImmobile(immobile)}
+                              style={{ background: 'rgba(217,48,37,0.1)', color: '#d93025', border: '1px solid rgba(217,48,37,0.3)', padding: '0.6rem 1.2rem', borderRadius: 2, cursor: 'pointer', fontSize: '0.78rem', fontFamily: 'DM Sans, sans-serif', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}
+                            >
+                              Elimina bozza
+                            </button>
+                          </>
                         )}
 
                         {immobile.status === 'draft' && (
@@ -651,6 +693,43 @@ const badgeImmobileStatus = (status) => {
           </>
         )}
       </div>
+
+      {/* Modal conferma elimina bozza (task 6.D) */}
+      {eliminandoImmobile && (
+        <div
+          onClick={() => !eliminandoLoading && setEliminandoImmobile(null)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(10,10,10,0.78)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', backdropFilter: 'blur(4px)' }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ background: '#141414', border: '1px solid rgba(247,245,240,0.1)', borderRadius: 4, padding: '2.4rem', maxWidth: 480, width: '100%' }}
+          >
+            <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: '1.8rem', color: '#f7f5f0', marginBottom: '0.8rem', letterSpacing: '0.02em' }}>
+              Eliminare questa bozza?
+            </div>
+            <div style={{ fontSize: '0.9rem', color: 'rgba(247,245,240,0.65)', lineHeight: 1.6, marginBottom: '1.2rem' }}>
+              <strong style={{ color: '#f7f5f0' }}>{eliminandoImmobile.indirizzo}</strong> — foto, documenti e dati inseriti andranno persi. Operazione irreversibile.
+            </div>
+            <div style={{ display: 'flex', gap: '0.8rem', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setEliminandoImmobile(null)}
+                disabled={eliminandoLoading}
+                style={{ background: 'transparent', color: 'rgba(247,245,240,0.7)', border: '1px solid rgba(247,245,240,0.15)', padding: '0.7rem 1.4rem', borderRadius: 2, cursor: eliminandoLoading ? 'not-allowed' : 'pointer', fontSize: '0.82rem', fontFamily: 'DM Sans, sans-serif', fontWeight: 600 }}
+              >
+                Annulla
+              </button>
+              <button
+                onClick={confermaEliminaBozza}
+                disabled={eliminandoLoading}
+                style={{ background: '#d93025', color: 'white', border: 'none', padding: '0.7rem 1.4rem', borderRadius: 2, cursor: eliminandoLoading ? 'not-allowed' : 'pointer', fontSize: '0.82rem', fontFamily: 'DM Sans, sans-serif', fontWeight: 700, letterSpacing: '0.04em' }}
+              >
+                {eliminandoLoading ? 'Eliminazione...' : 'Elimina definitivamente'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <SiteFooter />
     </>
   )
