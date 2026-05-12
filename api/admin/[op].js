@@ -316,14 +316,51 @@ async function rifiutaImmobile(req, res, env) {
   const immobile_id = body?.immobile_id;
   const motivo = (body?.motivo || "").toString().trim();
   if (!immobile_id) return res.status(400).json({ error: "immobile_id mancante" });
+  // Da batch 6 task 6.F: motivo obbligatorio (era opzionale). Range 10-500 char
+  // — sotto 10 il motivo è poco utile al venditore, sopra 500 sospetta
+  // copia/incolla di documenti interi (l'admin può sempre mandare email
+  // separata se serve dettagli più lunghi).
+  if (motivo.length < 10) {
+    return res.status(400).json({ error: "Motivo del rifiuto obbligatorio (min 10 caratteri)" });
+  }
+  if (motivo.length > 500) {
+    return res.status(400).json({ error: "Motivo del rifiuto troppo lungo (max 500 caratteri)" });
+  }
 
   try {
-    const upd = await patchImmobileStatus(env, immobile_id, "draft");
-    if (!upd.ok) {
-      const status = upd.notFound ? 404 : 500;
-      return res.status(status).json({ error: upd.error });
+    // Da batch 6 task 6.F: status passa da 'draft' a 'rejected' + persiste
+    // rejection_reason / rejected_at / rejected_by_email. Migration
+    // 2026-05-12-add-rejection-fields.sql deve essere applicata prima.
+    const patchRes = await fetch(
+      `${env.SUPABASE_URL}/rest/v1/immobili?id=eq.${encodeURIComponent(immobile_id)}`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: env.SUPABASE_SECRET,
+          Authorization: `Bearer ${env.SUPABASE_SECRET}`,
+          Prefer: "return=representation",
+        },
+        body: JSON.stringify({
+          status: "rejected",
+          rejection_reason: motivo,
+          rejected_at: new Date().toISOString(),
+          // Placeholder: /admin login usa ADMIN_SECRET shared, non c'è un
+          // user Supabase. Quando passeremo a OPZIONE B (whitelist
+          // VITE_ADMIN_EMAILS + login Supabase) popoleremo l'email reale.
+          rejected_by_email: "admin",
+        }),
+      }
+    );
+    if (!patchRes.ok) {
+      const errBody = await patchRes.text();
+      return res.status(500).json({ error: "Errore aggiornamento immobile", detail: errBody });
     }
-    const immobile = upd.immobile;
+    const rows = await patchRes.json();
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return res.status(404).json({ error: "Immobile non trovato" });
+    }
+    const immobile = rows[0];
     const v = await lookupVenditore(env, immobile.venditore_user_id);
 
     let emailSent = false;
@@ -346,16 +383,16 @@ async function rifiutaImmobile(req, res, env) {
         '</td></tr>',
         '<tr><td style="background:#d93025;height:4px;font-size:0;">&nbsp;</td></tr>',
         '<tr><td style="padding:40px 40px 16px;">',
-        '<p style="font-family:Arial,sans-serif;font-size:24px;font-weight:900;color:#0a0a0a;margin:0 0 12px;">Modifiche richieste.</p>',
+        '<p style="font-family:Arial,sans-serif;font-size:24px;font-weight:900;color:#0a0a0a;margin:0 0 12px;">Il tuo immobile non è stato approvato.</p>',
         '<p style="font-family:Arial,sans-serif;font-size:15px;color:#555555;margin:0 0 16px;line-height:1.7;">',
         escapeHtml(greet) + " abbiamo revisionato il tuo annuncio in <strong style=\"color:#0a0a0a;\">" + indirizzoSafe + "</strong> e prima di pubblicarlo serve una sistemata.",
         '</p>',
         motivoBlock,
         '<p style="font-family:Arial,sans-serif;font-size:15px;color:#555555;margin:0 0 24px;line-height:1.7;">',
-        "Trovi l'annuncio in stato “bozza” nella tua dashboard. Aggiorna i dati e clicca di nuovo su “Richiedi pubblicazione”.",
+        "Trovi l'annuncio nella tua dashboard. Clicca <strong>Modifica</strong>, aggiorna i dati richiesti e ri-invialo: il re-submit ritorna automaticamente in revisione.",
         '</p>',
         '<table cellpadding="0" cellspacing="0" style="margin:0 0 16px;"><tr><td style="background:#d93025;border-radius:2px;">',
-        '<a href="https://realaistate.ai/venditore" style="display:inline-block;padding:14px 28px;font-family:Arial,sans-serif;font-size:14px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#ffffff;text-decoration:none;">Vai alla dashboard &rarr;</a>',
+        '<a href="https://realaistate.ai/venditore" style="display:inline-block;padding:14px 28px;font-family:Arial,sans-serif;font-size:14px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#ffffff;text-decoration:none;">Modifica e ripubblica &rarr;</a>',
         '</td></tr></table>',
         '</td></tr>',
         '<tr><td style="background:#f9f9f9;padding:24px 40px;border-top:1px solid #e8e8e8;">',
@@ -368,7 +405,7 @@ async function rifiutaImmobile(req, res, env) {
       emailSent = await sendBrevo(env, {
         to: v.email,
         name: v.nome,
-        subject: "Modifiche richieste sul tuo annuncio",
+        subject: "Il tuo immobile non è stato approvato",
         html,
       });
     }
@@ -376,7 +413,7 @@ async function rifiutaImmobile(req, res, env) {
     return res.status(200).json({
       ok: true,
       immobile_id,
-      status: "draft",
+      status: "rejected",
       email_sent: emailSent,
       venditore_email: v.email,
     });

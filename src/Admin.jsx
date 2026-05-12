@@ -11,6 +11,11 @@ export default function AdminPage() {
   const [search, setSearch] = useState("");
   const [processing, setProcessing] = useState({});
   const [feedback, setFeedback] = useState("");
+  // Modal rifiuto (task 6.F): sostituisce prompt() / confirm() con UI dedicata.
+  // motivo obbligatorio 10-500 char, validato sia frontend che backend.
+  const [rejectModal, setRejectModal] = useState(null); // immobile target o null
+  const [rejectMotivo, setRejectMotivo] = useState("");
+  const [rejectSubmitting, setRejectSubmitting] = useState(false);
 
   const fetchData = async (key) => {
     const [scuseRes, immRes] = await Promise.all([
@@ -81,14 +86,18 @@ export default function AdminPage() {
     });
   };
 
-  const rifiuta = async (im) => {
-    const motivo = prompt(
-      `Motivo del rifiuto (opzionale, finirà nell'email al venditore):`,
-      ""
-    );
-    if (motivo === null) return; // cancel
-    if (!confirm(`Riportare l'annuncio "${im.titolo || im.indirizzo}" in bozza?`)) return;
-    setProcessing((p) => ({ ...p, [im.id]: "rifiuta" }));
+  const rifiuta = (im) => {
+    // Task 6.F: apre modal con textarea (motivo obbligatorio 10-500 char).
+    setRejectModal(im);
+    setRejectMotivo("");
+  };
+
+  const confermaRifiuto = async () => {
+    if (!rejectModal) return;
+    const motivo = rejectMotivo.trim();
+    if (motivo.length < 10 || motivo.length > 500) return; // bottone è già disabled
+    const im = rejectModal;
+    setRejectSubmitting(true);
     setFeedback("");
     try {
       const r = await fetch("/api/admin/rifiuta", {
@@ -100,20 +109,19 @@ export default function AdminPage() {
       if (!r.ok) {
         setFeedback(`Errore rifiuto: ${data?.error || r.status}`);
       } else {
-        const bits = ["Riportato in draft"];
+        const bits = ["Rifiutato"];
         if (data.email_sent) bits.push("email inviata");
         else if (data.venditore_email) bits.push("email NON inviata");
         else bits.push("email venditore non disponibile");
         setFeedback(`#${im.id} → ${bits.join(", ")}.`);
+        setRejectModal(null);
+        setRejectMotivo("");
         await refreshImmobili();
       }
     } catch (e) {
       setFeedback(`Errore di rete: ${String(e?.message || e)}`);
     }
-    setProcessing((p) => {
-      const { [im.id]: _, ...rest } = p;
-      return rest;
-    });
+    setRejectSubmitting(false);
   };
 
   const filtered = scuse.filter(s =>
@@ -347,6 +355,69 @@ export default function AdminPage() {
           </>
         )}
       </div>
+
+      {/* Modal rifiuto con motivo obbligatorio (task 6.F) */}
+      {rejectModal && (
+        <div
+          onClick={() => !rejectSubmitting && setRejectModal(null)}
+          style={{ position: "fixed", inset: 0, background: "rgba(10,10,10,0.78)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem", backdropFilter: "blur(4px)" }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 4, padding: "2.4rem", maxWidth: 560, width: "100%" }}
+          >
+            <div style={{ fontFamily: "Bebas Neue, sans-serif", fontSize: "1.8rem", color: "var(--white)", marginBottom: "0.6rem", letterSpacing: "0.02em" }}>
+              Rifiuta pubblicazione
+            </div>
+            <div style={{ fontSize: "0.85rem", color: "rgba(247,245,240,0.55)", marginBottom: "1.4rem", lineHeight: 1.55 }}>
+              <strong style={{ color: "var(--white)" }}>{rejectModal.indirizzo}</strong>. Il venditore riceverà email col motivo e potrà ri-submittere dopo aver fatto le correzioni.
+            </div>
+
+            <label style={{ display: "block", fontSize: "0.72rem", color: "var(--muted)", letterSpacing: "0.06em", textTransform: "uppercase", fontWeight: 600, marginBottom: "0.5rem" }}>
+              Motivo del rifiuto <span style={{ color: "var(--red)" }}>*</span>
+            </label>
+            <textarea
+              value={rejectMotivo}
+              onChange={(e) => setRejectMotivo(e.target.value)}
+              rows={4}
+              placeholder="Es. Le foto della cucina sono mosse, ricaricale. La planimetria è troncata sul lato destro."
+              style={{ width: "100%", padding: "0.8rem", background: "rgba(247,245,240,0.05)", border: "1px solid var(--border)", color: "var(--white)", fontFamily: "DM Sans, sans-serif", fontSize: "0.9rem", borderRadius: 2, outline: "none", resize: "vertical", boxSizing: "border-box", lineHeight: 1.5 }}
+              maxLength={500}
+            />
+            <div style={{ fontSize: "0.72rem", color: rejectMotivo.length < 10 || rejectMotivo.length > 500 ? "var(--red)" : "var(--muted)", marginTop: "0.4rem", marginBottom: "1.4rem", lineHeight: 1.4 }}>
+              {rejectMotivo.length}/500 caratteri — min 10. Verrà inviato al venditore via email.
+            </div>
+
+            <div style={{ display: "flex", gap: "0.8rem", justifyContent: "flex-end" }}>
+              <button
+                onClick={() => setRejectModal(null)}
+                disabled={rejectSubmitting}
+                style={{ background: "transparent", color: "rgba(247,245,240,0.7)", border: "1px solid var(--border)", padding: "0.7rem 1.4rem", borderRadius: 2, cursor: rejectSubmitting ? "not-allowed" : "pointer", fontSize: "0.82rem", fontFamily: "DM Sans, sans-serif", fontWeight: 600 }}
+              >
+                Annulla
+              </button>
+              <button
+                onClick={confermaRifiuto}
+                disabled={rejectSubmitting || rejectMotivo.trim().length < 10 || rejectMotivo.trim().length > 500}
+                style={{
+                  background: (rejectSubmitting || rejectMotivo.trim().length < 10 || rejectMotivo.trim().length > 500) ? "rgba(217,48,37,0.4)" : "var(--red)",
+                  color: "white",
+                  border: "none",
+                  padding: "0.7rem 1.4rem",
+                  borderRadius: 2,
+                  cursor: (rejectSubmitting || rejectMotivo.trim().length < 10 || rejectMotivo.trim().length > 500) ? "not-allowed" : "pointer",
+                  fontSize: "0.82rem",
+                  fontFamily: "DM Sans, sans-serif",
+                  fontWeight: 700,
+                  letterSpacing: "0.04em"
+                }}
+              >
+                {rejectSubmitting ? "Invio..." : "Conferma rifiuto"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
