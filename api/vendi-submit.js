@@ -99,6 +99,15 @@ export default async function handler(req, res) {
         foto: dati.foto || [],
         planimetria: dati.planimetria !== undefined ? dati.planimetria : existing.planimetria,
         ape: dati.ape !== undefined ? dati.ape : existing.ape,
+        // Contatti (hotfix 6.7): preservation logic — se il frontend non
+        // include nome/cognome/email/telefono nel payload (undefined), il
+        // PATCH mantiene il valore esistente. Stesso pattern di
+        // planimetria/ape. Il form invia sempre i 4 campi (sono nello
+        // state), quindi il caso undefined è defense in depth.
+        contatto_nome: dati.nome !== undefined ? dati.nome : existing.contatto_nome,
+        contatto_cognome: dati.cognome !== undefined ? dati.cognome : existing.contatto_cognome,
+        contatto_email: dati.email !== undefined ? dati.email : existing.contatto_email,
+        contatto_telefono: dati.telefono !== undefined ? dati.telefono : existing.contatto_telefono,
         // Rejected → pending_review (re-submit). Draft → resta draft.
         status: existing.status === "rejected" ? "pending_review" : "draft",
       };
@@ -252,6 +261,15 @@ export default async function handler(req, res) {
       // dell'annuncio (foto/planimetria/ape/prezzo/ecc.).
       planimetria: dati.planimetria || null,
       ape: dati.ape || null,
+      // Contatti salvati anche in immobili da hotfix 6.7. Pattern coerente
+      // con planimetria/ape (hotfix 6.5): single source of truth è immobili.
+      // venditori legacy resta solo come lead capture iniziale.
+      // Per-immobile (NON per-utente): se l'utente ha più immobili, i
+      // contatti possono differire (referenti diversi per annunci diversi).
+      contatto_nome: dati.nome || null,
+      contatto_cognome: dati.cognome || null,
+      contatto_email: dati.email || null,
+      contatto_telefono: dati.telefono || null,
       venditore_user_id: userId,
       status: "draft",
     };

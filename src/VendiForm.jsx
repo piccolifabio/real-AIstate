@@ -367,7 +367,24 @@ function Pertinenza({ title, value, onToggle, metratura, onMetratura, tooltip })
 // non presenti in DB vengono lasciate vuote (default form). Foto/planimetria/
 // ape sono URL stringa, non File: il submit handler li passa attraverso
 // uploadFile() che li riconosce e li ritorna invariati (no upload).
-function mapDbToForm(db) {
+function mapDbToForm(db, user) {
+  // Contatti (hotfix 6.7): priorità a immobili.contatto_* (per-immobile),
+  // fallback su user.user_metadata / user.email (per-utente). Telefono
+  // non ha fallback perché è specifico per immobile (no "telefono utente"
+  // globale). Vedi anche useEffect user_metadata sotto — quello popola
+  // nome/cognome/email al primo load /vendi (no edit), questa funzione
+  // copre l'edit mode dove il setForm(mapDbToForm) sovrascriverebbe i
+  // valori già popolati dal useEffect.
+  const meta = user?.user_metadata || {};
+  let metaNome = meta.nome || "";
+  let metaCognome = meta.cognome || "";
+  if (!metaNome && !metaCognome && meta.full_name) {
+    const fn = String(meta.full_name).trim();
+    const idx = fn.indexOf(" ");
+    metaNome = idx >= 0 ? fn.slice(0, idx) : fn;
+    metaCognome = idx >= 0 ? fn.slice(idx + 1).trim() : "";
+  }
+  const contattoEmail = db.contatto_email || user?.email || "";
   return {
     tipologia: db.tipologia || "",
     indirizzo: db.indirizzo || "",
@@ -405,7 +422,11 @@ function mapDbToForm(db) {
     foto: Array.isArray(db.foto) ? db.foto.filter(Boolean) : [],
     planimetria: db.planimetria || null,
     ape: db.ape || null,
-    nome: "", cognome: "", email: "", email_conferma: "", telefono: "",
+    nome: db.contatto_nome || metaNome,
+    cognome: db.contatto_cognome || metaCognome,
+    email: contattoEmail,
+    email_conferma: contattoEmail,
+    telefono: db.contatto_telefono || "",
     disponibilita: [], note: "",
   };
 }
@@ -480,7 +501,7 @@ export default function VendiForm() {
         setEditLoading(false);
         return;
       }
-      setForm(mapDbToForm(data));
+      setForm(mapDbToForm(data, user));
       setEditingId(data.id);
       setEditLoading(false);
     })();
