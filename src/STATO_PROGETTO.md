@@ -1,6 +1,88 @@
 # RealAIstate — Stato del progetto
 Aggiornato: 12/05/2026 (settimana 7 — hotfix 6.9 doc only: migration repo per documentare il fix CHECK constraint immobili_status_check già applicato manualmente in produzione, aggiunge 'rejected' al CHECK. Prima di questo: hotfix 6.8 upload Storage via signed URL service_role, hotfix 6.7 contatti per-immobile pre-popolati in edit mode, hotfix 6.6 coerenza URL completi planimetria/ape, hotfix 6.5 documenti edit pre-popolazione, batch 6 fixes & polish — auth callback fix definitivo con explicit PKCE exchange + listener, endpoint preview-immobile service_role per anteprima admin/owner, copy hero /vendi meno aggressivo, label admin login, edit bozza venditore, elimina bozza con modal, modal rifiuto motivo obbligatorio + status='rejected' + migration rejection fields, email info@ post-approva/rifiuta, tabs filtro admin Pending/Pubblicati/Rifiutati/Bozze con counts)
 
+## Decisioni operative 12/05 sera — strategia firma digitale fase beta
+
+Decisioni del founder a fine giornata 12/05 sulla gestione firma
+digitale durante la fase beta (onboarding venditori a partire dal
+18/05). Niente impatto tecnico sul prodotto — nessun task aperto sul
+codice generato da questa sezione. Solo cornice strategica e
+operativa.
+
+### 1. Yousign production — rimandato
+
+Call Yousign 11/05 (Nicoleta) ha chiarito che lo switch da sandbox a
+production NON è possibile finché l'account non viene attivato a
+pagamento, con fees ricorrenti dal momento dell'attivazione.
+
+**Decisione founder**: rimandare l'attivazione Yousign production a
+1-2 settimane PRIMA della prima transazione reale prevista. Yousign
+sandbox resta integrato nel codice prodotto (UX demo per i venditori
+beta + futura production plug-and-play quando si attiverà — variabili
+env già predisposte, basta swappare API key e TEMPLATE_ID).
+
+### 2. Soluzione transitoria — DocuSign account separato del founder
+
+Per i mandati di vendita / scritture private di intermediazione della
+fase beta si usa un account DocuSign separato del founder, **fuori
+dal flusso prodotto**:
+
+- Envelope DocuSign creato e inviato manualmente per ogni nuovo
+  venditore beta
+- DocuSign è eIDAS-compliant UE → firma giuridicamente valida in
+  Italia, equivalente legale a Yousign
+- Account: credenziali nel password manager personale del founder
+- Template envelope da creare prima del primo onboarding, eventualmente
+  con consulenza legale (~€100-200 una tantum)
+- Tracking ID immobile RealAIstate ↔ DocuSign envelope ID in
+  spreadsheet/Notion separato durante beta (5-10 righe attese in fase
+  iniziale, gestibile manualmente)
+
+### 3. Classificazione strategica — opzione intentional, non workaround
+
+Questa soluzione è coerente con la fase del prodotto, non un compromesso
+tecnico subito:
+
+- **Fase beta** = sales-led / high-touch onboarding (1-2 venditori
+  iniziali accompagnati personalmente dal founder). DocuSign manuale
+  è perfettamente adeguato a questo volume.
+- **Self-service automatizzato via Yousign integrato** = V2 post-PMF,
+  quando il volume di transazioni giustifica costo ricorrente Yousign
+  production + complessità tecnica del flusso integrato.
+- **Implicazione**: nessun task tecnico aperto sul prodotto per questa
+  decisione. Il codice resta com'è.
+
+### 4. Migration path — quando Yousign production verrà attivato
+
+Steps previsti per la transizione:
+
+1. Disattivare flusso DocuSign separato per nuovi mandati
+2. Switch nel codice da Yousign sandbox → production: cambiare
+   `YOUSIGN_API_KEY` env var su Vercel (Production + Preview +
+   Development) + aggiornare `YOUSIGN_TEMPLATE_ID` col nuovo UUID
+   production. Endpoint base resta `api.yousign.app/v3`.
+3. Migrare template firma (mandato di vendita, scrittura privata
+   intermediazione) da DocuSign a Yousign — ricreazione una tantum
+   nel pannello Yousign.
+4. Data migration dei mandati firmati in DocuSign durante beta:
+   export dei PDF firmati + archivio in storage (es. Google Drive
+   founder o bucket dedicato `mandati-archive` su Supabase Storage
+   con RLS strict).
+
+### 5. Action items founder per onboarding venditori beta 18/05
+
+- [ ] Verificare/creare account DocuSign (Personal ~€10-15/mese o
+      Business se serve branding completo con logo RealAIstate
+      sull'envelope)
+- [ ] Setup template envelope "Mandato di vendita" con aiuto legale
+      — costo stimato €100-200 una tantum
+- [ ] Setup spreadsheet/Notion per tracking transazioni beta:
+      colonne minime ID immobile, venditore, DocuSign envelope ID,
+      data invio, data firma, status
+- [ ] (Opzionale) preparare email template per accompagnare l'invio
+      DocuSign al venditore — friction-killer per chi non ha mai
+      firmato digitalmente
+
 ## Stack
 - Frontend: React + Vite, deploy su Vercel
 - Backend: Supabase (auth + database + storage)
