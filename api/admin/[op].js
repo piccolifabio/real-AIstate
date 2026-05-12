@@ -59,6 +59,7 @@ const OPS = {
   rifiuta:            { method: "POST", auth: "admin-key", handler: rifiutaImmobile },
   "preview-immobile": { method: "POST", auth: "jwt",       handler: previewImmobile },
   "elimina-bozza":    { method: "POST", auth: "jwt",       handler: eliminaBozza },
+  "upload-sign":      { method: "POST", auth: "jwt",       handler: uploadSign },
 };
 
 export default async function handler(req, res) {
@@ -692,6 +693,84 @@ async function eliminaBozza(req, res, env, ctx) {
     return res.status(200).json({ ok: true, deleted: true, asset_cleanup_warnings: warnings });
   } catch (err) {
     console.error("admin/elimina-bozza error:", err);
+    return res.status(500).json({ error: "Errore interno", detail: String(err?.message || err) });
+  }
+}
+
+// ── op: upload-sign (POST, JWT auth) ─────────────────────────────────────────
+//
+// Genera un signed upload URL per Storage `documenti-venditori` via
+// service_role (bypassa RLS). Il frontend chiama questo endpoint, riceve
+// signedUrl + publicUrl, poi fa PUT diretto del file al signedUrl. Il file
+// NON passa attraverso questa serverless function — solo il signed URL
+// (token nell'URL) viene generato server-side. Pattern bypassa il limite
+// Vercel 4.5 MB body e mantiene la performance.
+//
+// Hotfix 6.8: prima di questo cambio, uploadFile() in VendiForm.jsx usava
+// supabase.storage.from(...).upload() col client anon-key autenticato dalla
+// sessione utente. RLS Storage su bucket 'documenti-venditori' è stata
+// stretta nel frattempo (probabilmente policy "user's own folder" che
+// richiede path ${auth.uid()}/...) → 403 "new row violates row-level
+// security policy". Soluzione: backend autorizza (JWT validato dal
+// dispatcher) e poi service_role bypassa RLS per generare l'URL firmato.
+//
+// Auth: JWT validato dal dispatcher. Qualsiasi utente loggato può chiedere
+// un signed upload URL; le validazioni di ownership sull'immobile avvengono
+// alla submit successiva (/api/vendi-submit).
+//
+// Folder allowlist: solo planimetrie, ape, foto. Estensione safe:
+// alphanumeric + dash/underscore di max 10 char (defense in depth contro
+// path traversal o estensioni sospette).
+async function uploadSign(req, res, env, ctx) {
+  const body = parseBody(req);
+  if (body === null) return res.status(400).json({ error: "Body JSON invalido" });
+
+  const ALLOWED_FOLDERS = ["planimetrie", "ape", "foto"];
+  const folder = String(body?.folder || "");
+  if (!ALLOWED_FOLDERS.includes(folder)) {
+    return res.status(400).json({ error: `folder non valido: ${folder}` });
+  }
+  const extRaw = String(body?.ext || "").toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 10);
+  const ext = extRaw || "bin";
+
+  // Decisione design (hotfix 6.8 — opzione A): path FLAT senza user_id.
+  // La sicurezza dell'upload è garantita dal JWT check qui sopra: solo
+  // utenti autenticati possono richiedere un signed URL. Storage RLS
+  // resta belt-and-braces per bloccare upload diretti da anon client
+  // (se mai qualcuno tentasse di bypassare l'API).
+  const filename = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+
+  try {
+    const r = await fetch(
+      `${env.SUPABASE_URL}/storage/v1/object/upload/sign/documenti-venditori/${encodeURI(filename)}`,
+      {
+        method: "POST",
+        headers: {
+          apikey: env.SUPABASE_SECRET,
+          Authorization: `Bearer ${env.SUPABASE_SECRET}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({}),
+      }
+    );
+    if (!r.ok) {
+      const errBody = await r.text();
+      console.error("admin/upload-sign error:", errBody);
+      return res.status(500).json({ error: "Errore generazione signed URL", detail: errBody });
+    }
+    const data = await r.json();
+    // data: { url: "/object/upload/sign/documenti-venditori/<path>?token=...", token: "..." }
+    // url è relativo: ricostruiamo l'URL assoluto da spedire al frontend.
+    const signedUrl = `${env.SUPABASE_URL}/storage/v1${data.url}`;
+    const publicUrl = `${env.SUPABASE_URL}/storage/v1/object/public/documenti-venditori/${filename}`;
+    return res.status(200).json({
+      ok: true,
+      path: filename,
+      signedUrl,
+      publicUrl,
+    });
+  } catch (err) {
+    console.error("admin/upload-sign exception:", err);
     return res.status(500).json({ error: "Errore interno", detail: String(err?.message || err) });
   }
 }

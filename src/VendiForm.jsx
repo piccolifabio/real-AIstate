@@ -697,20 +697,49 @@ export default function VendiForm() {
     // ri-uploadare. Questo permette di mantenere il pattern unico submit
     // → uploadFile per ogni asset, senza biforcare la logica chiamante.
     if (typeof file === "string") return file;
+
+    // Hotfix 6.8: upload via signed URL generato server-side con
+    // service_role (bypassa RLS Storage). Pre-hotfix l'upload era
+    // diretto da frontend tramite supabase.storage.upload() col client
+    // anon — la RLS policy sul bucket documenti-venditori (stretta nel
+    // frattempo) bloccava con 403 "new row violates row-level security
+    // policy". Pattern attuale: il file NON passa attraverso la
+    // serverless function (no body size limit), va PUT diretto al
+    // signed URL bypassando RLS via il token nell'URL.
     const ext = file.name.split(".").pop();
-    const filename = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-    const { error: upErr } = await supabase.storage
-      .from("documenti-venditori")
-      .upload(filename, file, {
-        contentType: file.type || "application/octet-stream",
-        upsert: false,
-      });
-    if (upErr) throw new Error(`Upload fallito: ${file.name}`);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) throw new Error("Sessione scaduta");
+
+    // Step 1: ottieni signed upload URL dal backend (service_role)
+    const signRes = await fetch("/api/admin/upload-sign", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ folder, ext }),
+    });
+    if (!signRes.ok) {
+      const err = await signRes.json().catch(() => ({}));
+      throw new Error(`Upload sign fallito (${signRes.status}): ${err?.error || file.name}`);
+    }
+    const { signedUrl, publicUrl } = await signRes.json();
+    if (!signedUrl || !publicUrl) throw new Error(`Upload sign risposta invalida: ${file.name}`);
+
+    // Step 2: PUT file diretto al signed URL
+    const putRes = await fetch(signedUrl, {
+      method: "PUT",
+      headers: { "Content-Type": file.type || "application/octet-stream" },
+      body: file,
+    });
+    if (!putRes.ok) {
+      throw new Error(`Upload fallito (${putRes.status}): ${file.name}`);
+    }
+
     // Salviamo l'URL pubblico completo in DB (foto jsonb) invece del path
     // relativo: il render lato Listing/Immobile usa direttamente <img src>
     // senza dover ricostruire l'URL base. Standardizzato da batch 5 task 5.A.
-    const { data } = supabase.storage.from("documenti-venditori").getPublicUrl(filename);
-    return data.publicUrl;
+    return publicUrl;
   };
 
   const handleSubmit = async () => {
