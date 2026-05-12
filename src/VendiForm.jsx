@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import NavBar from "./NavBar.jsx";
 import { useAuth } from "./AuthContext";
 import { supabase } from "./supabase";
@@ -362,8 +362,61 @@ function Pertinenza({ title, value, onToggle, metratura, onMetratura, tooltip })
   );
 }
 
+// Mappa colonne DB immobili → keys del form. Usata in edit mode (?edit=<id>)
+// per pre-popolare lo stato del form a partire dal record salvato. Le chiavi
+// non presenti in DB vengono lasciate vuote (default form). Foto/planimetria/
+// ape sono URL stringa, non File: il submit handler li passa attraverso
+// uploadFile() che li riconosce e li ritorna invariati (no upload).
+function mapDbToForm(db) {
+  return {
+    tipologia: db.tipologia || "",
+    indirizzo: db.indirizzo || "",
+    cap: db.cap || "",
+    citta: db.citta || "",
+    provincia: db.provincia || "",
+    zona: db.zona || "",
+    latitudine: db.latitudine != null ? String(db.latitudine) : "",
+    longitudine: db.longitudine != null ? String(db.longitudine) : "",
+    addressVerified: !!(db.cap && db.citta && db.provincia),
+    piano: db.piano || "",
+    ascensore: db.ascensore || "",
+    superficie_catastale: db.superficie != null ? String(db.superficie) : (db.superficie_catastale != null ? String(db.superficie_catastale) : ""),
+    superficie_calpestabile: db.superficie_calpestabile != null ? String(db.superficie_calpestabile) : "",
+    vani: db.locali != null ? String(db.locali) : (db.vani != null ? String(db.vani) : ""),
+    camere: db.camere != null ? String(db.camere) : "",
+    bagni: db.bagni != null ? String(db.bagni) : "",
+    anno_costruzione: db.anno_costruzione != null ? String(db.anno_costruzione) : "",
+    anno_ristrutturazione: db.anno_ristrutturazione != null ? String(db.anno_ristrutturazione) : "",
+    stato: db.stato_immobile || db.stato || "",
+    classe_energetica: db.classe_energetica || "",
+    riscaldamento: db.riscaldamento || "",
+    acqua_calda: db.acqua_calda || "",
+    spese_condominio: db.spese_condominio != null ? String(db.spese_condominio) : "",
+    terrazzo: db.terrazzo || "",
+    terrazzo_mq: db.terrazzo_mq != null ? String(db.terrazzo_mq) : "",
+    giardino: db.giardino || "",
+    cantina: db.cantina || "",
+    cantina_mq: db.cantina_mq != null ? String(db.cantina_mq) : "",
+    garage: db.garage || "",
+    garage_mq: db.garage_mq != null ? String(db.garage_mq) : "",
+    disponibilita_rogito: db.disponibilita_rogito || "",
+    prezzo_desiderato: db.prezzo != null ? String(db.prezzo) : "",
+    note_prezzo: db.note_prezzo || "",
+    foto: Array.isArray(db.foto) ? db.foto.filter(Boolean) : [],
+    planimetria: db.planimetria || null,
+    ape: db.ape || null,
+    nome: "", cognome: "", email: "", email_conferma: "", telefono: "",
+    disponibilita: [], note: "",
+  };
+}
+
 export default function VendiForm() {
   const { user, loading: authLoading } = useAuth();
+  const [searchParams] = useSearchParams();
+  const editId = searchParams.get("edit");
+  const [editingId, setEditingId] = useState(null);
+  const [editLoading, setEditLoading] = useState(!!editId);
+  const [editError, setEditError] = useState("");
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -394,6 +447,45 @@ export default function VendiForm() {
     nome: "", cognome: "", email: "", email_conferma: "", telefono: "",
     disponibilita: [], note: "",
   });
+
+  // Edit mode (?edit=<immobile_id>): pre-popola form con dati DB.
+  // RLS permette al venditore proprietario di leggere il proprio draft. Se la
+  // riga non esiste, status non è draft/rejected, o non sei l'owner, blocchiamo
+  // con messaggio dedicato. Foto/planimetria/ape arrivano come URL stringhe;
+  // uploadFile() le riconosce e le ritorna invariate (no doppio upload).
+  useEffect(() => {
+    if (!editId || !user) return;
+    let cancelled = false;
+    (async () => {
+      setEditLoading(true);
+      setEditError("");
+      const { data, error: fetchErr } = await supabase
+        .from("immobili")
+        .select("*")
+        .eq("id", editId)
+        .maybeSingle();
+      if (cancelled) return;
+      if (fetchErr || !data) {
+        setEditError("Bozza non trovata o non hai i permessi per modificarla.");
+        setEditLoading(false);
+        return;
+      }
+      if (data.venditore_user_id !== user.id) {
+        setEditError("Non puoi modificare questo immobile.");
+        setEditLoading(false);
+        return;
+      }
+      if (data.status !== "draft" && data.status !== "rejected") {
+        setEditError("Questo immobile non è modificabile (status: " + data.status + "). Solo bozze e immobili rifiutati possono essere modificati.");
+        setEditLoading(false);
+        return;
+      }
+      setForm(mapDbToForm(data));
+      setEditingId(data.id);
+      setEditLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [editId, user]);
 
   // Pre-popolazione step 4 contatti: nome e cognome separati da user_metadata.
   // Pattern: legge user_metadata.nome / .cognome se presenti (post-migrazione SQL
@@ -485,6 +577,34 @@ export default function VendiForm() {
     );
   }
 
+  // Gate edit mode: stato di caricamento bozza
+  if (editLoading) {
+    return (
+      <>
+        <style>{vendiStyles}</style>
+        <NavBar />
+        <div className="vendi-page" style={{ textAlign: 'center', color: 'rgba(247,245,240,0.4)', paddingTop: '12rem' }}>
+          Carico la bozza...
+        </div>
+      </>
+    );
+  }
+
+  // Gate edit mode: errore (bozza non trovata / non tua / status non editabile)
+  if (editError) {
+    return (
+      <>
+        <style>{vendiStyles}</style>
+        <NavBar />
+        <div className="vendi-page" style={{ paddingTop: '8rem', textAlign: 'center', maxWidth: 560, margin: '0 auto' }}>
+          <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: '2.4rem', marginBottom: '1rem', color: '#f7f5f0' }}>Impossibile modificare</div>
+          <div style={{ fontSize: '0.95rem', color: 'rgba(247,245,240,0.6)', marginBottom: '2rem', lineHeight: 1.6 }}>{editError}</div>
+          <Link to="/venditore" style={{ background: 'var(--red)', color: 'white', padding: '0.9rem 1.8rem', borderRadius: 2, textDecoration: 'none', fontSize: '0.85rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Torna alla dashboard →</Link>
+        </div>
+      </>
+    );
+  }
+
   // Gate auth: utente non loggato → pre-onboarding
   if (!user) {
     return (
@@ -551,6 +671,11 @@ export default function VendiForm() {
   };
 
   const uploadFile = async (file, folder) => {
+    // Edit mode (?edit=<id>): foto/planimetria/ape già caricati in Storage
+    // arrivano come URL stringhe da mapDbToForm. Le passiamo through senza
+    // ri-uploadare. Questo permette di mantenere il pattern unico submit
+    // → uploadFile per ogni asset, senza biforcare la logica chiamante.
+    if (typeof file === "string") return file;
     const ext = file.name.split(".").pop();
     const filename = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
     const { error: upErr } = await supabase.storage
@@ -588,6 +713,12 @@ export default function VendiForm() {
         ape: apeUrl,
         disponibilita: form.disponibilita.join(", "),
       };
+      // Edit mode: aggiungiamo _mode + immobile_id; il backend bypassa
+      // INSERT venditori/immobili e fa UPDATE su immobili esistente.
+      if (editingId) {
+        payload._mode = "update";
+        payload.immobile_id = editingId;
+      }
       const res = await fetch("/api/vendi-submit", {
         method: "POST",
         headers: {
@@ -608,12 +739,12 @@ export default function VendiForm() {
     <>
       <style>{vendiStyles}</style>
       <NavBar />
-      
+
       <div style={{ maxWidth: '760px', margin: '0 auto' }}>
         <div className="vendi-success">
           <div className="vendi-success-icon">✓</div>
-          <h1 className="vendi-success-title">Ci siamo.<br /><span>Quasi.</span></h1>
-          <p className="vendi-success-sub">Abbiamo ricevuto tutto. Ti abbiamo inviato una email di conferma con il riepilogo e i prossimi passi.</p>
+          <h1 className="vendi-success-title">{editingId ? <>Modifiche<br /><span>salvate.</span></> : <>Ci siamo.<br /><span>Quasi.</span></>}</h1>
+          <p className="vendi-success-sub">{editingId ? "La bozza è stata aggiornata. Da qui puoi tornare alla dashboard e richiedere la pubblicazione quando vuoi." : "Abbiamo ricevuto tutto. Ti abbiamo inviato una email di conferma con il riepilogo e i prossimi passi."}</p>
           <div className="vendi-success-steps">
             <div className="vendi-success-step"><div className="vendi-success-step-num">01</div><div className="vendi-success-step-text">Analizziamo i tuoi dati e calcoliamo il Fair Price Score del tuo immobile.</div></div>
             <div className="vendi-success-step"><div className="vendi-success-step-num">02</div><div className="vendi-success-step-text">Ti contatteremo entro 24 ore per confermare i dettagli e raccogliere i documenti mancanti.</div></div>
@@ -632,9 +763,9 @@ export default function VendiForm() {
       <div className="vendi-page">
 
         <div className="vendi-hero">
-          <div className="vendi-eyebrow">Vendi il tuo immobile</div>
-          <h1 className="vendi-h1">Pubblica il tuo<br />immobile. Gratis.</h1>
-          <p className="vendi-sub">Niente agenzia. Niente trattative al ribasso. L'AI calcola il prezzo giusto, analizziamo le tue foto e pubblichiamo il tuo annuncio sui principali portali.</p>
+          <div className="vendi-eyebrow">{editingId ? "Modifica la tua bozza" : "Vendi il tuo immobile"}</div>
+          <h1 className="vendi-h1">{editingId ? <>Modifica il tuo<br />immobile.</> : <>Pubblica il tuo<br />immobile. Gratis.</>}</h1>
+          <p className="vendi-sub">{editingId ? "Rivedi e modifica i dati che hai inserito. Le foto e i documenti già caricati restano salvati — puoi sostituirli se vuoi." : "Niente agenzia. Niente trattative al ribasso. L'AI calcola il prezzo giusto, analizziamo le tue foto e pubblichiamo il tuo annuncio sui principali portali."}</p>
         </div>
 
         <div className="vendi-stepper">
@@ -939,7 +1070,7 @@ export default function VendiForm() {
               <div className="vendi-photos-grid">
                 {form.foto.map((f, i) => (
                   <div className="vendi-photo-thumb" key={i}>
-                    <img src={URL.createObjectURL(f)} alt="" />
+                    <img src={typeof f === "string" ? f : URL.createObjectURL(f)} alt="" />
                     <button className="vendi-photo-remove" onClick={() => removeFoto(i)}>×</button>
                   </div>
                 ))}
@@ -962,7 +1093,7 @@ export default function VendiForm() {
                 <div className="vendi-label" style={{ marginBottom: "0.5rem" }}>Planimetria catastale <span className="req">*</span></div>
                 {form.planimetria ? (
                   <div className="vendi-file-item">
-                    <span>✓ {form.planimetria.name}</span>
+                    <span>✓ {typeof form.planimetria === "string" ? "Planimetria già caricata" : form.planimetria.name}</span>
                     <span className="vendi-file-remove" onClick={() => update("planimetria", null)}>×</span>
                   </div>
                 ) : (
@@ -977,7 +1108,7 @@ export default function VendiForm() {
                 <div className="vendi-label" style={{ marginBottom: "0.5rem" }}>APE — Attestato di Prestazione Energetica <span className="req">*</span></div>
                 {form.ape ? (
                   <div className="vendi-file-item">
-                    <span>✓ {form.ape.name}</span>
+                    <span>✓ {typeof form.ape === "string" ? "APE già caricato" : form.ape.name}</span>
                     <span className="vendi-file-remove" onClick={() => update("ape", null)}>×</span>
                   </div>
                 ) : (

@@ -27,6 +27,102 @@ export default async function handler(req, res) {
     const raw = Buffer.concat(buffers).toString("utf8");
     const dati = JSON.parse(raw);
 
+    // 2.5 Edit mode (batch 6 task 6.C): se _mode === 'update' con immobile_id,
+    // facciamo PATCH dell'immobile esistente invece di INSERT. Skippiamo
+    // venditori legacy (sarebbe un duplicate lead) e le email (è un re-submit,
+    // non una nuova bozza). Le rules:
+    //   - L'utente deve essere proprietario (venditore_user_id === userId)
+    //   - L'immobile deve essere in stato 'draft' o 'rejected' (non si edita
+    //     pending_review/published/sold/archived: richiede flow dedicato)
+    //   - Se status era 'rejected', force 'pending_review' al submit (è un
+    //     re-submit dopo correzioni richieste dall'admin). Se era 'draft'
+    //     resta 'draft' (l'utente cliccherà poi "Richiedi pubblicazione").
+    if (dati._mode === "update" && dati.immobile_id) {
+      const immobileId = dati.immobile_id;
+
+      // Fetch esistente via service_role per validare owner+status
+      const existingRes = await fetch(
+        `${process.env.SUPABASE_URL}/rest/v1/immobili?id=eq.${encodeURIComponent(immobileId)}&select=*`,
+        {
+          headers: {
+            apikey: process.env.SUPABASE_SECRET_KEY,
+            Authorization: `Bearer ${process.env.SUPABASE_SECRET_KEY}`,
+          },
+        }
+      );
+      if (!existingRes.ok) {
+        return res.status(500).json({ error: "Errore lettura immobile" });
+      }
+      const rows = await existingRes.json();
+      if (!Array.isArray(rows) || rows.length === 0) {
+        return res.status(404).json({ error: "Immobile non trovato" });
+      }
+      const existing = rows[0];
+      if (existing.venditore_user_id !== userId) {
+        return res.status(403).json({ error: "Non puoi modificare questo immobile" });
+      }
+      if (existing.status !== "draft" && existing.status !== "rejected") {
+        return res.status(409).json({
+          error: `Immobile in stato ${existing.status} non modificabile da /vendi`,
+        });
+      }
+      if (!dati.cap || !dati.citta || !dati.provincia) {
+        return res.status(400).json({
+          error: "Indirizzo incompleto: cap, città e provincia sono obbligatori.",
+        });
+      }
+
+      const updatePayload = {
+        indirizzo: dati.indirizzo,
+        cap: dati.cap || null,
+        citta: dati.citta || null,
+        provincia: dati.provincia || null,
+        zona: dati.zona || null,
+        latitudine: dati.latitudine != null && dati.latitudine !== "" ? parseFloat(dati.latitudine) : null,
+        longitudine: dati.longitudine != null && dati.longitudine !== "" ? parseFloat(dati.longitudine) : null,
+        prezzo: dati.prezzo_desiderato ? parseFloat(dati.prezzo_desiderato) : null,
+        superficie: dati.superficie_catastale ? parseFloat(dati.superficie_catastale) : null,
+        tipologia: dati.tipologia || null,
+        piano: dati.piano || null,
+        superficie_calpestabile: dati.superficie_calpestabile ? parseFloat(dati.superficie_calpestabile) : null,
+        locali: dati.vani ? parseInt(dati.vani) : null,
+        camere: dati.camere ? parseInt(dati.camere) : null,
+        bagni: dati.bagni ? parseInt(dati.bagni) : null,
+        anno_costruzione: dati.anno_costruzione ? parseInt(dati.anno_costruzione) : null,
+        classe_energetica: dati.classe_energetica || null,
+        stato_immobile: dati.stato || null,
+        foto: dati.foto || [],
+        // Rejected → pending_review (re-submit). Draft → resta draft.
+        status: existing.status === "rejected" ? "pending_review" : "draft",
+      };
+
+      const patchRes = await fetch(
+        `${process.env.SUPABASE_URL}/rest/v1/immobili?id=eq.${encodeURIComponent(immobileId)}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: process.env.SUPABASE_SECRET_KEY,
+            Authorization: `Bearer ${process.env.SUPABASE_SECRET_KEY}`,
+            Prefer: "return=representation",
+          },
+          body: JSON.stringify(updatePayload),
+        }
+      );
+      if (!patchRes.ok) {
+        const errBody = await patchRes.text();
+        console.error("vendi-submit UPDATE error:", errBody);
+        return res.status(500).json({ error: "Errore aggiornamento immobile" });
+      }
+
+      return res.status(200).json({
+        ok: true,
+        immobile_id: immobileId,
+        status: updatePayload.status,
+        mode: "update",
+      });
+    }
+
     // 3. Salva in venditori (lead completo, come prima)
     const sbRes = await fetch(`${process.env.SUPABASE_URL}/rest/v1/venditori`, {
       method: "POST",

@@ -396,6 +396,15 @@ const badgeImmobileStatus = (status) => {
                           {immobile.status === 'published' ? 'Apri scheda →' : 'Anteprima →'}
                         </a>
 
+                        {(immobile.status === 'draft' || immobile.status === 'rejected') && (
+                          <a
+                            href={`/vendi?edit=${immobile.id}`}
+                            style={{ background: 'transparent', border: '1px solid rgba(247,245,240,0.15)', color: 'rgba(247,245,240,0.7)', padding: '0.6rem 1.2rem', borderRadius: 2, textDecoration: 'none', fontSize: '0.78rem', fontFamily: 'DM Sans, sans-serif', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}
+                          >
+                            Modifica
+                          </a>
+                        )}
+
                         {immobile.status === 'draft' && (
                           <button
                             onClick={() => richiediPubblicazione(immobile.id)}
