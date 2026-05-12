@@ -72,6 +72,11 @@ export default async function handler(req, res) {
         });
       }
 
+      // planimetria/ape (hotfix 6.5): preserva i valori esistenti se il
+      // frontend non li include nel payload (undefined). Il form invia
+      // sempre planimetria/ape — anche null se l'utente li rimuove con
+      // ×. Quindi `!== undefined` distingue "non inviato" (preserva) da
+      // "rimosso" (azzera).
       const updatePayload = {
         indirizzo: dati.indirizzo,
         cap: dati.cap || null,
@@ -92,6 +97,8 @@ export default async function handler(req, res) {
         classe_energetica: dati.classe_energetica || null,
         stato_immobile: dati.stato || null,
         foto: dati.foto || [],
+        planimetria: dati.planimetria !== undefined ? dati.planimetria : existing.planimetria,
+        ape: dati.ape !== undefined ? dati.ape : existing.ape,
         // Rejected → pending_review (re-submit). Draft → resta draft.
         status: existing.status === "rejected" ? "pending_review" : "draft",
       };
@@ -114,6 +121,36 @@ export default async function handler(req, res) {
         console.error("vendi-submit UPDATE error:", errBody);
         return res.status(500).json({ error: "Errore aggiornamento immobile" });
       }
+
+      // Storage cleanup best-effort (hotfix 6.5): se planimetria/ape sono
+      // state sostituite o rimosse, attempt DELETE del vecchio file da
+      // Storage. Errori loggati ma non bloccano la response — meglio
+      // orphan in Storage che response 500 dopo PATCH OK. Stesso pattern
+      // di api/admin/[op].js op elimina-bozza (batch 6.D).
+      const bucketBase = `${process.env.SUPABASE_URL}/storage/v1/object/public/documenti-venditori/`;
+      const tryDeleteOld = async (oldUrl, newUrl) => {
+        if (!oldUrl || oldUrl === newUrl) return;
+        if (typeof oldUrl !== "string" || !oldUrl.startsWith(bucketBase)) return;
+        const path = oldUrl.slice(bucketBase.length);
+        try {
+          await fetch(
+            `${process.env.SUPABASE_URL}/storage/v1/object/documenti-venditori/${path}`,
+            {
+              method: "DELETE",
+              headers: {
+                apikey: process.env.SUPABASE_SECRET_KEY,
+                Authorization: `Bearer ${process.env.SUPABASE_SECRET_KEY}`,
+              },
+            }
+          );
+        } catch (err) {
+          console.warn("vendi-submit storage cleanup failed:", err);
+        }
+      };
+      await Promise.all([
+        tryDeleteOld(existing.planimetria, updatePayload.planimetria),
+        tryDeleteOld(existing.ape, updatePayload.ape),
+      ]);
 
       return res.status(200).json({
         ok: true,
@@ -208,6 +245,13 @@ export default async function handler(req, res) {
       classe_energetica: dati.classe_energetica || null,
       stato_immobile: dati.stato || null,
       foto: dati.foto || [],
+      // planimetria/ape salvate anche in immobili da hotfix 6.5: prima erano
+      // SOLO in tabella legacy venditori (planimetria_url/ape_url). La
+      // duplicazione è transitoria — venditori resta come lead capture
+      // legacy ma immobili diventa la single source of truth per i dati
+      // dell'annuncio (foto/planimetria/ape/prezzo/ecc.).
+      planimetria: dati.planimetria || null,
+      ape: dati.ape || null,
       venditore_user_id: userId,
       status: "draft",
     };
