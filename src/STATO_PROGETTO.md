@@ -1,5 +1,5 @@
 # RealAIstate — Stato del progetto
-Aggiornato: 12/05/2026 (settimana 7 — hotfix 6.9 doc only: migration repo per documentare il fix CHECK constraint immobili_status_check già applicato manualmente in produzione, aggiunge 'rejected' al CHECK. Prima di questo: hotfix 6.8 upload Storage via signed URL service_role, hotfix 6.7 contatti per-immobile pre-popolati in edit mode, hotfix 6.6 coerenza URL completi planimetria/ape, hotfix 6.5 documenti edit pre-popolazione, batch 6 fixes & polish — auth callback fix definitivo con explicit PKCE exchange + listener, endpoint preview-immobile service_role per anteprima admin/owner, copy hero /vendi meno aggressivo, label admin login, edit bozza venditore, elimina bozza con modal, modal rifiuto motivo obbligatorio + status='rejected' + migration rejection fields, email info@ post-approva/rifiuta, tabs filtro admin Pending/Pubblicati/Rifiutati/Bozze con counts)
+Aggiornato: 15/05/2026 (settimana 7 — batch 7 pre-launch polish: 7.A pre-popolazione totale edit mode [vendi-submit persiste ~11 campi prima solo in venditori legacy + migration 4 colonne + coercizione boolean], 7.B Fair Price Score "in fase di calcolo" [niente fallback frontend a 88, solo id=1 ha 88 nel DB], 7.C textarea descrizione venditore [Step 1, sezione pubblica "Dal venditore" distinta da Analisi AI]. AZIONE FOUNDER: eseguire migration 2026-05-15-add-immobili-extra-fields.sql. Prima di questo: hotfix 6.9 doc only: migration repo per documentare il fix CHECK constraint immobili_status_check già applicato manualmente in produzione, aggiunge 'rejected' al CHECK. Prima di questo: hotfix 6.8 upload Storage via signed URL service_role, hotfix 6.7 contatti per-immobile pre-popolati in edit mode, hotfix 6.6 coerenza URL completi planimetria/ape, hotfix 6.5 documenti edit pre-popolazione, batch 6 fixes & polish — auth callback fix definitivo con explicit PKCE exchange + listener, endpoint preview-immobile service_role per anteprima admin/owner, copy hero /vendi meno aggressivo, label admin login, edit bozza venditore, elimina bozza con modal, modal rifiuto motivo obbligatorio + status='rejected' + migration rejection fields, email info@ post-approva/rifiuta, tabs filtro admin Pending/Pubblicati/Rifiutati/Bozze con counts)
 
 ## Decisioni operative 12/05 sera — strategia firma digitale fase beta
 
@@ -318,6 +318,135 @@ Steps previsti per la transizione:
   - **Out of scope**: signup. Dopo registrazione l'utente clicca il link
     di conferma email Supabase che lo riporta al Site URL — il
     redirect param scompare. Caso accettabile per ora.
+
+### Settimana 7 — batch 7 ✅ — completata 15/05/2026 (pre-launch polish: 3 fix verso onboarding venditori beta 18/05)
+
+Batch finale pre-onboarding venditori beta. Test E2E 15/05 aveva
+promosso il prodotto al 95%; questi 3 fix chiudono il 5% restante.
+Branch `feat/batch-7-pre-launch-polish` (NO merge automatico).
+
+**L'esplorazione in plan mode ha smentito 2 assunzioni del brief** —
+sotto la realtà verificata sul codice + DB live, non l'ipotesi iniziale.
+
+- [x] **Task 7.A — pre-popolazione totale edit mode** ✅ (commit 1)
+  - **Causa reale (≠ brief)**: NON era un bug di sola lettura UI.
+    `mapDbToForm` era già quasi completo. `api/vendi-submit.js`
+    scriveva ~11 campi (ascensore, terrazzo, garage, giardino,
+    riscaldamento, acqua_calda, spese_condominio,
+    anno_ristrutturazione, disponibilita_rogito, garage_mq, ecc.)
+    **solo nella tabella legacy `venditori`, mai sulla riga
+    `immobili`**. L'edit legge da immobili → null → campo vuoto. È
+    data loss verso una tabella morta, *non* "dati ancora nel DB":
+    la scheda pubblica sembrava ok perché sostituiva silenziosamente
+    i valori di Capecelatro (fallback frontend).
+  - **Fix**: (1) migration `2026-05-15-add-immobili-extra-fields.sql`
+    aggiunge 4 colonne senza casa (terrazzo_mq, cantina, cantina_mq,
+    note_prezzo); gli altri 10 campi avevano già la colonna. (2)
+    vendi-submit INSERT + UPDATE ora persistono tutti i campi su
+    `immobili` con coercizione tipi. (3) mapDbToForm read-side
+    coercion boolean→stringa.
+  - **Decisione design — coercizione tipi**: le colonne immobili
+    `ascensore/terrazzo/garage/giardino_condominiale` sono **boolean**
+    sul DB (verificato su id=1); il form invia stringhe. Convertito
+    ai bordi (vendi-submit write + mapDbToForm read) invece di
+    retypare le colonne — retyping avrebbe toccato il rendering della
+    demo id=1, rischio inutile a 3 giorni dal lancio.
+  - **Decisione design — giardino appiattito**: `form.giardino` ha 3
+    valori (privato/condominiale/no), la colonna è un solo boolean
+    `giardino_condominiale`. privato e condominiale → entrambi true.
+    **Limitazione MVP nota**: dopo un edit "privato" round-trippa
+    come "condominiale". Accettabile: scheda pubblica mostra un
+    generico "Ascensore" (giardino non è nemmeno nella spec list),
+    nessun venditore beta dipende dalla distinzione, id=1 non viene
+    mai editato.
+  - **Bug fixato en passant**: mapDbToForm leggeva `db.giardino`
+    (colonna inesistente) → ora `db.giardino_condominiale`.
+  - **Indirizzo Step 1**: nessuna modifica necessaria — il riquadro
+    verde "Indirizzo verificato" + bottone "Cambia" + `addressVerified`
+    derivato da cap/citta/provincia esistevano già (hotfix precedenti).
+  - File: `migrations/2026-05-15-add-immobili-extra-fields.sql` (nuovo),
+    `api/vendi-submit.js`, `src/VendiForm.jsx`.
+
+- [x] **Task 7.B — Fair Price Score "in fase di calcolo"** ✅ (commit 2)
+  - **Causa reale (≠ brief)**: NESSUN hardcoding 88 nel backend.
+    Query sul DB live: `immobili` id=1 (Capecelatro) ha davvero
+    `fair_price_score=88` salvato; tutti gli altri NULL. Il "88
+    ovunque" (test E2E FASE 6.2: id=8 = id=1 = 88) nasceva dal
+    fallback frontend `Immobile.jsx:711`
+    (`?? IMMOBILE_FALLBACK.scores.prezzo` = 88). Admin approve NON
+    tocca fair_price_score. **Fix solo frontend.**
+  - **Fix**: scores.prezzo niente più fallback a 88 (`?? null`).
+    id=1 resta 88 (è nel suo record DB). FPS null → placeholder
+    "In fase di calcolo" + sottotesto OMI + nota "Scrivici" (non
+    cliccabile). Soppressi anche badge "✓ Validato da dati OMI" e
+    "Aggiornata oggi" quando FPS null (asserivano una validazione
+    OMI non avvenuta — incoerente con /metodologia). Listing.jsx:
+    card mostra "In calcolo" muted invece di "—".
+  - **Bug-class gemello fixato**: `Immobile.jsx:697` faceva
+    `descrizione ?? IMMOBILE_FALLBACK.descrizione` → un immobile
+    senza descrizione mostrava quella di Capecelatro. Ora `?? ""`
+    (rilevante anche per 7.C).
+  - VenditoreDashboard / Admin: nessuna sezione FPS per immobile
+    (verificato) → niente da fare.
+  - File: `src/Immobile.jsx`, `src/Listing.jsx`.
+  - **Tech debt** (invariato): Batch FPS conversazionale (pagina
+    pubblica + chat AI + dati OMI Milano) resta il prossimo grande
+    progetto post-onboarding. Stima 2,5-4 gg Plan + Effort Max.
+
+- [x] **Task 7.C — textarea descrizione venditore** ✅ (commit 3)
+  - La scheda era tutta AI-generated, mancava la "voce del
+    venditore". La colonna `immobili.descrizione` esisteva già e
+    Immobile.jsx la renderizzava già — non veniva mai raccolta dal
+    form né scritta da vendi-submit.
+  - **Fix**: campo `descrizione` in form state + mapDbToForm;
+    textarea opzionale (max 1000 char, counter visibile).
+  - **Decisione design — posizionamento**: textarea in **Step 1
+    "Prezzo"**, dopo `note_prezzo`. Gli step reali sono 0 Immobile ·
+    1 Prezzo · 2 Foto · 3 Documenti · 4 Contatti (non esiste uno
+    step "riepilogo" separato come ipotizzato nel brief); Step 1 è
+    il punto "le tue parole" più vicino a "riepilogo/prezzo" e
+    affianca naturalmente note_prezzo.
+  - **Decisione design — policy textarea vuota** (founder): il form
+    invia sempre `descrizione` (è nello state) → vuota = stringa
+    vuota in DB = svuotamento deliberato. Ramo `!== undefined` è
+    defense-in-depth.
+  - **Layout scheda pubblica**: sezione "Dal venditore" con badge
+    "Voce del proprietario" (corsivo, accent gold) DISTINTA dall'AI
+    panel "Analisi AI" (ai_summary, invariato). Descrizione vuota →
+    solo Analisi AI.
+  - **Workflow beta**: il founder rifinisce manualmente la
+    descrizione in fase di approvazione admin (offline, non
+    automatizzato). V2 post-PMF: AI rewriting in tempo reale.
+  - File: `src/VendiForm.jsx`, `api/vendi-submit.js`, `src/Immobile.jsx`.
+
+**Build**: `npm run build` pulita (solo warning chunk-size
+pre-esistente, non correlato).
+
+**AZIONI FOUNDER REQUIRED post-merge batch 7** (UNA sola):
+- [ ] Eseguire `migrations/2026-05-15-add-immobili-extra-fields.sql`
+      nel Supabase SQL Editor PRIMA del test E2E. Senza, INSERT/UPDATE
+      su immobili fallisce con "Could not find the 'terrazzo_mq'
+      column" (PostgREST schema cache miss). Idempotente, nessun
+      backfill. Nessuna env var nuova.
+
+**Test E2E definitivo post-merge** (replica del test 15/05 + verifica
+dei 3 fix):
+1. **7.A** — login walktest_temp nuovo → `/vendi` → submit immobile
+   con TUTTI i campi (tipologia, indirizzo Google Places, ascensore,
+   terrazzo+mq, cantina+mq, garage+mq, giardino, riscaldamento,
+   acqua_calda, spese_condominio, anni, disponibilità rogito,
+   descrizione) → status=draft. Dashboard → Modifica → atteso: tutti
+   i campi pre-popolati, indirizzo verde già verificato con "Cambia".
+   Cambia il prezzo → submit → `SELECT * FROM immobili WHERE id=<id>`:
+   prezzo aggiornato, tutti gli altri campi invariati, status=draft.
+2. **7.B** — `/immobili/1`: FPS=88 visibile. Nuovo immobile test →
+   admin approva → `/immobili/<id>`: placeholder "In fase di calcolo"
+   (NON 88, NON sezione saltata), nessun badge "OMI validato".
+   `/compra`: card nuovo immobile "In calcolo", card Capecelatro 88.
+   `SELECT id, fair_price_score FROM immobili`: id=1→88, altri→NULL.
+3. **7.C** — scheda pubblica nuovo immobile: sezione "Dal venditore"
+   col testo scritto, distinta da "Analisi AI". Immobile senza
+   descrizione → solo "Analisi AI", nessun testo Capecelatro.
 
 ### Settimana 7 — hotfix 6.9 ✅ — completata 12/05/2026 (doc only: CHECK constraint immobili.status include 'rejected')
 Bug introdotto da batch 6 task 6.F (modal rifiuto admin): l'op rifiuta
