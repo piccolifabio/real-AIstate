@@ -513,6 +513,21 @@ const badgeImmobileStatus = (status) => {
                           </button>
                         )}
                       </div>
+
+                      {/* Hotfix 7.5 — copy bridge: la modifica self-service
+                          è disponibile solo su draft/rejected (decisione
+                          design batch 6 task 6.C). Su published manca il
+                          bottone Modifica per scelta; questo messaggio dice
+                          al venditore che può comunque chiedere modifiche.
+                          Scenario C (modifica granulare post-published) è
+                          in backlog post-PMF. */}
+                      {immobile.status === 'published' && (
+                        <div style={{ marginTop: '1rem', background: 'rgba(247,245,240,0.04)', border: '1px solid rgba(247,245,240,0.1)', borderRadius: 2, padding: '0.85rem 1rem', fontSize: '0.74rem', lineHeight: 1.65, color: 'rgba(247,245,240,0.55)' }}>
+                          Vuoi modificare l&apos;annuncio? Scrivici a{' '}
+                          <a href="mailto:info@realaistate.ai" style={{ color: 'rgba(247,245,240,0.8)', textDecoration: 'none', fontWeight: 600 }}>info@realaistate.ai</a>{' '}
+                          e ci pensiamo noi. Stiamo implementando un sistema che ti permetterà di farlo in autonomia - sappiamo che è una scomodità e ci stiamo lavorando :)
+                        </div>
+                      )}
                     </div>
                   </div>
                 )

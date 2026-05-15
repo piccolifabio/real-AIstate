@@ -1,5 +1,5 @@
 # RealAIstate — Stato del progetto
-Aggiornato: 15/05/2026 (settimana 7 — batch 7 pre-launch polish: 7.A pre-popolazione totale edit mode [vendi-submit persiste ~11 campi prima solo in venditori legacy + migration 4 colonne + coercizione boolean], 7.B Fair Price Score "in fase di calcolo" [niente fallback frontend a 88, solo id=1 ha 88 nel DB], 7.C textarea descrizione venditore [Step 1, sezione pubblica "Dal venditore" distinta da Analisi AI]. AZIONE FOUNDER: eseguire migration 2026-05-15-add-immobili-extra-fields.sql. Prima di questo: hotfix 6.9 doc only: migration repo per documentare il fix CHECK constraint immobili_status_check già applicato manualmente in produzione, aggiunge 'rejected' al CHECK. Prima di questo: hotfix 6.8 upload Storage via signed URL service_role, hotfix 6.7 contatti per-immobile pre-popolati in edit mode, hotfix 6.6 coerenza URL completi planimetria/ape, hotfix 6.5 documenti edit pre-popolazione, batch 6 fixes & polish — auth callback fix definitivo con explicit PKCE exchange + listener, endpoint preview-immobile service_role per anteprima admin/owner, copy hero /vendi meno aggressivo, label admin login, edit bozza venditore, elimina bozza con modal, modal rifiuto motivo obbligatorio + status='rejected' + migration rejection fields, email info@ post-approva/rifiuta, tabs filtro admin Pending/Pubblicati/Rifiutati/Bozze con counts)
+Aggiornato: 15/05/2026 (settimana 7 — hotfix 7.5 copy bridge: messaggio "scrivici per modifiche" su immobili published in dashboard venditore, modifica self-service resta solo draft/rejected. Prima di questo: batch 7 pre-launch polish: 7.A pre-popolazione totale edit mode [vendi-submit persiste ~11 campi prima solo in venditori legacy + migration 4 colonne + coercizione boolean], 7.B Fair Price Score "in fase di calcolo" [niente fallback frontend a 88, solo id=1 ha 88 nel DB], 7.C textarea descrizione venditore [Step 1, sezione pubblica "Dal venditore" distinta da Analisi AI]. AZIONE FOUNDER: eseguire migration 2026-05-15-add-immobili-extra-fields.sql. Prima di questo: hotfix 6.9 doc only: migration repo per documentare il fix CHECK constraint immobili_status_check già applicato manualmente in produzione, aggiunge 'rejected' al CHECK. Prima di questo: hotfix 6.8 upload Storage via signed URL service_role, hotfix 6.7 contatti per-immobile pre-popolati in edit mode, hotfix 6.6 coerenza URL completi planimetria/ape, hotfix 6.5 documenti edit pre-popolazione, batch 6 fixes & polish — auth callback fix definitivo con explicit PKCE exchange + listener, endpoint preview-immobile service_role per anteprima admin/owner, copy hero /vendi meno aggressivo, label admin login, edit bozza venditore, elimina bozza con modal, modal rifiuto motivo obbligatorio + status='rejected' + migration rejection fields, email info@ post-approva/rifiuta, tabs filtro admin Pending/Pubblicati/Rifiutati/Bozze con counts)
 
 ## Decisioni operative 12/05 sera — strategia firma digitale fase beta
 
@@ -318,6 +318,40 @@ Steps previsti per la transizione:
   - **Out of scope**: signup. Dopo registrazione l'utente clicca il link
     di conferma email Supabase che lo riporta al Site URL — il
     redirect param scompare. Caso accettabile per ora.
+
+### Settimana 7 — hotfix 7.5 ✅ — completata 15/05/2026 (copy bridge modifica post-published)
+
+Test E2E batch 7 ha rivelato che il venditore loggato, in dashboard,
+NON vede il bottone "Modifica" su immobili `published`. È
+**comportamento intenzionale** (decisione design batch 6 task 6.C:
+modifica self-service solo su `draft`/`rejected`). Mancava però la
+comunicazione: senza messaggio il venditore pensa che l'annuncio sia
+"congelato" e potrebbe lasciare dati imprecisi → onboarding beta
+perde credibilità.
+
+- [x] **Copy bridge** ✅
+  - `src/VenditoreDashboard.jsx`: sezione info visibile SOLO se
+    `immobile.status === 'published'`, sotto i bottoni "Apri scheda"
+    / "Archivia" (fuori dal flex Azioni, `marginTop`). Copy: "Vuoi
+    modificare l'annuncio? Scrivici a info@realaistate.ai e ci
+    pensiamo noi. Stiamo implementando un sistema che ti permetterà
+    di farlo in autonomia - sappiamo che è una scomodità e ci stiamo
+    lavorando :)"
+  - Stile: background muted (no rosso brand — non è urgente), border
+    + radius coerenti col design system, font 0.74rem (< testo
+    principale). Email = link `mailto:` senza underline. ":)" reso
+    come testo (non emoji unicode) per coerenza col tono founder-bold.
+  - **NON toccato**: bottoni "Apri scheda"/"Archivia", logica
+    show/hide bottone "Modifica". Messaggio NON mostrato su
+    `pending_review` (in revisione admin), `rejected` (modifica già
+    via bottone), `draft` (idem), `archived`.
+
+- **Decisione design**: questo è **solo un copy bridge**. Lo
+  scenario C "modifica granulare post-published" (il venditore edita
+  un annuncio pubblicato → re-review admin o patch diretta) resta in
+  **backlog post-PMF**, non in questo hotfix. Build pulita. Branch
+  `hotfix/copy-modifica-post-published`, merge manuale del founder
+  dopo verifica preview.
 
 ### Settimana 7 — batch 7 ✅ — completata 15/05/2026 (pre-launch polish: 3 fix verso onboarding venditori beta 18/05)
 
