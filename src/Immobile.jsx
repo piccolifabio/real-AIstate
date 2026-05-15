@@ -694,7 +694,9 @@ export default function ImmobilePage() {
       classe_energetica: immobileDb.classe_energetica ?? IMMOBILE_FALLBACK.classe_energetica,
       anno_costruzione: immobileDb.anno_costruzione ?? IMMOBILE_FALLBACK.anno_costruzione,
       anno_ristrutturazione: immobileDb.anno_ristrutturazione ?? IMMOBILE_FALLBACK.anno_ristrutturazione,
-      descrizione: immobileDb.descrizione ?? IMMOBILE_FALLBACK.descrizione,
+      // Batch 7 task 7.B/7.C: stesso bug-class del FPS — senza questo
+      // un immobile con descrizione=null mostrava quella di Capecelatro.
+      descrizione: immobileDb.descrizione ?? "",
       stato_immobile: immobileDb.stato_immobile ?? IMMOBILE_FALLBACK.stato_immobile,
       tipologia: immobileDb.tipologia ?? IMMOBILE_FALLBACK.tipologia,
       ascensore: immobileDb.ascensore ?? IMMOBILE_FALLBACK.ascensore,
@@ -708,7 +710,12 @@ export default function ImmobilePage() {
       foto: immobileDb.foto ?? null,
       venditore_user_id: immobileDb.venditore_user_id ?? null,
       scores: {
-        prezzo: immobileDb.fair_price_score ?? IMMOBILE_FALLBACK.scores.prezzo,
+        // Batch 7 task 7.B: NIENTE fallback a IMMOBILE_FALLBACK (=88).
+        // Borrowava il punteggio demo di Capecelatro su ogni immobile
+        // con fair_price_score=null (test E2E 15/05 FASE 6.2: id=8
+        // mostrava 88 come id=1). id=1 ha 88 nel DB → resta 88. Gli
+        // altri → null → placeholder "in fase di calcolo".
+        prezzo: immobileDb.fair_price_score ?? null,
       },
       ai_summary: immobileDb.ai_summary ?? IMMOBILE_FALLBACK.ai_summary,
       punti_forza: immobileDb.punti_forza ?? IMMOBILE_FALLBACK.punti_forza,
@@ -773,6 +780,11 @@ export default function ImmobilePage() {
 
   // Sezioni AI-generate al submit di /vendi: mostriamo solo se popolate in DB.
   const haAiSummary = !!immobileDb?.ai_summary;
+  // Batch 7 task 7.B: Fair Price Score reale presente solo se calcolato
+  // (oggi solo id=1 Capecelatro, 88 nel DB). Altrimenti placeholder
+  // "in fase di calcolo" + niente badge "validato da OMI" (asserirebbe
+  // una validazione non avvenuta — incoerente con /metodologia).
+  const haFps = immobile.scores.prezzo != null;
   const haPuntiForza = Array.isArray(immobileDb?.punti_forza) && immobileDb.punti_forza.length > 0;
   const haDomande = Array.isArray(immobileDb?.domande_consigliate) && immobileDb.domande_consigliate.length > 0;
   // Sezione documenti: stesso rendering per tutti gli immobili published.
@@ -944,24 +956,39 @@ export default function ImmobilePage() {
             <div className="ai-panel">
               <div className="ai-panel-header">
                 <div className="ai-label"><div className="ai-dot" /> Analisi AI</div>
-                <div style={{ fontSize: "0.7rem", color: "var(--muted)", letterSpacing: "0.06em" }}>Aggiornata oggi</div>
+                {haFps && <div style={{ fontSize: "0.7rem", color: "var(--muted)", letterSpacing: "0.06em" }}>Aggiornata oggi</div>}
               </div>
 
               <div className="ai-summary">{immobile.ai_summary}</div>
 
-              <div style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", background: "rgba(45,106,79,0.12)", border: "1px solid rgba(45,106,79,0.25)", borderRadius: "2px", padding: "0.4rem 0.9rem", marginBottom: "1.5rem" }}>
-                <span style={{ color: "var(--green-light)", fontSize: "0.7rem", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase" }}>✓ Validato da dati OMI — Agenzia delle Entrate · Zona D24 · 2° sem. 2025</span>
-                <a href="/metodologia" style={{ color: "var(--gold)", fontSize: "0.7rem", textDecoration: "none", borderLeft: "1px solid rgba(247,245,240,0.1)", paddingLeft: "0.5rem", marginLeft: "0.2rem" }}>Come calcoliamo →</a>
-              </div>
+              {haFps && (
+                <div style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", background: "rgba(45,106,79,0.12)", border: "1px solid rgba(45,106,79,0.25)", borderRadius: "2px", padding: "0.4rem 0.9rem", marginBottom: "1.5rem" }}>
+                  <span style={{ color: "var(--green-light)", fontSize: "0.7rem", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase" }}>✓ Validato da dati OMI — Agenzia delle Entrate · Zona D24 · 2° sem. 2025</span>
+                  <a href="/metodologia" style={{ color: "var(--gold)", fontSize: "0.7rem", textDecoration: "none", borderLeft: "1px solid rgba(247,245,240,0.1)", paddingLeft: "0.5rem", marginLeft: "0.2rem" }}>Come calcoliamo →</a>
+                </div>
+              )}
 
               <div className="ai-scores">
-                <div className="score-card">
-                  <div className="score-num green">{immobile.scores.prezzo}</div>
-                  <div className="score-label">Fair Price Score</div>
-                  <div className="score-bar-wrap">
-                    <div className="score-bar-fill" style={{ width: `${immobile.scores.prezzo}%`, background: "#4ade80" }} />
+                {haFps ? (
+                  <div className="score-card">
+                    <div className="score-num green">{immobile.scores.prezzo}</div>
+                    <div className="score-label">Fair Price Score</div>
+                    <div className="score-bar-wrap">
+                      <div className="score-bar-fill" style={{ width: `${immobile.scores.prezzo}%`, background: "#4ade80" }} />
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="score-card" style={{ opacity: 0.7 }}>
+                    <div className="score-num" style={{ color: "var(--muted)", fontSize: "1rem", lineHeight: 1.3 }}>In fase di calcolo</div>
+                    <div className="score-label">Fair Price Score</div>
+                    <div style={{ fontSize: "0.78rem", color: "var(--muted)", lineHeight: 1.6, marginTop: "0.6rem" }}>
+                      Stiamo verificando il prezzo rispetto ai dati ufficiali OMI dell&apos;Agenzia delle Entrate.
+                    </div>
+                    <div style={{ fontSize: "0.72rem", color: "rgba(247,245,240,0.4)", marginTop: "0.5rem" }}>
+                      Vuoi sapere il valore stimato? Scrivici.
+                    </div>
+                  </div>
+                )}
               </div>
 
               {haPuntiForza && (

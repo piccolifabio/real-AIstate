@@ -115,9 +115,14 @@ function PropCardReal({ imm }) {
               <div className="prop-card-sqm">€ {Math.round(imm.prezzo / imm.superficie).toLocaleString("it-IT")} / m²</div>
             </div>
             <div className="prop-card-score">
-              <div className="prop-card-score-num" style={!imm.fair_price_score ? { color: "var(--muted)" } : undefined}>
-                {imm.fair_price_score ?? "—"}
-              </div>
+              {/* Batch 7 task 7.B: FPS reale solo se calcolato (oggi
+                  solo Capecelatro id=1). Altrimenti "In calcolo" muted,
+                  non un numero finto né "—" ambiguo. */}
+              {imm.fair_price_score != null ? (
+                <div className="prop-card-score-num">{imm.fair_price_score}</div>
+              ) : (
+                <div className="prop-card-score-num" style={{ color: "var(--muted)", fontSize: "0.72rem", lineHeight: 1.3, fontWeight: 600 }}>In calcolo</div>
+              )}
               <div className="prop-card-score-label">Fair Price</div>
             </div>
           </div>
