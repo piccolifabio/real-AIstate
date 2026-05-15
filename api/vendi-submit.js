@@ -149,6 +149,10 @@ export default async function handler(req, res) {
         anno_ristrutturazione: dati.anno_ristrutturazione !== undefined ? intOrNull(dati.anno_ristrutturazione) : existing.anno_ristrutturazione,
         disponibilita_rogito: dati.disponibilita_rogito !== undefined ? (dati.disponibilita_rogito || null) : existing.disponibilita_rogito,
         note_prezzo: dati.note_prezzo !== undefined ? (dati.note_prezzo || null) : existing.note_prezzo,
+        // Batch 7 task 7.C: textarea vuota = stringa vuota in DB (il
+        // venditore ha deliberatamente svuotato). Il ramo !== undefined
+        // è defense-in-depth (preserva solo se proprio non inviato).
+        descrizione: dati.descrizione !== undefined ? (dati.descrizione || "") : existing.descrizione,
         foto: dati.foto || [],
         planimetria: dati.planimetria !== undefined ? dati.planimetria : existing.planimetria,
         ape: dati.ape !== undefined ? dati.ape : existing.ape,
@@ -322,6 +326,9 @@ export default async function handler(req, res) {
       anno_ristrutturazione: intOrNull(dati.anno_ristrutturazione),
       disponibilita_rogito: dati.disponibilita_rogito || null,
       note_prezzo: dati.note_prezzo || null,
+      // Batch 7 task 7.C: descrizione libera del venditore ("voce del
+      // proprietario"). Renderizzata distinta dall'ai_summary.
+      descrizione: dati.descrizione || null,
       foto: dati.foto || [],
       // planimetria/ape salvate anche in immobili da hotfix 6.5: prima erano
       // SOLO in tabella legacy venditori (planimetria_url/ape_url). La

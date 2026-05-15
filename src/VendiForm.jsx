@@ -428,6 +428,7 @@ function mapDbToForm(db, user) {
     disponibilita_rogito: db.disponibilita_rogito || "",
     prezzo_desiderato: db.prezzo != null ? String(db.prezzo) : "",
     note_prezzo: db.note_prezzo || "",
+    descrizione: db.descrizione || "",
     foto: Array.isArray(db.foto) ? db.foto.filter(Boolean) : [],
     planimetria: db.planimetria || null,
     ape: db.ape || null,
@@ -472,6 +473,7 @@ export default function VendiForm() {
     garage: "", garage_mq: "",
     disponibilita_rogito: "",
     prezzo_desiderato: "", note_prezzo: "",
+    descrizione: "",
     foto: [],
     planimetria: null, ape: null,
     nome: "", cognome: "", email: "", email_conferma: "", telefono: "",
@@ -1107,6 +1109,27 @@ export default function VendiForm() {
               <div className="vendi-field">
                 <label className="vendi-label">Note sul prezzo</label>
                 <input className="vendi-input" placeholder="es. Prezzo trattabile..." value={form.note_prezzo} onChange={e => update("note_prezzo", e.target.value)} />
+              </div>
+            </div>
+
+            {/* Batch 7 task 7.C — la "voce del venditore". Opzionale, max
+                1000 char. Per beta il founder rifinisce manualmente in
+                fase di approvazione admin (workflow offline). */}
+            <div className="vendi-grid single">
+              <div className="vendi-field">
+                <label className="vendi-label">Racconta la tua casa (opzionale)</label>
+                <textarea
+                  className="vendi-input"
+                  rows={5}
+                  maxLength={1000}
+                  style={{ resize: "vertical", fontFamily: "inherit", lineHeight: 1.6 }}
+                  placeholder="In poche righe, cosa rende speciale questo immobile? Vista, luminosità, ristrutturazioni, quartiere, vicinato... La tua descrizione aiuta i potenziali compratori a immaginarsi qui."
+                  value={form.descrizione}
+                  onChange={e => update("descrizione", e.target.value)}
+                />
+                <div style={{ fontSize: "0.72rem", color: "var(--muted)", textAlign: "right", marginTop: "0.3rem" }}>
+                  {form.descrizione.length} / 1000
+                </div>
               </div>
             </div>
           </>}

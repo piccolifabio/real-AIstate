@@ -931,17 +931,24 @@ export default function ImmobilePage() {
             </div>
           </div>
 
-          {/* DESCRIZIONE */}
+          {/* DAL VENDITORE (batch 7 task 7.C) — la "voce del proprietario",
+              distinta dall'Analisi AI (ai_summary, AI panel sotto). Resa
+              solo se non vuota; descrizione=null/"" → niente sezione
+              (niente più borrow di Capecelatro, fix 7.B riga ~697). */}
           {immobile.descrizione && (
             <div style={{ marginBottom: "2rem", paddingBottom: "2rem", borderBottom: "1px solid var(--border)" }}>
-              <h2 className="section-title" style={{ marginBottom: "1rem" }}>Descrizione</h2>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem", fontSize: "0.7rem", fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--gold)" }}>
+                <span aria-hidden="true">❝</span> Voce del proprietario
+              </div>
+              <h2 className="section-title" style={{ marginBottom: "1rem" }}>Dal venditore</h2>
               {immobile.descrizione.split(/\n\s*\n/).map((paragrafo, i) => (
                 <p
                   key={i}
                   style={{
-                    fontSize: "0.95rem",
-                    lineHeight: "1.8",
-                    color: "rgba(247,245,240,0.7)",
+                    fontSize: "0.97rem",
+                    lineHeight: "1.85",
+                    fontStyle: "italic",
+                    color: "rgba(247,245,240,0.78)",
                     marginBottom: i < immobile.descrizione.split(/\n\s*\n/).length - 1 ? "1rem" : 0,
                   }}
                 >
