@@ -362,6 +362,15 @@ function Pertinenza({ title, value, onToggle, metratura, onMetratura, tooltip })
   );
 }
 
+// Batch 7 task 7.A — coercizione read-side DB→form. Le colonne
+// ascensore/terrazzo/garage/giardino_condominiale sono BOOLEAN sul DB;
+// i controlli del form vogliono stringhe ("Sì"/"No", "si"/"no",
+// "condominiale"/"no"). Tolleranti verso valori già-stringa (righe
+// legacy). null/undefined → "" (campo non risposto).
+const boolToSelect = (v) => (v === true || v === "Sì" || v === "Si" || v === "si" ? "Sì" : v === false || v === "No" || v === "no" ? "No" : "");
+const boolToSiNo = (v) => (v === true || v === "si" || v === "Sì" ? "si" : v === false || v === "no" || v === "No" ? "no" : "");
+const boolToGiardino = (v) => (v === true || v === "condominiale" || v === "privato" ? "condominiale" : v === false || v === "no" ? "no" : (typeof v === "string" ? v : ""));
+
 // Mappa colonne DB immobili → keys del form. Usata in edit mode (?edit=<id>)
 // per pre-popolare lo stato del form a partire dal record salvato. Le chiavi
 // non presenti in DB vengono lasciate vuote (default form). Foto/planimetria/
@@ -396,7 +405,7 @@ function mapDbToForm(db, user) {
     longitudine: db.longitudine != null ? String(db.longitudine) : "",
     addressVerified: !!(db.cap && db.citta && db.provincia),
     piano: db.piano || "",
-    ascensore: db.ascensore || "",
+    ascensore: boolToSelect(db.ascensore),
     superficie_catastale: db.superficie != null ? String(db.superficie) : (db.superficie_catastale != null ? String(db.superficie_catastale) : ""),
     superficie_calpestabile: db.superficie_calpestabile != null ? String(db.superficie_calpestabile) : "",
     vani: db.locali != null ? String(db.locali) : (db.vani != null ? String(db.vani) : ""),
@@ -409,12 +418,12 @@ function mapDbToForm(db, user) {
     riscaldamento: db.riscaldamento || "",
     acqua_calda: db.acqua_calda || "",
     spese_condominio: db.spese_condominio != null ? String(db.spese_condominio) : "",
-    terrazzo: db.terrazzo || "",
+    terrazzo: boolToSiNo(db.terrazzo),
     terrazzo_mq: db.terrazzo_mq != null ? String(db.terrazzo_mq) : "",
-    giardino: db.giardino || "",
+    giardino: boolToGiardino(db.giardino_condominiale),
     cantina: db.cantina || "",
     cantina_mq: db.cantina_mq != null ? String(db.cantina_mq) : "",
-    garage: db.garage || "",
+    garage: boolToSiNo(db.garage),
     garage_mq: db.garage_mq != null ? String(db.garage_mq) : "",
     disponibilita_rogito: db.disponibilita_rogito || "",
     prezzo_desiderato: db.prezzo != null ? String(db.prezzo) : "",

@@ -1,6 +1,41 @@
 import { escapeHtml } from "./_lib/escape-html.js";
 import { handleCors } from "./_lib/cors.js";
 
+// Batch 7 task 7.A — coercizione tipi form→DB. Le colonne immobili
+// ascensore/terrazzo/garage/giardino_condominiale sono BOOLEAN sul DB
+// (verificato su id=1), ma il form invia stringhe. Convertiamo qui ai
+// bordi. "" / undefined → null (campo non risposto, non false).
+const boolFromSiNo = (v) => {
+  if (v === "si" || v === "Sì" || v === "Si" || v === true) return true;
+  if (v === "no" || v === "No" || v === false) return false;
+  return null;
+};
+// Ascensore: il <select> ha value "Sì"/"No" (testo dell'<option>).
+const boolFromSelect = (v) => {
+  if (v === "Sì" || v === "Si" || v === "si" || v === true) return true;
+  if (v === "No" || v === "no" || v === false) return false;
+  return null;
+};
+// form.giardino è a 3 valori (privato/condominiale/no); la colonna è un
+// solo boolean giardino_condominiale → appiattiamo (privato e
+// condominiale entrambi → true). Limitazione MVP documentata in
+// STATO_PROGETTO: dopo edit "privato" round-trippa come "condominiale".
+const boolGiardino = (v) => {
+  if (v === "condominiale" || v === "privato" || v === true) return true;
+  if (v === "no" || v === false) return false;
+  return null;
+};
+const numOrNull = (v) => {
+  if (v == null || v === "") return null;
+  const n = parseFloat(v);
+  return Number.isFinite(n) ? n : null;
+};
+const intOrNull = (v) => {
+  if (v == null || v === "") return null;
+  const n = parseInt(v, 10);
+  return Number.isFinite(n) ? n : null;
+};
+
 export default async function handler(req, res) {
   if (handleCors(req, res)) return;
   if (req.method !== "POST") return res.status(405).end();
@@ -96,6 +131,24 @@ export default async function handler(req, res) {
         anno_costruzione: dati.anno_costruzione ? parseInt(dati.anno_costruzione) : null,
         classe_energetica: dati.classe_energetica || null,
         stato_immobile: dati.stato || null,
+        // Batch 7 task 7.A: campi prima scritti SOLO in `venditori`, ora
+        // persistiti anche in immobili (single source of truth per
+        // l'edit + scheda pubblica). Coercizione tipi: boolean per le
+        // pertinenze, numeric/text per il resto.
+        ascensore: dati.ascensore !== undefined ? boolFromSelect(dati.ascensore) : existing.ascensore,
+        terrazzo: dati.terrazzo !== undefined ? boolFromSiNo(dati.terrazzo) : existing.terrazzo,
+        terrazzo_mq: dati.terrazzo_mq !== undefined ? numOrNull(dati.terrazzo_mq) : existing.terrazzo_mq,
+        garage: dati.garage !== undefined ? boolFromSiNo(dati.garage) : existing.garage,
+        garage_mq: dati.garage_mq !== undefined ? numOrNull(dati.garage_mq) : existing.garage_mq,
+        cantina: dati.cantina !== undefined ? (dati.cantina || null) : existing.cantina,
+        cantina_mq: dati.cantina_mq !== undefined ? numOrNull(dati.cantina_mq) : existing.cantina_mq,
+        giardino_condominiale: dati.giardino !== undefined ? boolGiardino(dati.giardino) : existing.giardino_condominiale,
+        riscaldamento: dati.riscaldamento !== undefined ? (dati.riscaldamento || null) : existing.riscaldamento,
+        acqua_calda: dati.acqua_calda !== undefined ? (dati.acqua_calda || null) : existing.acqua_calda,
+        spese_condominio: dati.spese_condominio !== undefined ? numOrNull(dati.spese_condominio) : existing.spese_condominio,
+        anno_ristrutturazione: dati.anno_ristrutturazione !== undefined ? intOrNull(dati.anno_ristrutturazione) : existing.anno_ristrutturazione,
+        disponibilita_rogito: dati.disponibilita_rogito !== undefined ? (dati.disponibilita_rogito || null) : existing.disponibilita_rogito,
+        note_prezzo: dati.note_prezzo !== undefined ? (dati.note_prezzo || null) : existing.note_prezzo,
         foto: dati.foto || [],
         planimetria: dati.planimetria !== undefined ? dati.planimetria : existing.planimetria,
         ape: dati.ape !== undefined ? dati.ape : existing.ape,
@@ -253,6 +306,22 @@ export default async function handler(req, res) {
       anno_costruzione: dati.anno_costruzione ? parseInt(dati.anno_costruzione) : null,
       classe_energetica: dati.classe_energetica || null,
       stato_immobile: dati.stato || null,
+      // Batch 7 task 7.A: persistiti anche in immobili (prima solo in
+      // tabella legacy `venditori` → edit mode li vedeva vuoti).
+      ascensore: boolFromSelect(dati.ascensore),
+      terrazzo: boolFromSiNo(dati.terrazzo),
+      terrazzo_mq: numOrNull(dati.terrazzo_mq),
+      garage: boolFromSiNo(dati.garage),
+      garage_mq: numOrNull(dati.garage_mq),
+      cantina: dati.cantina || null,
+      cantina_mq: numOrNull(dati.cantina_mq),
+      giardino_condominiale: boolGiardino(dati.giardino),
+      riscaldamento: dati.riscaldamento || null,
+      acqua_calda: dati.acqua_calda || null,
+      spese_condominio: numOrNull(dati.spese_condominio),
+      anno_ristrutturazione: intOrNull(dati.anno_ristrutturazione),
+      disponibilita_rogito: dati.disponibilita_rogito || null,
+      note_prezzo: dati.note_prezzo || null,
       foto: dati.foto || [],
       // planimetria/ape salvate anche in immobili da hotfix 6.5: prima erano
       // SOLO in tabella legacy venditori (planimetria_url/ape_url). La
